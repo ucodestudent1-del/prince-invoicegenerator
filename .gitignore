@@ -1,0 +1,11 @@
+/node_modules
+/.next
+/out
+/build
+/prisma/migrations/dev.db
+*.log
+.env
+.env*.local
+next-env.d.ts
+.DS_Store
+.kilo
