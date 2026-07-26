@@ -1,0 +1,458 @@
+// Prisma schema for Prince Invoice Generator
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum InvoiceType {
+  STANDARD
+  PROGRESS
+  RECURRING
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum EstimateStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum ChangeOrderStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  INVOICED
+}
+
+enum ExpenseCategory {
+  LABOR
+  MATERIALS
+  EQUIPMENT
+  SUBCONTRACTOR
+  PERMITS
+  TRAVEL
+  OTHER
+}
+
+enum EntityType {
+  INVOICE
+  ESTIMATE
+  EXPENSE
+  PROJECT
+}
+
+// ---------------------------------------------------------------------------
+// Auth (Auth.js Prisma Adapter)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  role           OrgRole       @default(OWNER)
+
+  accounts Account[]
+  sessions Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Organization / Team (Business tier: multiple users)
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id              String             @id @default(cuid())
+  name            String
+  slug            String             @unique
+  plan            SubscriptionPlan   @default(FREE)
+  ownerId         String
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  stripePriceId   String?
+  subscriptionStatus SubscriptionStatus?
+  currentPeriodEnd DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  customers      Customer[]
+  projects       Project[]
+  invoices       Invoice[]
+  estimates      Estimate[]
+  changeOrders   ChangeOrder[]
+  expenses       Expense[]
+  subcontractors Subcontractor[]
+  photoAttachments PhotoAttachment[]
+  recurringConfigs RecurringInvoiceConfig[]
+}
+
+// ---------------------------------------------------------------------------
+// Customers
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name      String
+  company   String?
+  email     String?
+  phone     String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoices  Invoice[]
+  estimates Estimate[]
+  projects  Project[]
+  recurringConfigs RecurringInvoiceConfig[]
+
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Projects (Business tier: project management)
+// ---------------------------------------------------------------------------
+
+model Project {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customerId String?
+  customer  Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  name      String
+  address   String?
+  startDate DateTime?
+  endDate   DateTime?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoices       Invoice[]
+  estimates      Estimate[]
+  changeOrders   ChangeOrder[]
+  expenses       Expense[]
+  subcontractorAssignments SubcontractorProject[]
+
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Invoices (core feature across all tiers)
+// ---------------------------------------------------------------------------
+
+model Invoice {
+  id            String       @id @default(cuid())
+  orgId         String
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  number        String
+  customerId    String
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  projectId     String?
+  project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  type          InvoiceType  @default(STANDARD)
+  status        InvoiceStatus @default(DRAFT)
+  issueDate     DateTime     @default(now())
+  dueDate       DateTime?
+  currency      String       @default("USD")
+
+  subtotal      Float        @default(0)
+  taxRate       Float        @default(0)
+  taxAmount     Float        @default(0)
+  discount      Float        @default(0)
+
+  // Retainage (Pro tier): percentage of contract withheld until completion
+  retainageRate Float        @default(0)
+  retainageAmount Float      @default(0)
+
+  total         Float        @default(0)
+  amountPaid    Float        @default(0)
+  notes         String?
+  stripeInvoiceId String?
+  recurringConfigId String?
+  recurringConfig RecurringInvoiceConfig? @relation(fields: [recurringConfigId], references: [id])
+
+  createdById   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  items         InvoiceItem[]
+  changeOrders  ChangeOrder[]
+
+  @@unique([orgId, number])
+  @@index([orgId])
+  @@index([customerId])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Float   @default(0)
+  amount      Float   @default(0)
+  sortOrder   Int     @default(0)
+
+  @@index([invoiceId])
+}
+
+// ---------------------------------------------------------------------------
+// Estimates (Starter tier+)
+// ---------------------------------------------------------------------------
+
+model Estimate {
+  id          String        @id @default(cuid())
+  orgId       String
+  org         Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  number      String
+  customerId  String
+  customer    Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  projectId   String?
+  project     Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  status      EstimateStatus @default(DRAFT)
+  issueDate   DateTime      @default(now())
+  validUntil  DateTime?
+  currency    String        @default("USD")
+  subtotal    Float         @default(0)
+  taxRate     Float         @default(0)
+  taxAmount   Float         @default(0)
+  discount    Float         @default(0)
+  total       Float         @default(0)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  items       EstimateItem[]
+
+  @@unique([orgId, number])
+  @@index([orgId])
+}
+
+model EstimateItem {
+  id          String    @id @default(cuid())
+  estimateId  String
+  estimate    Estimate  @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float     @default(1)
+  unitPrice   Float     @default(0)
+  amount      Float     @default(0)
+  sortOrder   Int       @default(0)
+
+  @@index([estimateId])
+}
+
+// ---------------------------------------------------------------------------
+// Change Orders (Pro tier)
+// ---------------------------------------------------------------------------
+
+model ChangeOrder {
+  id          String            @id @default(cuid())
+  orgId       String
+  org         Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  number      String
+  title       String
+  description String?
+  invoiceId   String?
+  invoice     Invoice?          @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  projectId   String?
+  project     Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  amount      Float             @default(0)
+  status      ChangeOrderStatus @default(PROPOSED)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Expenses with photo attachments (Pro tier: expense tracking)
+// ---------------------------------------------------------------------------
+
+model Expense {
+  id          String           @id @default(cuid())
+  orgId       String
+  org         Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId   String?
+  project     Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  vendor      String?
+  category    ExpenseCategory  @default(OTHER)
+  amount      Float            @default(0)
+  date        DateTime         @default(now())
+  notes       String?
+  photoId     String?   @unique
+  photo       PhotoAttachment? @relation(fields: [photoId], references: [id], onDelete: SetNull)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Subcontractor tracking (Business tier)
+// ---------------------------------------------------------------------------
+
+model Subcontractor {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name      String
+  company   String?
+  trade     String?
+  email     String?
+  phone     String?
+  rate      Decimal?
+  status    String    @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects  SubcontractorProject[]
+
+  @@index([orgId])
+}
+
+model SubcontractorProject {
+  id              String        @id @default(cuid())
+  subcontractorId String
+  subcontractor   Subcontractor @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+  projectId       String
+  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedAt      DateTime      @default(now())
+
+  @@unique([subcontractorId, projectId])
+}
+
+// ---------------------------------------------------------------------------
+// Photo attachments stored on Cloudflare R2 (Pro tier)
+// ---------------------------------------------------------------------------
+
+model PhotoAttachment {
+  id        String     @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  key       String // R2 object key
+  url       String
+  filename  String
+  contentType String?
+  size      Int?
+  entityType EntityType?
+  entityId  String?
+  uploadedById String?
+  createdAt DateTime   @default(now())
+
+  expense   Expense?
+
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Recurring invoices (Pro tier)
+// ---------------------------------------------------------------------------
+
+model RecurringInvoiceConfig {
+  id          String   @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  frequency   String   @default("MONTHLY") // MONTHLY, QUARTERLY, etc.
+  nextRunDate DateTime
+  active      Boolean  @default(true)
+  lastInvoiceId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  invoices    Invoice[]
+
+  @@index([orgId])
+}

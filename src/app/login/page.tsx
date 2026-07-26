@@ -1,0 +1,97 @@
+"use client";
+
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+import { HardHat } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = React.useState("");
+  const [name, setName] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+
+  async function devLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    const res = await signIn("credentials", {
+      email,
+      name,
+      redirect: false,
+    });
+    setLoading(false);
+    if (res?.ok) router.push("/dashboard");
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <Link href="/" className="mx-auto mb-2 flex items-center gap-2 font-bold">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <HardHat className="h-5 w-5" />
+            </span>
+            Prince
+          </Link>
+          <CardTitle>Sign in</CardTitle>
+          <CardDescription>
+            Use your email to explore the platform (dev mode).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={devLogin} className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@contractor.com"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="John Prince"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Signing in…" : "Continue"}
+            </Button>
+          </form>
+
+          <div className="relative text-center text-xs text-muted-foreground">
+            <span className="bg-card px-2">or</span>
+          </div>
+
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+            >
+              Continue with GitHub
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            >
+              Continue with Google
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

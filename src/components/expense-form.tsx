@@ -1,0 +1,135 @@
+"use client";
+
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { createExpense } from "@/lib/actions/features";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const CATEGORIES = [
+  "LABOR",
+  "MATERIALS",
+  "EQUIPMENT",
+  "SUBCONTRACTOR",
+  "PERMITS",
+  "TRAVEL",
+  "OTHER",
+];
+
+export function ExpenseForm({
+  projects,
+  r2Enabled,
+}: {
+  projects: { id: string; name: string }[];
+  r2Enabled: boolean;
+}) {
+  const router = useRouter();
+  const [error, setError] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const [photoId, setPhotoId] = React.useState<string | null>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/photos", { method: "POST", body: fd });
+    const data = await res.json();
+    setUploading(false);
+    if (data.id) setPhotoId(data.id);
+    else setError(data.error ?? "Upload failed");
+  }
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    const fd = new FormData(e.currentTarget);
+    try {
+      await createExpense({
+        vendor: String(fd.get("vendor") || "") || undefined,
+        category: (String(fd.get("category") || "OTHER") as any),
+        amount: Number(fd.get("amount") || 0),
+        date: String(fd.get("date") || "") || null,
+        notes: String(fd.get("notes") || "") || undefined,
+        projectId: String(fd.get("projectId") || "") || null,
+        photoId,
+      });
+      router.push("/dashboard/expenses");
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message ?? "Failed.");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle className="text-lg">New expense</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <div className="mb-3 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+        <form onSubmit={submit} className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="vendor">Vendor</Label>
+              <Input id="vendor" name="vendor" />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="amount">Amount</Label>
+              <Input id="amount" name="amount" type="number" step="0.01" min={0} required />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="category">Category</Label>
+              <select id="category" name="category" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="date">Date</Label>
+              <Input id="date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="projectId">Project</Label>
+            <select id="projectId" name="projectId" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
+              <option value="">None</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+          {r2Enabled && (
+            <div className="space-y-1">
+              <Label htmlFor="photo">Receipt photo (R2)</Label>
+              <Input id="photo" type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
+              {uploading && <p className="text-xs text-muted-foreground">Uploading…</p>}
+              {photoId && <p className="text-xs text-emerald-600">Photo attached.</p>}
+            </div>
+          )}
+          <div className="space-y-1">
+            <Label htmlFor="notes">Notes</Label>
+            <Input id="notes" name="notes" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button type="submit" disabled={saving || uploading}>
+              {saving ? "Saving…" : "Create"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
