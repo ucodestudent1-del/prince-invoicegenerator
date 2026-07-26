@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { requireUser } from "@/lib/org";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getPlan } from "@/lib/plans";
 
@@ -8,7 +9,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const user = await requireUser();
+  const authSession = await getServerSession(authOptions);
+  if (!authSession?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const user = authSession.user;
   if (!user.organizationId) {
     return NextResponse.json({ error: "No organization" }, { status: 400 });
   }
