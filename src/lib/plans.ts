@@ -44,7 +44,7 @@ export const PLANS: PlanDefinition[] = [
     id: "STARTER",
     name: "Starter",
     priceLabel: "$15–25",
-    priceMonthly: 19,
+    priceMonthly: 20,
     blurb: "Solo contractors",
     audience: "Solo contractors",
     features: [
@@ -59,7 +59,7 @@ export const PLANS: PlanDefinition[] = [
     id: "PRO",
     name: "Pro",
     priceLabel: "$39–59",
-    priceMonthly: 49,
+    priceMonthly: 45,
     blurb: "Small construction companies",
     audience: "Small construction companies",
     features: [
@@ -80,7 +80,7 @@ export const PLANS: PlanDefinition[] = [
     id: "BUSINESS",
     name: "Business",
     priceLabel: "$79–149",
-    priceMonthly: 99,
+    priceMonthly: 130,
     blurb: "Growing contractors",
     audience: "Growing contractors",
     features: [
