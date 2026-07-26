@@ -14,7 +14,6 @@ export function PricingCheckout({
 }) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
-  const [interval, setInterval] = React.useState<"monthly" | "yearly">("monthly");
 
   async function handleCheckout() {
     setLoading(true);
@@ -22,7 +21,7 @@ export function PricingCheckout({
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planId, interval }),
+        body: JSON.stringify({ plan: planId }),
       });
       if (res.status === 401 || res.status === 400) {
         router.push("/login");
@@ -46,30 +45,8 @@ export function PricingCheckout({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex rounded-md border p-0.5 text-xs">
-        <button
-          type="button"
-          onClick={() => setInterval("monthly")}
-          className={`flex-1 rounded px-2 py-1 ${
-            interval === "monthly" ? "bg-primary text-primary-foreground" : ""
-          }`}
-        >
-          Monthly
-        </button>
-        <button
-          type="button"
-          onClick={() => setInterval("yearly")}
-          className={`flex-1 rounded px-2 py-1 ${
-            interval === "yearly" ? "bg-primary text-primary-foreground" : ""
-          }`}
-        >
-          Yearly
-        </button>
-      </div>
-      <Button className="w-full" onClick={handleCheckout} disabled={loading}>
-        {loading ? "Redirecting…" : `Choose ${planName}`}
-      </Button>
-    </div>
+    <Button className="w-full" onClick={handleCheckout} disabled={loading}>
+      {loading ? "Redirecting…" : `Choose ${planName}`}
+    </Button>
   );
 }

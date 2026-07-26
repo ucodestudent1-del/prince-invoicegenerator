@@ -28,7 +28,6 @@ export interface PlanDefinition {
   audience: string;
   features: FeatureKey[];
   stripePriceId?: string;
-  stripePriceIdYearly?: string;
 }
 
 export const PLANS: PlanDefinition[] = [
@@ -55,7 +54,6 @@ export const PLANS: PlanDefinition[] = [
       "customerDb",
     ],
     stripePriceId: process.env.STRIPE_PRICE_STARTER_MONTHLY,
-    stripePriceIdYearly: process.env.STRIPE_PRICE_STARTER_YEARLY,
   },
   {
     id: "PRO",
@@ -77,7 +75,6 @@ export const PLANS: PlanDefinition[] = [
       "photoAttachments",
     ],
     stripePriceId: process.env.STRIPE_PRICE_PRO_MONTHLY,
-    stripePriceIdYearly: process.env.STRIPE_PRICE_PRO_YEARLY,
   },
   {
     id: "BUSINESS",
@@ -103,7 +100,6 @@ export const PLANS: PlanDefinition[] = [
       "reports",
     ],
     stripePriceId: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
-    stripePriceIdYearly: process.env.STRIPE_PRICE_BUSINESS_YEARLY,
   },
   {
     id: "ENTERPRISE",

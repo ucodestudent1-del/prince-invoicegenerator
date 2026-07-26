@@ -13,10 +13,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No organization" }, { status: 400 });
   }
 
-  const { plan, interval = "monthly" } = await req.json();
+  const { plan } = await req.json();
   const planDef = getPlan(plan);
-  const priceId =
-    interval === "yearly" ? planDef.stripePriceIdYearly : planDef.stripePriceId;
+  const priceId = planDef.stripePriceId;
   if (!priceId) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
