@@ -11,7 +11,6 @@ const display = PLANS.map((p) => ({
   name: p.name,
   priceLabel: p.priceLabel,
   blurb: p.blurb,
-  audience: p.audience,
   features: p.features.map((f) => FEATURE_LABELS[f as FeatureKey]),
 }));
 
@@ -49,7 +48,6 @@ export default function PricingPage() {
                   </CardTitle>
                   <div className="text-2xl font-bold">{plan.priceLabel}</div>
                   <p className="text-sm text-muted-foreground">{plan.blurb}</p>
-                  <p className="text-xs text-muted-foreground">For {plan.audience}</p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-2 text-sm">
