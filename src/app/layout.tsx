@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { EB_Garamond } from "next/font/google";
 import "./globals.css";
+
+const ebGaramond = EB_Garamond({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Prince — Construction Invoice Generator",
@@ -14,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className={`min-h-screen antialiased ${ebGaramond.className}`}>{children}</body>
     </html>
   );
 }
