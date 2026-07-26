@@ -9,3 +9,5 @@
 next-env.d.ts
 .DS_Store
 .kilo
+
+tsconfig.tsbuildinfo
