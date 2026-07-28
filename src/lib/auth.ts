@@ -1,20 +1,10 @@
 import type { NextAuthOptions, DefaultSession } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 
 const providers: NextAuthOptions["providers"] = [];
-
-if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
-  providers.push(
-    GitHubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
-    })
-  );
-}
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(

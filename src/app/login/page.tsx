@@ -70,18 +70,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="relative text-center text-xs text-muted-foreground">
-            <span className="bg-card px-2">or</span>
-          </div>
-
           <div className="space-y-2">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
-            >
-              Continue with GitHub
-            </Button>
             <Button
               variant="outline"
               className="w-full"
