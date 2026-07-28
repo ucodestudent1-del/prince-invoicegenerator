@@ -13,6 +13,8 @@ import { formatCurrency } from "@/lib/utils";
 interface Customer {
   id: string;
   name: string;
+  company: string | null;
+  email: string | null;
 }
 interface Project {
   id: string;
@@ -25,12 +27,14 @@ export function InvoiceForm({
   canRetainage,
   canProgress,
   canRecurring,
+  canCustomizeInvoiceNumber,
 }: {
   customers: Customer[];
   projects: Project[];
   canRetainage: boolean;
   canProgress: boolean;
   canRecurring: boolean;
+  canCustomizeInvoiceNumber: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
@@ -45,6 +49,7 @@ export function InvoiceForm({
   const [taxRate, setTaxRate] = React.useState(0);
   const [discount, setDiscount] = React.useState(0);
   const [retainageRate, setRetainageRate] = React.useState(0);
+  const [invoiceNumber, setInvoiceNumber] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [items, setItems] = React.useState([
     { description: "", quantity: 1, unitPrice: 0 },
@@ -80,6 +85,7 @@ export function InvoiceForm({
         discount,
         retainageRate: canRetainage ? retainageRate : 0,
         notes,
+        invoiceNumber: canCustomizeInvoiceNumber ? invoiceNumber || null : null,
         items: items.filter((i) => i.description),
       });
       router.push(`/dashboard/invoices/${invoice.id}`);
@@ -110,10 +116,11 @@ export function InvoiceForm({
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
             >
-              <option value="">Select customer…</option>
+              <option value="">Select customer&#x2026;</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.company ? `${c.name} (${c.company})` : c.name}
+                  {c.email ? ` &#x2014; ${c.email}` : ""}
                 </option>
               ))}
             </select>
@@ -148,6 +155,17 @@ export function InvoiceForm({
                 <option value="PROGRESS">Progress (AIA-style)</option>
                 {canRecurring && <option value="RECURRING">Recurring</option>}
               </select>
+            </div>
+          )}
+          {canCustomizeInvoiceNumber && (
+            <div className="space-y-1">
+              <Label htmlFor="invoiceNumber">Invoice name / number</Label>
+              <Input
+                id="invoiceNumber"
+                placeholder="e.g. INV-001 or custom name"
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+              />
             </div>
           )}
           <div className="space-y-1">
@@ -215,7 +233,7 @@ export function InvoiceForm({
                 size="sm"
                 onClick={() => setItems((p) => p.filter((_, i) => i !== idx))}
               >
-                ✕
+                &#x2715;
               </Button>
             </div>
           ))}
@@ -286,7 +304,7 @@ export function InvoiceForm({
           Cancel
         </Button>
         <Button type="submit" disabled={saving}>
-          {saving ? "Saving…" : "Create invoice"}
+          {saving ? "Saving&#x2026;" : "Create invoice"}
         </Button>
       </div>
     </form>

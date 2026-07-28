@@ -23,6 +23,7 @@ export interface CreateInvoiceInput {
   discount: number;
   retainageRate: number;
   notes?: string;
+  invoiceNumber?: string | null;
   items: InvoiceItemInput[];
 }
 
