@@ -73,11 +73,20 @@ export default async function InvoiceDetailPage({
       <Card>
         <CardContent className="space-y-6 pt-6">
           <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">{invoice.number}</h1>
-              <p className="text-sm text-muted-foreground">
-                {invoice.type} • Issued {formatDate(invoice.issueDate)}
-              </p>
+            <div className="flex items-start gap-4">
+              {invoice.logoUrl && (
+                <img
+                  src={invoice.logoUrl}
+                  alt="Invoice logo"
+                  className="h-12 w-auto object-contain"
+                />
+              )}
+              <div>
+                <h1 className="text-2xl font-bold">{invoice.number}</h1>
+                <p className="text-sm text-muted-foreground">
+                  {invoice.type} • Issued {formatDate(invoice.issueDate)}
+                </p>
+              </div>
             </div>
             <Badge variant={statusVariant[invoice.status] ?? "secondary"}>
               {invoice.status}

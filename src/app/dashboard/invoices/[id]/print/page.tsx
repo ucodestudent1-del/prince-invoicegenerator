@@ -24,9 +24,18 @@ export default async function InvoicePrintPage({
   return (
     <div className="mx-auto max-w-3xl bg-white p-10 text-black">
       <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-orange-600">Prince</h1>
-          <p className="text-sm text-gray-500">Construction Invoicing</p>
+        <div className="flex items-start gap-4">
+          {invoice.logoUrl && (
+            <img
+              src={invoice.logoUrl}
+              alt="Invoice logo"
+              className="h-16 object-contain"
+            />
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-orange-600">Prince</h1>
+            <p className="text-sm text-gray-500">Construction Invoicing</p>
+          </div>
         </div>
         <div className="text-right">
           <h2 className="text-2xl font-bold">{invoice.number}</h2>

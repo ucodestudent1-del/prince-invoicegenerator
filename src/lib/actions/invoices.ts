@@ -24,6 +24,7 @@ export interface CreateInvoiceInput {
   retainageRate: number;
   notes?: string;
   invoiceNumber?: string | null;
+  logoUrl?: string | null;
   items: InvoiceItemInput[];
 }
 
@@ -77,6 +78,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
       taxAmount,
       total,
       notes: input.notes,
+      logoUrl: input.logoUrl ?? null,
       createdById: user.id,
       items: {
         create: input.items.map((it, i) => ({

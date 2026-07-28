@@ -51,6 +51,9 @@ export function InvoiceForm({
   const [retainageRate, setRetainageRate] = React.useState(0);
   const [invoiceNumber, setInvoiceNumber] = React.useState("");
   const [notes, setNotes] = React.useState("");
+  const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
+  const [logoFile, setLogoFile] = React.useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
   const [items, setItems] = React.useState([
     { description: "", quantity: 1, unitPrice: 0 },
   ]);
@@ -66,6 +69,41 @@ export function InvoiceForm({
     );
   }
 
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.type)) {
+      setError("Invalid file type. Accepted: PNG, JPG, WebP");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File too large. Maximum 5MB");
+      return;
+    }
+    setError(null);
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadLogo(file: File): Promise<string | null> {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/api/invoices/upload-logo", {
+      method: "POST",
+      body: form,
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error ?? "Logo upload failed");
+    }
+    const data = await res.json();
+    return data.url as string;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -75,6 +113,10 @@ export function InvoiceForm({
     }
     setSaving(true);
     try {
+      let uploadedLogoUrl: string | null = null;
+      if (logoFile) {
+        uploadedLogoUrl = await uploadLogo(logoFile);
+      }
       const invoice = await createInvoice({
         customerId,
         projectId: projectId || null,
@@ -86,6 +128,7 @@ export function InvoiceForm({
         retainageRate: canRetainage ? retainageRate : 0,
         notes,
         invoiceNumber: canCustomizeInvoiceNumber ? invoiceNumber || null : null,
+        logoUrl: uploadedLogoUrl ?? logoUrl ?? null,
         items: items.filter((i) => i.description),
       });
       router.push(`/dashboard/invoices/${invoice.id}`);
@@ -185,6 +228,22 @@ export function InvoiceForm({
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
             />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="logo">Logo</Label>
+            <Input
+              id="logo"
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={handleLogoChange}
+            />
+            {logoPreview && (
+              <img
+                src={logoPreview}
+                alt="Logo preview"
+                className="mt-2 h-16 object-contain"
+              />
+            )}
           </div>
         </CardContent>
       </Card>

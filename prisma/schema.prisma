@@ -261,6 +261,7 @@ model Invoice {
   stripeInvoiceId String?
   recurringConfigId String?
   recurringConfig RecurringInvoiceConfig? @relation(fields: [recurringConfigId], references: [id])
+  logoUrl String?
 
   createdById   String?
   createdAt     DateTime     @default(now())
