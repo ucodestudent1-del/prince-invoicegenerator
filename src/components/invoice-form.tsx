@@ -58,6 +58,8 @@ export function InvoiceForm({
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
   const [billToAddress, setBillToAddress] = React.useState("");
   const [shipToAddress, setShipToAddress] = React.useState("");
+  const [customerSearch, setCustomerSearch] = React.useState("");
+  const [projectSearch, setProjectSearch] = React.useState("");
   const [items, setItems] = React.useState([
     { description: "", quantity: 1, unitPrice: 0 },
   ]);
