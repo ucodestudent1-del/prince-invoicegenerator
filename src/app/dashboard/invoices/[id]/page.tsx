@@ -72,19 +72,18 @@ export default async function InvoiceDetailPage({
 
       <Card>
         <CardContent className="space-y-6 pt-6">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between border-b pb-4">
             <div className="flex items-start gap-4">
               {invoice.logoUrl && (
-                <img
-                  src={invoice.logoUrl}
-                  alt="Invoice logo"
-                  className="h-12 w-auto object-contain"
-                />
+                <img src={invoice.logoUrl} alt="Invoice logo" className="h-12 w-auto object-contain" />
               )}
               <div>
-                <h1 className="text-2xl font-bold">{invoice.number}</h1>
+                <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                  Invoice
+                </span>
+                <h1 className="text-2xl font-bold mt-1">{invoice.number}</h1>
                 <p className="text-sm text-muted-foreground">
-                  {invoice.type} • Issued {formatDate(invoice.issueDate)}
+                  Issued {formatDate(invoice.issueDate)} &middot; Due {formatDate(invoice.dueDate)}
                 </p>
               </div>
             </div>
@@ -93,53 +92,60 @@ export default async function InvoiceDetailPage({
             </Badge>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3 text-sm">
+          <div className="grid gap-4 sm:grid-cols-2 text-sm">
             <div>
-              <p className="font-medium">Bill To</p>
+              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Bill To</p>
               {invoice.billToAddress ? (
-                <p>{invoice.billToAddress.replace(/\n/g, "<br/>")}</p>
+                <div className="whitespace-pre-line">{invoice.billToAddress}</div>
               ) : (
                 <>
-                  <p>{invoice.customer.name}</p>
+                  <p className="font-medium">{invoice.customer.name}</p>
                   {invoice.customer.company && <p>{invoice.customer.company}</p>}
+                  {invoice.customer.email && <p>{invoice.customer.email}</p>}
                   {invoice.customer.address && <p>{invoice.customer.address}</p>}
                 </>
               )}
+              {invoice.shipToAddress && (
+                <div className="mt-3 pt-3 border-t">
+                  <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Ship To</p>
+                  <div className="whitespace-pre-line">{invoice.shipToAddress}</div>
+                </div>
+              )}
             </div>
-            {invoice.shipToAddress && (
+            <div>
+              {invoice.project && (
+                <div className="mb-4">
+                  <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Project</p>
+                  <p>{invoice.project.name}</p>
+                </div>
+              )}
               <div>
-                <p className="font-medium">Ship To</p>
-                <p>{invoice.shipToAddress.replace(/\n/g, "<br/>")}</p>
+                <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Type</p>
+                <p>{invoice.type}</p>
               </div>
-            )}
-            <div>
-              <p className="font-medium">Due date</p>
-              <p>{formatDate(invoice.dueDate)}</p>
-            </div>
-            <div>
-              <p className="font-medium">Project</p>
-              <p>{invoice.project?.name ?? "—"}</p>
             </div>
           </div>
 
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
+                <th className="py-2 w-8">#</th>
                 <th className="py-2">Description</th>
                 <th className="py-2 text-right">Qty</th>
-                <th className="py-2 text-right">Unit price</th>
+                <th className="py-2 text-right">Unit Price</th>
                 <th className="py-2 text-right">Amount</th>
               </tr>
             </thead>
             <tbody>
-              {invoice.items.map((it) => (
+              {invoice.items.map((it, idx) => (
                 <tr key={it.id} className="border-b">
+                  <td className="py-2 text-gray-400">{idx + 1}</td>
                   <td className="py-2">{it.description}</td>
                   <td className="py-2 text-right">{it.quantity}</td>
                   <td className="py-2 text-right">
                     {formatCurrency(it.unitPrice, invoice.currency)}
                   </td>
-                  <td className="py-2 text-right">
+                  <td className="py-2 text-right font-medium">
                     {formatCurrency(it.amount, invoice.currency)}
                   </td>
                 </tr>
@@ -148,7 +154,7 @@ export default async function InvoiceDetailPage({
           </table>
 
           <div className="flex justify-end">
-            <div className="w-64 space-y-1 text-sm">
+            <div className="w-72 space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
@@ -178,8 +184,8 @@ export default async function InvoiceDetailPage({
 
           {invoice.notes && (
             <div className="text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">Notes</p>
-              <p>{invoice.notes}</p>
+              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Notes</p>
+              <p className="whitespace-pre-line">{invoice.notes}</p>
             </div>
           )}
         </CardContent>
