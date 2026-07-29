@@ -54,6 +54,8 @@ export function InvoiceForm({
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
   const [logoFile, setLogoFile] = React.useState<File | null>(null);
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
+  const [billToAddress, setBillToAddress] = React.useState("");
+  const [shipToAddress, setShipToAddress] = React.useState("");
   const [items, setItems] = React.useState([
     { description: "", quantity: 1, unitPrice: 0 },
   ]);
@@ -129,6 +131,8 @@ export function InvoiceForm({
         notes,
         invoiceNumber: canCustomizeInvoiceNumber ? invoiceNumber || null : null,
         logoUrl: uploadedLogoUrl ?? logoUrl ?? null,
+        billToAddress: billToAddress || null,
+        shipToAddress: shipToAddress || null,
         items: items.filter((i) => i.description),
       });
       router.push(`/dashboard/invoices/${invoice.id}`);
@@ -244,6 +248,34 @@ export function InvoiceForm({
                 className="mt-2 h-16 object-contain"
               />
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Bill &amp; Ship To</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="billTo">Bill To (optional)</Label>
+            <Textarea
+              id="billTo"
+              placeholder="Address line 1&#10;City, State ZIP"
+              value={billToAddress}
+              onChange={(e) => setBillToAddress(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="shipTo">Ship To (optional)</Label>
+            <Textarea
+              id="shipTo"
+              placeholder="Address line 1&#10;City, State ZIP"
+              value={shipToAddress}
+              onChange={(e) => setShipToAddress(e.target.value)}
+              rows={3}
+            />
           </div>
         </CardContent>
       </Card>

@@ -95,11 +95,23 @@ export default async function InvoiceDetailPage({
 
           <div className="grid gap-4 sm:grid-cols-3 text-sm">
             <div>
-              <p className="font-medium">Bill to</p>
-              <p>{invoice.customer.name}</p>
-              {invoice.customer.company && <p>{invoice.customer.company}</p>}
-              {invoice.customer.address && <p>{invoice.customer.address}</p>}
+              <p className="font-medium">Bill To</p>
+              {invoice.billToAddress ? (
+                <p>{invoice.billToAddress.replace(/\n/g, "<br/>")}</p>
+              ) : (
+                <>
+                  <p>{invoice.customer.name}</p>
+                  {invoice.customer.company && <p>{invoice.customer.company}</p>}
+                  {invoice.customer.address && <p>{invoice.customer.address}</p>}
+                </>
+              )}
             </div>
+            {invoice.shipToAddress && (
+              <div>
+                <p className="font-medium">Ship To</p>
+                <p>{invoice.shipToAddress.replace(/\n/g, "<br/>")}</p>
+              </div>
+            )}
             <div>
               <p className="font-medium">Due date</p>
               <p>{formatDate(invoice.dueDate)}</p>

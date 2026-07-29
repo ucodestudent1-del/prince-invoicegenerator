@@ -262,6 +262,8 @@ model Invoice {
   recurringConfigId String?
   recurringConfig RecurringInvoiceConfig? @relation(fields: [recurringConfigId], references: [id])
   logoUrl String?
+  billToAddress String?
+  shipToAddress String?
 
   createdById   String?
   createdAt     DateTime     @default(now())

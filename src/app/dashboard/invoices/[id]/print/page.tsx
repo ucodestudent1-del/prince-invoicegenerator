@@ -48,9 +48,21 @@ export default async function InvoicePrintPage({
       <div className="mb-8 grid grid-cols-3 gap-4 text-sm">
         <div>
           <p className="font-semibold">Bill To</p>
-          <p>{invoice.customer.name}</p>
-          {invoice.customer.company && <p>{invoice.customer.company}</p>}
-          {invoice.customer.address && <p>{invoice.customer.address}</p>}
+          {invoice.billToAddress ? (
+            <p>{invoice.billToAddress.replace(/\n/g, "<br/>")}</p>
+          ) : (
+            <>
+              <p>{invoice.customer.name}</p>
+              {invoice.customer.company && <p>{invoice.customer.company}</p>}
+              {invoice.customer.address && <p>{invoice.customer.address}</p>}
+            </>
+          )}
+          {invoice.shipToAddress && (
+            <>
+              <p className="font-semibold mt-2">Ship To</p>
+              <p>{invoice.shipToAddress.replace(/\n/g, "<br/>")}</p>
+            </>
+          )}
         </div>
         <div>
           <p className="font-semibold">Due Date</p>

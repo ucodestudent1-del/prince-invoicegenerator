@@ -25,6 +25,8 @@ export interface CreateInvoiceInput {
   notes?: string;
   invoiceNumber?: string | null;
   logoUrl?: string | null;
+  billToAddress?: string | null;
+  shipToAddress?: string | null;
   items: InvoiceItemInput[];
 }
 
@@ -79,6 +81,8 @@ export async function createInvoice(input: CreateInvoiceInput) {
       total,
       notes: input.notes,
       logoUrl: input.logoUrl ?? null,
+      billToAddress: input.billToAddress ?? null,
+      shipToAddress: input.shipToAddress ?? null,
       createdById: user.id,
       items: {
         create: input.items.map((it, i) => ({
