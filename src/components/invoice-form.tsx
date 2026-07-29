@@ -28,6 +28,7 @@ export function InvoiceForm({
   canProgress,
   canRecurring,
   canCustomizeInvoiceNumber,
+  canProjectManagement,
 }: {
   customers: Customer[];
   projects: Project[];
@@ -35,6 +36,7 @@ export function InvoiceForm({
   canProgress: boolean;
   canRecurring: boolean;
   canCustomizeInvoiceNumber: boolean;
+  canProjectManagement: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
@@ -179,7 +181,7 @@ export function InvoiceForm({
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              disabled={projects.length === 0}
+              hidden={!canProjectManagement}
             >
               <option value="">None</option>
               {projects.map((p) => (

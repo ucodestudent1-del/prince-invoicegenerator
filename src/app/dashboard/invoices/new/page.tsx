@@ -31,6 +31,7 @@ export default async function NewInvoicePage() {
         canProgress={hasFeature(plan, "progressInvoices")}
         canRecurring={hasFeature(plan, "recurring")}
         canCustomizeInvoiceNumber={plan === "FREE"}
+        canProjectManagement={hasFeature(plan, "projectManagement")}
       />
     </div>
   );
