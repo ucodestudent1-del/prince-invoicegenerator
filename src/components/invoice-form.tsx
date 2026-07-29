@@ -33,9 +33,9 @@ export function InvoiceForm({
     new Date().toISOString().slice(0, 10)
   );
   const [dueDate, setDueDate] = React.useState("");
-  const [taxRate, setTaxRate] = React.useState(0);
-  const [discount, setDiscount] = React.useState(0);
-  const [retainageRate, setRetainageRate] = React.useState(0);
+  const [taxRate, setTaxRate] = React.useState<string | number>(0);
+  const [discount, setDiscount] = React.useState<string | number>(0);
+  const [retainageRate, setRetainageRate] = React.useState<string | number>(0);
   const [invoiceNumber, setInvoiceNumber] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
@@ -49,10 +49,10 @@ export function InvoiceForm({
     { description: "", quantity: 1, unitPrice: 0 },
   ]);
 
-  const subtotal = items.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
-  const taxAmount = (subtotal * taxRate) / 100;
-  const total = subtotal + taxAmount - discount;
-  const retainageAmount = canRetainage ? (total * retainageRate) / 100 : 0;
+  const subtotal = items.reduce((a, i) => a + i.quantity * (Number(i.unitPrice) || 0), 0);
+  const taxAmount = ((subtotal * (Number(taxRate) || 0)) / 100);
+  const total = subtotal + taxAmount - (Number(discount) || 0);
+  const retainageAmount = canRetainage ? ((total * (Number(retainageRate) || 0)) / 100) : 0;
 
   function updateItem(idx: number, field: string, value: any) {
     setItems((prev) =>
@@ -108,22 +108,28 @@ export function InvoiceForm({
       if (logoFile) {
         uploadedLogoUrl = await uploadLogo(logoFile);
       }
-      const invoice = await createInvoice({
-        customerId,
-        projectId: projectId || null,
-        type: canProgress ? (type as any) : "STANDARD",
-        issueDate,
-        dueDate: dueDate || null,
-        taxRate,
-        discount,
-        retainageRate: canRetainage ? retainageRate : 0,
-        notes,
-        invoiceNumber: canCustomizeInvoiceNumber ? invoiceNumber || null : null,
-        logoUrl: uploadedLogoUrl ?? logoUrl ?? null,
-        billToAddress: billToAddress || null,
-        shipToAddress: shipToAddress || null,
-        items: items.filter((i) => i.description),
-      });
+        const invoice = await createInvoice({
+          customerId,
+          projectId: projectId || null,
+          type: canProgress ? (type as any) : "STANDARD",
+          issueDate,
+          dueDate: dueDate || null,
+          taxRate: Number(taxRate) || 0,
+          discount: Number(discount) || 0,
+          retainageRate: canRetainage ? Number(retainageRate) || 0 : 0,
+          notes,
+          invoiceNumber: canCustomizeInvoiceNumber ? invoiceNumber || null : null,
+          logoUrl: uploadedLogoUrl ?? logoUrl ?? null,
+          billToAddress: billToAddress || null,
+          shipToAddress: shipToAddress || null,
+          items: items
+            .filter((i) => i.description)
+            .map((i) => ({
+              description: i.description,
+              quantity: Number(i.quantity) || 0,
+              unitPrice: Number(i.unitPrice) || 0,
+            })),
+        });
       router.push(`/dashboard/invoices/${invoice.id}`);
     } catch (err: any) {
       setError(err?.message ?? "Failed to create invoice.");
@@ -284,7 +290,7 @@ export function InvoiceForm({
                 className="w-20"
                 value={it.quantity}
                 min={0}
-                onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))}
+                onChange={(e) => updateItem(idx, "quantity", e.target.value === "" ? "" : Number(e.target.value))}
               />
               <Input
                 type="number"
@@ -292,7 +298,7 @@ export function InvoiceForm({
                 value={it.unitPrice}
                 min={0}
                 step="0.01"
-                onChange={(e) => updateItem(idx, "unitPrice", Number(e.target.value))}
+                onChange={(e) => updateItem(idx, "unitPrice", e.target.value === "" ? "" : Number(e.target.value))}
               />
               <Button
                 type="button"
@@ -313,7 +319,7 @@ export function InvoiceForm({
                 type="number"
                 value={taxRate}
                 min={0}
-                onChange={(e) => setTaxRate(Number(e.target.value))}
+                onChange={(e) => setTaxRate(e.target.value === "" ? "" : Number(e.target.value))}
               />
             </div>
             <div className="space-y-1">
@@ -324,7 +330,7 @@ export function InvoiceForm({
                 value={discount}
                 min={0}
                 step="0.01"
-                onChange={(e) => setDiscount(Number(e.target.value))}
+                onChange={(e) => setDiscount(e.target.value === "" ? "" : Number(e.target.value))}
               />
             </div>
             {canRetainage && (
@@ -335,7 +341,7 @@ export function InvoiceForm({
                   type="number"
                   value={retainageRate}
                   min={0}
-                  onChange={(e) => setRetainageRate(Number(e.target.value))}
+                  onChange={(e) => setRetainageRate(e.target.value === "" ? "" : Number(e.target.value))}
                 />
               </div>
             )}

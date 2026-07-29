@@ -16,14 +16,14 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
   const [saving, setSaving] = React.useState(false);
   const [customerId, setCustomerId] = React.useState("");
   const [validUntil, setValidUntil] = React.useState("");
-  const [taxRate, setTaxRate] = React.useState(0);
-  const [discount, setDiscount] = React.useState(0);
+  const [taxRate, setTaxRate] = React.useState<string | number>(0);
+  const [discount, setDiscount] = React.useState<string | number>(0);
   const [notes, setNotes] = React.useState("");
   const [items, setItems] = React.useState([{ description: "", quantity: 1, unitPrice: 0 }]);
 
-  const subtotal = items.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
-  const taxAmount = (subtotal * taxRate) / 100;
-  const total = subtotal + taxAmount - discount;
+  const subtotal = items.reduce((a, i) => a + i.quantity * (Number(i.unitPrice) || 0), 0);
+  const taxAmount = ((subtotal * (Number(taxRate) || 0)) / 100);
+  const total = subtotal + taxAmount - (Number(discount) || 0);
 
   function updateItem(idx: number, field: string, value: any) {
     setItems((p) => p.map((it, i) => (i === idx ? { ...it, [field]: value } : it)));
@@ -38,10 +38,16 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
       await createEstimate({
         customerId,
         validUntil: validUntil || null,
-        taxRate,
-        discount,
+        taxRate: Number(taxRate) || 0,
+        discount: Number(discount) || 0,
         notes,
-        items: items.filter((i) => i.description),
+        items: items
+          .filter((i) => i.description)
+          .map((i) => ({
+            description: i.description,
+            quantity: Number(i.quantity) || 0,
+            unitPrice: Number(i.unitPrice) || 0,
+          })),
       });
       router.push("/dashboard/estimates");
       router.refresh();
@@ -110,14 +116,14 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
                 type="number"
                 className="w-20"
                 value={it.quantity}
-                onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))}
+                onChange={(e) => updateItem(idx, "quantity", e.target.value === "" ? "" : Number(e.target.value))}
               />
               <Input
                 type="number"
                 className="w-28"
                 step="0.01"
                 value={it.unitPrice}
-                onChange={(e) => updateItem(idx, "unitPrice", Number(e.target.value))}
+                onChange={(e) => updateItem(idx, "unitPrice", e.target.value === "" ? "" : Number(e.target.value))}
               />
               <Button
                 type="button"
@@ -132,11 +138,11 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
           <div className="grid gap-4 pt-2 sm:grid-cols-2">
             <div className="space-y-1">
               <Label>Tax rate %</Label>
-              <Input type="number" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value))} />
+              <Input type="number" value={taxRate} onChange={(e) => setTaxRate(e.target.value === "" ? "" : Number(e.target.value))} />
             </div>
             <div className="space-y-1">
               <Label>Discount</Label>
-              <Input type="number" step="0.01" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} />
+              <Input type="number" step="0.01" value={discount} onChange={(e) => setDiscount(e.target.value === "" ? "" : Number(e.target.value))} />
             </div>
           </div>
           <Textarea placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
