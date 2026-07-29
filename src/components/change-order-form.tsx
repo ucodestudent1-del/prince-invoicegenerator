@@ -10,10 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function ChangeOrderForm({
-  projects,
   invoices,
 }: {
-  projects: { id: string; name: string }[];
   invoices: { id: string; number: string }[];
 }) {
   const router = useRouter();
@@ -58,15 +56,10 @@ export function ChangeOrderForm({
             <Input id="title" name="title" required />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor="projectId">Project</Label>
-              <select id="projectId" name="projectId" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
-                <option value="">None</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
+<div className="space-y-1">
+                <Label htmlFor="projectId">Project</Label>
+                <Input id="projectId" name="projectId" placeholder="Enter project name" />
+              </div>
             <div className="space-y-1">
               <Label htmlFor="invoiceId">Linked invoice</Label>
               <select id="invoiceId" name="invoiceId" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">

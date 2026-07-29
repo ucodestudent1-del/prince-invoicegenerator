@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function ProjectForm({ customers }: { customers: { id: string; name: string }[] }) {
+export function ProjectForm() {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -52,12 +52,7 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
           </div>
           <div className="space-y-1">
             <Label htmlFor="customerId">Customer</Label>
-            <select id="customerId" name="customerId" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
-              <option value="">None</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <Input id="customerId" name="customerId" placeholder="Enter customer name" />
           </div>
           <div className="space-y-1">
             <Label htmlFor="address">Address</Label>

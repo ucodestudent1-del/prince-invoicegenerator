@@ -19,10 +19,8 @@ const CATEGORIES = [
 ];
 
 export function ExpenseForm({
-  projects,
   r2Enabled,
 }: {
-  projects: { id: string; name: string }[];
   r2Enabled: boolean;
 }) {
   const router = useRouter();
@@ -101,15 +99,10 @@ export function ExpenseForm({
               <Input id="date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
             </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="projectId">Project</Label>
-            <select id="projectId" name="projectId" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
-              <option value="">None</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
+<div className="space-y-1">
+              <Label htmlFor="projectId">Project</Label>
+              <Input id="projectId" name="projectId" placeholder="Enter project name" />
+            </div>
           {r2Enabled && (
             <div className="space-y-1">
               <Label htmlFor="photo">Receipt photo (R2)</Label>

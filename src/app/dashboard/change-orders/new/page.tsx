@@ -6,14 +6,11 @@ export default async function NewChangeOrderPage() {
   await requireFeature("changeOrders");
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const [projects, invoices] = await Promise.all([
-    db.project.findMany({ where: { orgId: user.organizationId }, orderBy: { name: "asc" } }),
-    db.invoice.findMany({ where: { orgId: user.organizationId }, orderBy: { number: "asc" } }),
-  ]);
+  const invoices = await db.invoice.findMany({ where: { orgId: user.organizationId }, orderBy: { number: "asc" } });
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">New change order</h1>
-      <ChangeOrderForm projects={projects} invoices={invoices} />
+      <ChangeOrderForm invoices={invoices} />
     </div>
   );
 }

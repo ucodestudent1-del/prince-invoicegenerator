@@ -10,28 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 
-interface Customer {
-  id: string;
-  name: string;
-  company: string | null;
-  email: string | null;
-}
-interface Project {
-  id: string;
-  name: string;
-}
-
 export function InvoiceForm({
-  customers,
-  projects,
   canRetainage,
   canProgress,
   canRecurring,
   canCustomizeInvoiceNumber,
   canProjectManagement,
 }: {
-  customers: Customer[];
-  projects: Project[];
   canRetainage: boolean;
   canProgress: boolean;
   canRecurring: boolean;
@@ -161,37 +146,24 @@ export function InvoiceForm({
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <Label htmlFor="customer">Customer</Label>
-            <select
+            <Input
               id="customer"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+              name="customer"
+              placeholder="Enter customer name"
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
-            >
-              <option value="">Select customer&#x2026;</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.company ? `${c.name} (${c.company})` : c.name}
-                  {c.email ? ` &#x2014; ${c.email}` : ""}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="project">Project</Label>
-            <select
+            <Input
               id="project"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+              name="project"
+              placeholder="Enter project name"
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
               hidden={!canProjectManagement}
-            >
-              <option value="">None</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           {canProgress && (
             <div className="space-y-1">
