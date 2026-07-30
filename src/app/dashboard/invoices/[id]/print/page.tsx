@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/org";
 import { db } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { PrintButton } from "@/components/print-button";
 
 export const dynamic = "force-dynamic";
 
@@ -140,18 +139,10 @@ export default async function InvoicePrintPage({
         </div>
       )}
 
-      <div className="mt-10 hidden print:block">
-        <Button onClick={() => window.print()}>
-          <Printer className="mr-2 h-4 w-4" /> Print / Save as PDF
-        </Button>
+      <div className="mt-10">
+        <PrintButton />
       </div>
-
-      <style>{`@media print { .no-print { display: none } }`}</style>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: "window.onload = function(){ if(window.location.search.indexOf('auto')>-1) window.print(); }",
-        }}
-      />
     </div>
   );
 }
+
