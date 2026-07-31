@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import type { SubscriptionPlan } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
 
 export async function getCurrentUser() {
@@ -26,18 +27,32 @@ export async function ensureOrganization(userId: string) {
   if (user.organizationId && user.organization) return user.organization;
 
   const slug = `org-${userId.slice(0, 8)}`;
-  const org = await db.organization.create({
-    data: {
-      name: `${user.name ?? "My"} Contracting`,
-      slug,
-      ownerId: userId,
-    },
-  });
-  await db.user.update({
-    where: { id: userId },
-    data: { organizationId: org.id },
-  });
-  return org;
+  try {
+    const org = await db.organization.create({
+      data: {
+        name: `${user.name ?? "My"} Contracting`,
+        slug,
+        ownerId: userId,
+      },
+    });
+    await db.user.update({
+      where: { id: userId },
+      data: { organizationId: org.id },
+    });
+    return org;
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const org = await db.organization.findUnique({ where: { slug } });
+      if (org) {
+        await db.user.update({
+          where: { id: userId },
+          data: { organizationId: org.id },
+        });
+        return org;
+      }
+    }
+    throw err;
+  }
 }
 
 export async function getCurrentOrg() {

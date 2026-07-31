@@ -19,11 +19,19 @@ export default async function ProjectsPage() {
   await requireFeature("projectManagement");
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const projects = await db.project.findMany({
-    where: { orgId: user.organizationId },
-    orderBy: { createdAt: "desc" },
-    include: { customer: true, _count: { select: { invoices: true, expenses: true } } },
-  });
+  const orgId = user.organizationId;
+
+  let projects;
+  try {
+    projects = await db.project.findMany({
+      where: { orgId },
+      orderBy: { createdAt: "desc" },
+      include: { customer: true, _count: { select: { invoices: true, expenses: true } } },
+    });
+  } catch (err) {
+    console.error("ProjectsPage failed to load projects:", err);
+    throw err;
+  }
 
   return (
     <div className="space-y-6">

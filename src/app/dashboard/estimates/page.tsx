@@ -27,11 +27,19 @@ export default async function EstimatesPage() {
   await requireFeature("estimates");
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const estimates = await db.estimate.findMany({
-    where: { orgId: user.organizationId },
-    orderBy: { createdAt: "desc" },
-    include: { customer: true },
-  });
+  const orgId = user.organizationId;
+
+  let estimates;
+  try {
+    estimates = await db.estimate.findMany({
+      where: { orgId },
+      orderBy: { createdAt: "desc" },
+      include: { customer: true },
+    });
+  } catch (err) {
+    console.error("EstimatesPage failed to load estimates:", err);
+    throw err;
+  }
 
   return (
     <div className="space-y-6">

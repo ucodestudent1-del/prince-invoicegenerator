@@ -29,14 +29,28 @@ const nav = [
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
 ];
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireUser();
-  const org = (await getCurrentOrg()) ?? (await ensureOrganization(user.id));
-  const plan = await getActivePlan();
+  let user;
+  let org;
+  let plan;
+  try {
+    user = await requireUser();
+    org = (await getCurrentOrg()) ?? (await ensureOrganization(user.id));
+    plan = await getActivePlan();
+  } catch (err) {
+    console.error("DashboardLayout failed to load auth/org/plan:", err);
+    throw err;
+  }
+
+  if (!org) {
+    throw new Error("Organization not found");
+  }
 
   return (
     <div className="flex min-h-screen">

@@ -17,10 +17,16 @@ export default async function InvoiceDetailPage({
   const user = await requireUser();
   if (!user.organizationId) return null;
 
-  const invoice = await db.invoice.findFirst({
-    where: { id: params.id, orgId: user.organizationId },
-    include: { customer: true, project: true, items: { orderBy: { sortOrder: "asc" } } },
-  });
+  let invoice;
+  try {
+    invoice = await db.invoice.findFirst({
+      where: { id: params.id, orgId: user.organizationId },
+      include: { customer: true, project: true, items: { orderBy: { sortOrder: "asc" } } },
+    });
+  } catch (err) {
+    console.error("InvoiceDetailPage failed to load invoice:", err);
+    throw err;
+  }
   if (!invoice) notFound();
 
   const statusVariant: Record<string, any> = {

@@ -26,11 +26,19 @@ const statusVariant: Record<string, any> = {
 export default async function InvoicesPage() {
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const invoices = await db.invoice.findMany({
-    where: { orgId: user.organizationId },
-    orderBy: { createdAt: "desc" },
-    include: { customer: true },
-  });
+  const orgId = user.organizationId;
+
+  let invoices;
+  try {
+    invoices = await db.invoice.findMany({
+      where: { orgId },
+      orderBy: { createdAt: "desc" },
+      include: { customer: true },
+    });
+  } catch (err) {
+    console.error("InvoicesPage failed to load invoices:", err);
+    throw err;
+  }
 
   return (
     <div className="space-y-6">

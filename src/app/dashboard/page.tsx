@@ -11,20 +11,28 @@ export default async function DashboardPage() {
   if (!user.organizationId) return null;
   const orgId = user.organizationId;
 
-  const [invoiceAgg, customerCount, recentInvoices] = await Promise.all([
-    db.invoice.aggregate({
-      where: { orgId },
-      _sum: { total: true, amountPaid: true },
-      _count: { _all: true },
-    }),
-    db.customer.count({ where: { orgId } }),
-    db.invoice.findMany({
-      where: { orgId },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: { customer: true },
-    }),
-  ]);
+  let invoiceAgg;
+  let customerCount;
+  let recentInvoices;
+  try {
+    [invoiceAgg, customerCount, recentInvoices] = await Promise.all([
+      db.invoice.aggregate({
+        where: { orgId },
+        _sum: { total: true, amountPaid: true },
+        _count: { _all: true },
+      }),
+      db.customer.count({ where: { orgId } }),
+      db.invoice.findMany({
+        where: { orgId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: { customer: true },
+      }),
+    ]);
+  } catch (err) {
+    console.error("DashboardPage failed to load data:", err);
+    throw err;
+  }
 
   const outstanding =
     (invoiceAgg._sum.total ?? 0) - (invoiceAgg._sum.amountPaid ?? 0);

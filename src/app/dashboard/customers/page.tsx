@@ -17,11 +17,19 @@ import { Plus, Trash2 } from "lucide-react";
 export default async function CustomersPage() {
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const customers = await db.customer.findMany({
-    where: { orgId: user.organizationId },
-    orderBy: { name: "asc" },
-    include: { _count: { select: { invoices: true } } },
-  });
+  const orgId = user.organizationId;
+
+  let customers;
+  try {
+    customers = await db.customer.findMany({
+      where: { orgId },
+      orderBy: { name: "asc" },
+      include: { _count: { select: { invoices: true } } },
+    });
+  } catch (err) {
+    console.error("CustomersPage failed to load customers:", err);
+    throw err;
+  }
 
   return (
     <div className="space-y-6">

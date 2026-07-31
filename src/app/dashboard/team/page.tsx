@@ -16,10 +16,18 @@ export default async function TeamPage() {
   await requireFeature("multipleUsers");
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const members = await db.user.findMany({
-    where: { organizationId: user.organizationId },
-    orderBy: { createdAt: "asc" },
-  });
+  const orgId = user.organizationId;
+
+  let members;
+  try {
+    members = await db.user.findMany({
+      where: { organizationId: orgId },
+      orderBy: { createdAt: "asc" },
+    });
+  } catch (err) {
+    console.error("TeamPage failed to load members:", err);
+    throw err;
+  }
 
   return (
     <div className="space-y-6">
