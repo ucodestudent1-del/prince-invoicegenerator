@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { requireUser, ensureOrganization, getCurrentOrg, getActivePlan } from "@/lib/org";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
 import {
@@ -41,15 +42,15 @@ export default async function DashboardLayout({
   let plan;
   try {
     user = await requireUser();
-    org = (await getCurrentOrg()) ?? (await ensureOrganization(user.id));
-    plan = await getActivePlan();
+    org = (await getCurrentOrg(user)) ?? (await ensureOrganization(user.id));
+    plan = await getActivePlan(user);
   } catch (err) {
     console.error("DashboardLayout failed to load auth/org/plan:", err);
     throw err;
   }
 
   if (!org) {
-    throw new Error("Organization not found");
+    notFound();
   }
 
   return (

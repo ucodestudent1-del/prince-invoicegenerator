@@ -14,12 +14,19 @@ export default function Error({
         <p className="text-sm text-muted-foreground">
           Something went wrong while loading the dashboard.
         </p>
+        {error.digest && (
+          <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
+            <p className="text-sm font-mono text-destructive">
+              Error ID: {error.digest}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Search your server logs for this digest to find the full error details.
+            </p>
+          </div>
+        )}
         {process.env.NODE_ENV === "development" && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
             <p className="text-sm font-mono text-destructive">{error.message}</p>
-            {error.digest && (
-              <p className="mt-2 text-xs text-muted-foreground">Digest: {error.digest}</p>
-            )}
             {error.stack && (
               <pre className="mt-2 overflow-auto text-xs text-destructive">
                 {error.stack}

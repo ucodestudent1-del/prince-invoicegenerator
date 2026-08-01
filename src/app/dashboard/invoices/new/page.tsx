@@ -6,7 +6,7 @@ export default async function NewInvoicePage() {
   const user = await requireUser();
   if (!user.organizationId) return null;
   const orgId = user.organizationId;
-  const plan = await getActivePlan();
+  const plan = await getActivePlan(user);
 
   return (
     <div className="space-y-6">

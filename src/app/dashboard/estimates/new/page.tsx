@@ -1,4 +1,4 @@
-import { requireUser, requireFeature, getCurrentOrg } from "@/lib/org";
+import { requireUser, requireFeature } from "@/lib/org";
 import { db } from "@/lib/db";
 import { EstimateForm } from "@/components/estimate-form";
 
@@ -6,10 +6,16 @@ export default async function NewEstimatePage() {
   await requireFeature("estimates");
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const customers = await db.customer.findMany({
-    where: { orgId: user.organizationId },
-    orderBy: { name: "asc" },
-  });
+  let customers;
+  try {
+    customers = await db.customer.findMany({
+      where: { orgId: user.organizationId },
+      orderBy: { name: "asc" },
+    });
+  } catch (err) {
+    console.error("Failed to load customers for new estimate:", err);
+    throw err;
+  }
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">New estimate</h1>

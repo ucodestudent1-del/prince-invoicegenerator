@@ -7,14 +7,14 @@ export default async function BillingPage() {
   if (!user.organizationId) return null;
   const orgId = user.organizationId;
 
-  let org;
-  try {
-    org = await getCurrentOrg();
-  } catch (err) {
-    console.error("BillingPage failed to load org:", err);
-    throw err;
-  }
-  const plan = await getActivePlan();
+   let org;
+   try {
+     org = await getCurrentOrg(user);
+   } catch (err) {
+     console.error("BillingPage failed to load org:", err);
+     throw err;
+   }
+   const plan = await getActivePlan(user);
 
   return (
     <BillingPanel

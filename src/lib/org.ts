@@ -5,6 +5,13 @@ import { db } from "@/lib/db";
 import type { SubscriptionPlan } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
+import type { DefaultSession } from "next-auth";
+
+type AppUser = DefaultSession["user"] & {
+  id: string;
+  organizationId: string | null;
+  role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
+};
 
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions);
@@ -55,14 +62,14 @@ export async function ensureOrganization(userId: string) {
   }
 }
 
-export async function getCurrentOrg() {
-  const user = await requireUser();
-  if (!user.organizationId) return null;
-  return db.organization.findUnique({ where: { id: user.organizationId } });
+export async function getCurrentOrg(user?: AppUser) {
+  const currentUser = user ?? await getCurrentUser();
+  if (!currentUser?.organizationId) return null;
+  return db.organization.findUnique({ where: { id: currentUser.organizationId } });
 }
 
-export async function getActivePlan(): Promise<SubscriptionPlan> {
-  const org = await getCurrentOrg();
+export async function getActivePlan(user?: AppUser): Promise<SubscriptionPlan> {
+  const org = await getCurrentOrg(user);
   return org?.plan ?? "FREE";
 }
 

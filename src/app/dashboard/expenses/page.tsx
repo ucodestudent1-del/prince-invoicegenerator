@@ -19,11 +19,17 @@ export default async function ExpensesPage() {
   await requireFeature("expenseTracking");
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const expenses = await db.expense.findMany({
-    where: { orgId: user.organizationId },
-    orderBy: { date: "desc" },
-    include: { project: true, photo: true },
-  });
+  let expenses;
+  try {
+    expenses = await db.expense.findMany({
+      where: { orgId: user.organizationId },
+      orderBy: { date: "desc" },
+      include: { project: true, photo: true },
+    });
+  } catch (err) {
+    console.error("Failed to load expenses:", err);
+    throw err;
+  }
   const total = expenses.reduce((a, e) => a + e.amount, 0);
 
   return (

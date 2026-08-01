@@ -26,11 +26,17 @@ export default async function ChangeOrdersPage() {
   await requireFeature("changeOrders");
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const cos = await db.changeOrder.findMany({
-    where: { orgId: user.organizationId },
-    orderBy: { createdAt: "desc" },
-    include: { project: true },
-  });
+  let cos;
+  try {
+    cos = await db.changeOrder.findMany({
+      where: { orgId: user.organizationId },
+      orderBy: { createdAt: "desc" },
+      include: { project: true },
+    });
+  } catch (err) {
+    console.error("Failed to load change orders:", err);
+    throw err;
+  }
 
   return (
     <div className="space-y-6">
