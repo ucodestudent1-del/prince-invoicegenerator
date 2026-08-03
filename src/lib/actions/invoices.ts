@@ -41,6 +41,28 @@ export async function createInvoice(input: CreateInvoiceInput) {
       actionError("Customer is required.");
     }
 
+    const customerExists = await withRetry(() =>
+      db.customer.findFirst({
+        where: { id: input.customerId, orgId },
+        select: { id: true },
+      })
+    );
+    if (!customerExists) {
+      actionError("Selected customer does not exist or has been deleted.");
+    }
+
+    if (input.projectId) {
+      const projectExists = await withRetry(() =>
+        db.project.findFirst({
+          where: { id: input.projectId!, orgId },
+          select: { id: true },
+        })
+      );
+      if (!projectExists) {
+        actionError("Selected project does not exist or has been deleted.");
+      }
+    }
+
     const validItems = input.items.filter(
       (it) => it.description && it.quantity > 0 && it.unitPrice > 0
     );

@@ -1,5 +1,6 @@
 import { requireUser, requireFeature } from "@/lib/org";
 import { db } from "@/lib/db";
+import { logServerError } from "@/lib/errors";
 import { ChangeOrderForm } from "@/components/change-order-form";
 
 export default async function NewChangeOrderPage() {
@@ -10,7 +11,7 @@ export default async function NewChangeOrderPage() {
   try {
     invoices = await db.invoice.findMany({ where: { orgId: user.organizationId }, orderBy: { number: "asc" } });
   } catch (err) {
-    console.error("Failed to load invoices for new change order:", err);
+    logServerError("NewChangeOrderPage", err);
     throw err;
   }
   return (

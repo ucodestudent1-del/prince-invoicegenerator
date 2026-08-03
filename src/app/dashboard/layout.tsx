@@ -14,6 +14,7 @@ import {
   CreditCard,
   Lock,
 } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 import { UserMenu } from "@/components/user-menu";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,7 +46,7 @@ export default async function DashboardLayout({
     org = (await getCurrentOrg(user)) ?? (await ensureOrganization(user.id));
     plan = await getActivePlan(user);
   } catch (err) {
-    console.error("DashboardLayout failed to load auth/org/plan:", err);
+     logServerError("DashboardLayout", err);
     throw err;
   }
 

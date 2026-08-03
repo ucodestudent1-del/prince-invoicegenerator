@@ -1,5 +1,6 @@
 import { requireUser, requireFeature } from "@/lib/org";
 import { db } from "@/lib/db";
+import { logServerError } from "@/lib/errors";
 import { EstimateForm } from "@/components/estimate-form";
 
 export default async function NewEstimatePage() {
@@ -13,7 +14,7 @@ export default async function NewEstimatePage() {
       orderBy: { name: "asc" },
     });
   } catch (err) {
-    console.error("Failed to load customers for new estimate:", err);
+    logServerError("NewEstimatePage", err);
     throw err;
   }
   return (

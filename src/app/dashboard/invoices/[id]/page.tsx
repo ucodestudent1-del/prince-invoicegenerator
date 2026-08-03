@@ -30,7 +30,7 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
   if (!invoice.customer) {
-    console.error("Invoice", invoice.id, "has no customer relation");
+    logServerError("InvoiceDetailPage", new Error(`Invoice ${invoice.id} has no customer relation`));
   }
 
   const statusVariant: Record<string, any> = {

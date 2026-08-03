@@ -15,10 +15,16 @@ export default async function InvoicePrintPage({
   const user = await requireUser();
   if (!user.organizationId) return null;
 
-  const invoice = await db.invoice.findFirst({
-    where: { id: params.id, orgId: user.organizationId },
-    include: { customer: true, project: true, items: { orderBy: { sortOrder: "asc" } } },
-  });
+  let invoice;
+  try {
+    invoice = await db.invoice.findFirst({
+      where: { id: params.id, orgId: user.organizationId },
+      include: { customer: true, project: true, items: { orderBy: { sortOrder: "asc" } } },
+    });
+  } catch (err) {
+    logServerError("InvoicePrintPage", err);
+    throw err;
+  }
   if (!invoice) notFound();
 
   return (

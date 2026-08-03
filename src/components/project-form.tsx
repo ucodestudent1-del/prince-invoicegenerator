@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createProject } from "@/lib/actions/features";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function ProjectForm() {
+export function ProjectForm({ customers }: { customers: { id: string; name: string }[] }) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -52,7 +53,30 @@ export function ProjectForm() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="customerId">Customer</Label>
-            <Input id="customerId" name="customerId" placeholder="Enter customer name" />
+            {customers.length === 0 ? (
+              <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No customers found.{" "}
+                <Link
+                  href="/dashboard/customers/new"
+                  className="text-primary underline"
+                >
+                  Create one first.
+                </Link>
+              </div>
+            ) : (
+              <select
+                id="customerId"
+                name="customerId"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+              >
+                <option value="">None</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="space-y-1">
             <Label htmlFor="address">Address</Label>

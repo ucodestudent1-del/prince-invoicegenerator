@@ -1,5 +1,7 @@
 import { requireUser, getCurrentOrg, getActivePlan } from "@/lib/org";
 import { hasFeature } from "@/lib/plans";
+import { db } from "@/lib/db";
+import { logServerError } from "@/lib/errors";
 import { InvoiceForm } from "@/components/invoice-form";
 
 export default async function NewInvoicePage() {
@@ -7,6 +9,18 @@ export default async function NewInvoicePage() {
   if (!user.organizationId) return null;
   const orgId = user.organizationId;
   const plan = await getActivePlan(user);
+
+  let customers;
+  try {
+    customers = await db.customer.findMany({
+      where: { orgId },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    });
+  } catch (err) {
+    logServerError("NewInvoicePage", err);
+    throw err;
+  }
 
   return (
     <div className="space-y-6">
@@ -17,6 +31,7 @@ export default async function NewInvoicePage() {
         </p>
       </div>
       <InvoiceForm
+        customers={customers}
         canRetainage={hasFeature(plan, "retainage")}
         canProgress={hasFeature(plan, "progressInvoices")}
         canRecurring={hasFeature(plan, "recurring")}
