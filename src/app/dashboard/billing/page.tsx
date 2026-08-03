@@ -1,6 +1,7 @@
 import { requireUser, getCurrentOrg, getActivePlan } from "@/lib/org";
 import { formatDate } from "@/lib/utils";
 import { BillingPanel } from "@/components/billing-panel";
+import { logServerError } from "@/lib/errors";
 
 export default async function BillingPage() {
   const user = await requireUser();
@@ -11,7 +12,7 @@ export default async function BillingPage() {
    try {
      org = await getCurrentOrg(user);
    } catch (err) {
-     console.error("BillingPage failed to load org:", err);
+     logServerError("BillingPage", err);
      throw err;
    }
    const plan = await getActivePlan(user);

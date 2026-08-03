@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 
 export default async function CustomersPage() {
   const user = await requireUser();
@@ -27,7 +28,7 @@ export default async function CustomersPage() {
       include: { _count: { select: { invoices: true } } },
     });
   } catch (err) {
-    console.error("CustomersPage failed to load customers:", err);
+    logServerError("CustomersPage", err);
     throw err;
   }
 

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 
 export default async function ProjectsPage() {
   await requireFeature("projectManagement");
@@ -29,7 +30,7 @@ export default async function ProjectsPage() {
       include: { customer: true, _count: { select: { invoices: true, expenses: true } } },
     });
   } catch (err) {
-    console.error("ProjectsPage failed to load projects:", err);
+    logServerError("ProjectsPage", err);
     throw err;
   }
 

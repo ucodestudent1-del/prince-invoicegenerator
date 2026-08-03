@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { logServerError } from "@/lib/errors";
 
 export default async function TeamPage() {
   await requireFeature("multipleUsers");
@@ -25,7 +26,7 @@ export default async function TeamPage() {
       orderBy: { createdAt: "asc" },
     });
   } catch (err) {
-    console.error("TeamPage failed to load members:", err);
+    logServerError("TeamPage", err);
     throw err;
   }
 

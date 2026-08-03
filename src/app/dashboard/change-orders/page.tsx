@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 
 const variant: Record<string, any> = {
   PROPOSED: "secondary",
@@ -34,7 +35,7 @@ export default async function ChangeOrdersPage() {
       include: { project: true },
     });
   } catch (err) {
-    console.error("Failed to load change orders:", err);
+    logServerError("ChangeOrdersPage", err);
     throw err;
   }
 

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 
 export default async function ExpensesPage() {
   await requireFeature("expenseTracking");
@@ -27,7 +28,7 @@ export default async function ExpensesPage() {
       include: { project: true, photo: true },
     });
   } catch (err) {
-    console.error("Failed to load expenses:", err);
+    logServerError("ExpensesPage", err);
     throw err;
   }
   const total = expenses.reduce((a, e) => a + e.amount, 0);

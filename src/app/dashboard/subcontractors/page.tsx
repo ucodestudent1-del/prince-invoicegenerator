@@ -14,16 +14,24 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import { Plus } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 
 export default async function SubcontractorsPage() {
   await requireFeature("subcontractorTracking");
   const user = await requireUser();
   if (!user.organizationId) return null;
-  const subs = await db.subcontractor.findMany({
-    where: { orgId: user.organizationId },
-    orderBy: { name: "asc" },
-    include: { _count: { select: { projects: true } } },
-  });
+
+  let subs;
+  try {
+    subs = await db.subcontractor.findMany({
+      where: { orgId: user.organizationId },
+      orderBy: { name: "asc" },
+      include: { _count: { select: { projects: true } } },
+    });
+  } catch (err) {
+    logServerError("SubcontractorsPage", err);
+    throw err;
+  }
 
   return (
     <div className="space-y-6">
