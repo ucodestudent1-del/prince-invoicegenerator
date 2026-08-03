@@ -151,7 +151,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
 
 // Human-friendly allowance text per plan for the "invoicesPerMonth" feature.
 export const INVOICE_LIMITS: Record<SubscriptionPlan, number | null> = {
-  FREE: 5,
+  FREE: process.env.NODE_ENV !== "production" ? null : 5,
   STARTER: null, // unlimited
   PRO: null,
   BUSINESS: null,
@@ -162,6 +162,8 @@ export function getPlan(id: SubscriptionPlan): PlanDefinition {
   return PLANS.find((p) => p.id === id) ?? PLANS[0];
 }
 
+// In development, all features unlocked for testing.
 export function hasFeature(plan: SubscriptionPlan, feature: FeatureKey) {
+  if (process.env.NODE_ENV !== "production") return true;
   return getPlan(plan).features.includes(feature);
 }
