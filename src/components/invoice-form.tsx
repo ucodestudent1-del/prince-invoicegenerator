@@ -106,7 +106,11 @@ export function InvoiceForm({
     try {
       let uploadedLogoUrl: string | null = null;
       if (logoFile) {
-        uploadedLogoUrl = await uploadLogo(logoFile);
+        try {
+          uploadedLogoUrl = await uploadLogo(logoFile);
+        } catch (logoErr) {
+          console.error("Logo upload failed, continuing without logo:", logoErr);
+        }
       }
         const invoice = await createInvoice({
           customerId,

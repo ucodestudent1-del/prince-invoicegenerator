@@ -35,7 +35,17 @@ export async function createInvoice(input: CreateInvoiceInput) {
   if (!user.organizationId) throw new Error("No organization");
   const orgId = user.organizationId;
 
-  // Enforce FREE plan monthly invoice limit.
+  if (!input.customerId) {
+    throw new Error("Customer is required.");
+  }
+
+  const validItems = input.items.filter(
+    (it) => it.description && it.quantity > 0 && it.unitPrice > 0
+  );
+  if (validItems.length === 0) {
+    throw new Error("At least one line item with a description, quantity, and unit price is required.");
+  }
+
   const limit = INVOICE_LIMITS.FREE;
   if (limit !== null) {
     const startOfMonth = new Date();
@@ -51,7 +61,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
     }
   }
 
-  const subtotal = input.items.reduce(
+  const subtotal = validItems.reduce(
     (acc, it) => acc + it.quantity * it.unitPrice,
     0
   );
@@ -85,7 +95,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
       shipToAddress: input.shipToAddress ?? null,
       createdById: user.id,
       items: {
-        create: input.items.map((it, i) => ({
+        create: validItems.map((it, i) => ({
           description: it.description,
           quantity: it.quantity,
           unitPrice: it.unitPrice,
