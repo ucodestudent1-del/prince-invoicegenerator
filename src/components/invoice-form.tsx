@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils";
 
 export function InvoiceForm({
   customers,
+  projects,
   canRetainage,
   canProgress,
   canRecurring,
@@ -20,6 +21,7 @@ export function InvoiceForm({
   canProjectManagement,
 }: {
   customers: { id: string; name: string }[];
+  projects: { id: string; name: string }[];
   canRetainage: boolean;
   canProgress: boolean;
   canRecurring: boolean;
@@ -46,7 +48,6 @@ export function InvoiceForm({
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
   const [billToAddress, setBillToAddress] = React.useState("");
   const [shipToAddress, setShipToAddress] = React.useState("");
-  const [projectSearch, setProjectSearch] = React.useState("");
   const [items, setItems] = React.useState([
     { description: "", quantity: 1, unitPrice: 0 },
   ]);
@@ -186,16 +187,34 @@ export function InvoiceForm({
               </select>
             )}
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1" hidden={!canProjectManagement}>
             <Label htmlFor="project">Project</Label>
-            <Input
-              id="project"
-              name="project"
-              placeholder="Enter project name"
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              hidden={!canProjectManagement}
-            />
+            {projects.length === 0 ? (
+              <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No projects found.{" "}
+                <Link
+                  href="/dashboard/projects/new"
+                  className="text-primary underline"
+                >
+                  Create one first.
+                </Link>
+              </div>
+            ) : (
+              <select
+                id="project"
+                name="project"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+              >
+                <option value="">None</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           {canProgress && (
             <div className="space-y-1">

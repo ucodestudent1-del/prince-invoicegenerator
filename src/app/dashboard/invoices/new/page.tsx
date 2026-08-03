@@ -11,12 +11,20 @@ export default async function NewInvoicePage() {
   const plan = await getActivePlan(user);
 
   let customers;
+  let projects;
   try {
-    customers = await db.customer.findMany({
-      where: { orgId },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    });
+    [customers, projects] = await Promise.all([
+      db.customer.findMany({
+        where: { orgId },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+      db.project.findMany({
+        where: { orgId },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+    ]);
   } catch (err) {
     logServerError("NewInvoicePage", err);
     throw err;
@@ -32,6 +40,7 @@ export default async function NewInvoicePage() {
       </div>
       <InvoiceForm
         customers={customers}
+        projects={projects}
         canRetainage={hasFeature(plan, "retainage")}
         canProgress={hasFeature(plan, "progressInvoices")}
         canRecurring={hasFeature(plan, "recurring")}
