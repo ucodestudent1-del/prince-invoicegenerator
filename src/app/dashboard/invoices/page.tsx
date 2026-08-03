@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 
 const statusVariant: Record<string, any> = {
   DRAFT: "secondary",
@@ -36,7 +37,7 @@ export default async function InvoicesPage() {
       include: { customer: true },
     });
   } catch (err) {
-    console.error("InvoicesPage failed to load invoices:", err);
+    logServerError("InvoicesPage", err);
     throw err;
   }
 
@@ -81,7 +82,7 @@ export default async function InvoicesPage() {
                         {inv.number}
                       </Link>
                     </TableCell>
-                    <TableCell>{inv.customer.name}</TableCell>
+                    <TableCell>{inv.customer?.name ?? "Unknown"}</TableCell>
                     <TableCell className="text-muted-foreground">{inv.type}</TableCell>
                     <TableCell>{formatDate(inv.issueDate)}</TableCell>
                     <TableCell>{formatDate(inv.dueDate)}</TableCell>

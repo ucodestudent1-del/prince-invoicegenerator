@@ -1,3 +1,4 @@
+import { logServerError, validateEnv } from "@/lib/errors";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -6,6 +7,8 @@ import type { SubscriptionPlan } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
 import type { DefaultSession } from "next-auth";
+
+validateEnv();
 
 type AppUser = DefaultSession["user"] & {
   id: string;
@@ -63,9 +66,14 @@ export async function ensureOrganization(userId: string) {
 }
 
 export async function getCurrentOrg(user?: AppUser) {
-  const currentUser = user ?? await getCurrentUser();
+  const currentUser = user ?? (await getCurrentUser());
   if (!currentUser?.organizationId) return null;
-  return db.organization.findUnique({ where: { id: currentUser.organizationId } });
+  try {
+    return await db.organization.findUnique({ where: { id: currentUser.organizationId } });
+  } catch (err) {
+    logServerError("getCurrentOrg", err);
+    return null;
+  }
 }
 
 export async function getActivePlan(user?: AppUser): Promise<SubscriptionPlan> {

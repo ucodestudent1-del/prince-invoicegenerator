@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ArrowLeft, Printer, Check, Trash2 } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 
 export default async function InvoiceDetailPage({
   params,
@@ -24,10 +25,13 @@ export default async function InvoiceDetailPage({
       include: { customer: true, project: true, items: { orderBy: { sortOrder: "asc" } } },
     });
   } catch (err) {
-    console.error("InvoiceDetailPage failed to load invoice:", err);
+    logServerError("InvoiceDetailPage", err);
     throw err;
   }
   if (!invoice) notFound();
+  if (!invoice.customer) {
+    console.error("Invoice", invoice.id, "has no customer relation");
+  }
 
   const statusVariant: Record<string, any> = {
     DRAFT: "secondary",
@@ -105,10 +109,10 @@ export default async function InvoiceDetailPage({
                 <div className="whitespace-pre-line">{invoice.billToAddress}</div>
               ) : (
                 <>
-                  <p className="font-medium">{invoice.customer.name}</p>
-                  {invoice.customer.company && <p>{invoice.customer.company}</p>}
-                  {invoice.customer.email && <p>{invoice.customer.email}</p>}
-                  {invoice.customer.address && <p>{invoice.customer.address}</p>}
+                  <p className="font-medium">{invoice.customer?.name ?? "Unknown"}</p>
+                  {invoice.customer?.company && <p>{invoice.customer.company}</p>}
+                  {invoice.customer?.email && <p>{invoice.customer.email}</p>}
+                  {invoice.customer?.address && <p>{invoice.customer.address}</p>}
                 </>
               )}
               {invoice.shipToAddress && (

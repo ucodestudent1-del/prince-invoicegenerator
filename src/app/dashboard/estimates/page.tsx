@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Plus } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 
 const variant: Record<string, any> = {
   DRAFT: "secondary",
@@ -37,7 +38,7 @@ export default async function EstimatesPage() {
       include: { customer: true },
     });
   } catch (err) {
-    console.error("EstimatesPage failed to load estimates:", err);
+    logServerError("EstimatesPage", err);
     throw err;
   }
 
@@ -70,7 +71,7 @@ export default async function EstimatesPage() {
                 {estimates.map((e) => (
                   <TableRow key={e.id}>
                     <TableCell className="font-medium">{e.number}</TableCell>
-                    <TableCell>{e.customer.name}</TableCell>
+                    <TableCell>{e.customer?.name ?? "Unknown"}</TableCell>
                     <TableCell>{formatDate(e.validUntil)}</TableCell>
                     <TableCell>
                       <Badge variant={variant[e.status] ?? "secondary"}>

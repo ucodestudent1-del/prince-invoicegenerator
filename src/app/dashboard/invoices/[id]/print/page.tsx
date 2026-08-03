@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/org";
 import { db } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { PrintButton } from "@/components/print-button";
+import { logServerError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -49,10 +50,10 @@ export default async function InvoicePrintPage({
             <div className="whitespace-pre-line">{invoice.billToAddress}</div>
           ) : (
             <>
-              <p className="font-medium">{invoice.customer.name}</p>
-              {invoice.customer.company && <p>{invoice.customer.company}</p>}
-              {invoice.customer.email && <p>{invoice.customer.email}</p>}
-              {invoice.customer.address && <p>{invoice.customer.address}</p>}
+              <p className="font-medium">{invoice.customer?.name ?? "Unknown"}</p>
+              {invoice.customer?.company && <p>{invoice.customer.company}</p>}
+              {invoice.customer?.email && <p>{invoice.customer.email}</p>}
+              {invoice.customer?.address && <p>{invoice.customer.address}</p>}
             </>
           )}
           {invoice.shipToAddress && (

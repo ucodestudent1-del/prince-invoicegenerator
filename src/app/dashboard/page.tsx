@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { FileText, Plus, Users, Receipt } from "lucide-react";
+import { logServerError } from "@/lib/errors";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -30,7 +31,7 @@ export default async function DashboardPage() {
       }),
     ]);
   } catch (err) {
-    console.error("DashboardPage failed to load data:", err);
+    logServerError("DashboardPage", err);
     throw err;
   }
 
@@ -117,7 +118,7 @@ export default async function DashboardPage() {
                   {inv.number}
                 </Link>
                 <span className="ml-2 text-muted-foreground">
-                  {inv.customer.name}
+                  {inv.customer?.name ?? "Unknown customer"}
                 </span>
               </div>
               <span className="font-medium">{formatCurrency(inv.total)}</span>
