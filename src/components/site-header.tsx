@@ -18,6 +18,9 @@ export function SiteHeader({ cta = true }: { cta?: boolean }) {
           <Link href="/pricing" className="text-muted-foreground hover:text-foreground">
             Pricing
           </Link>
+          <Link href="/privacy" className="text-muted-foreground hover:text-foreground">
+            Privacy
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
           <Link
@@ -48,6 +51,9 @@ export function SiteFooter() {
         <div className="flex gap-4">
           <Link href="/pricing" className="hover:text-foreground">
             Pricing
+          </Link>
+          <Link href="/privacy" className="hover:text-foreground">
+            Privacy
           </Link>
           <Link href="/login" className="hover:text-foreground">
             Sign in
