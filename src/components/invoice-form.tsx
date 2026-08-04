@@ -362,6 +362,7 @@ export function InvoiceForm({
               <Input
                 id="tax"
                 type="number"
+                step="0.01"
                 value={taxRate}
                 min={0}
                 onChange={(e) => setTaxRate(e.target.value === "" ? "" : Number(e.target.value))}
