@@ -23,26 +23,34 @@ export function ReportsView() {
   const [customersData, setCustomersData] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(false);
 
+  const [error, setError] = React.useState<string | null>(null);
+
   async function loadData() {
     setLoading(true);
+    setError(null);
     try {
       if (activeTab === "revenue" && !revenueData) {
         const res = await fetch(`/api/reports/revenue?year=${year}`);
         if (res.ok) setRevenueData(await res.json());
+        else setError("Failed to load revenue report.");
       }
       if (activeTab === "outstanding" && !outstandingData) {
         const res = await fetch("/api/reports/outstanding");
         if (res.ok) setOutstandingData(await res.json());
+        else setError("Failed to load outstanding report.");
       }
       if (activeTab === "taxes" && !taxesData) {
         const res = await fetch(`/api/reports/taxes?year=${year}`);
         if (res.ok) setTaxesData(await res.json());
+        else setError("Failed to load taxes report.");
       }
       if (activeTab === "customers" && !customersData) {
         const res = await fetch("/api/reports/customers");
         if (res.ok) setCustomersData(await res.json());
+        else setError("Failed to load customer analytics.");
       }
     } catch (err) {
+      setError("Failed to load report data. Please try again.");
       console.error("Failed to load report data", err);
     } finally {
       setLoading(false);
@@ -107,6 +115,10 @@ export function ReportsView() {
             </Button>
           </div>
           {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {!loading && !error && !revenueData && (
+            <p className="text-sm text-muted-foreground">No revenue data available.</p>
+          )}
           {revenueData && (
             <Card>
               <CardHeader>
@@ -146,6 +158,10 @@ export function ReportsView() {
       {activeTab === "outstanding" && (
         <>
           {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {!loading && !error && !outstandingData && (
+            <p className="text-sm text-muted-foreground">No outstanding data available.</p>
+          )}
           {outstandingData && (
             <>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -247,6 +263,10 @@ export function ReportsView() {
             </Button>
           </div>
           {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {!loading && !error && !taxesData && (
+            <p className="text-sm text-muted-foreground">No taxes data available.</p>
+          )}
           {taxesData && (
             <Card>
               <CardHeader>
@@ -274,6 +294,10 @@ export function ReportsView() {
       {activeTab === "customers" && (
         <>
           {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {!loading && !error && !customersData && (
+            <p className="text-sm text-muted-foreground">No customer data available.</p>
+          )}
           {customersData && (
             <>
               <div className="grid gap-4 sm:grid-cols-3">

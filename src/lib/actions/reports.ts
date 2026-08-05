@@ -2,7 +2,7 @@
 
 import { format as formatDateFn } from "date-fns";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 
 export async function getRevenueReport(year?: number) {
@@ -13,44 +13,95 @@ export async function getRevenueReport(year?: number) {
 
     const targetYear = year ?? new Date().getFullYear();
 
-    const months = await db.invoice.aggregate({
-      where: {
-        orgId,
-        issueDate: {
-          gte: new Date(`${targetYear}-01-01`),
-          lte: new Date(`${targetYear}-12-31T23:59:59.999Z`),
+    let months;
+    try {
+      months = await db.invoice.aggregate({
+        where: {
+          orgId,
+          issueDate: {
+            gte: new Date(`${targetYear}-01-01`),
+            lte: new Date(`${targetYear}-12-31T23:59:59.999Z`),
+          },
         },
-      },
-      _sum: {
-        total: true,
-        taxAmount: true,
-        discount: true,
-        amountPaid: true,
-        lateFeeAmount: true,
-      },
-      _count: {
-        _all: true,
-      },
-    });
+        _sum: {
+          total: true,
+          taxAmount: true,
+          discount: true,
+          amountPaid: true,
+          lateFeeAmount: true,
+        },
+        _count: {
+          _all: true,
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        months = await db.invoice.aggregate({
+          where: {
+            orgId,
+            issueDate: {
+              gte: new Date(`${targetYear}-01-01`),
+              lte: new Date(`${targetYear}-12-31T23:59:59.999Z`),
+            },
+          },
+          _sum: {
+            total: true,
+            taxAmount: true,
+            discount: true,
+            amountPaid: true,
+          },
+          _count: {
+            _all: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
-    const monthlyData = await db.invoice.findMany({
-      where: {
-        orgId,
-        issueDate: {
-          gte: new Date(`${targetYear}-01-01`),
-          lte: new Date(`${targetYear}-12-31T23:59:59.999Z`),
+    let monthlyData;
+    try {
+      monthlyData = await db.invoice.findMany({
+        where: {
+          orgId,
+          issueDate: {
+            gte: new Date(`${targetYear}-01-01`),
+            lte: new Date(`${targetYear}-12-31T23:59:59.999Z`),
+          },
         },
-      },
-      select: {
-        issueDate: true,
-        total: true,
-        taxAmount: true,
-        discount: true,
-        amountPaid: true,
-        lateFeeAmount: true,
-        status: true,
-      },
-    });
+        select: {
+          issueDate: true,
+          total: true,
+          taxAmount: true,
+          discount: true,
+          amountPaid: true,
+          lateFeeAmount: true,
+          status: true,
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        monthlyData = await db.invoice.findMany({
+          where: {
+            orgId,
+            issueDate: {
+              gte: new Date(`${targetYear}-01-01`),
+              lte: new Date(`${targetYear}-12-31T23:59:59.999Z`),
+            },
+          },
+          select: {
+            issueDate: true,
+            total: true,
+            taxAmount: true,
+            discount: true,
+            amountPaid: true,
+            status: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const monthlyMap: Record<string, any> = {};
     for (let m = 0; m < 12; m++) {
@@ -73,7 +124,7 @@ export async function getRevenueReport(year?: number) {
         monthlyMap[monthKey].taxAmount += inv.taxAmount;
         monthlyMap[monthKey].discount += inv.discount;
         monthlyMap[monthKey].amountPaid += inv.amountPaid;
-        monthlyMap[monthKey].lateFeeAmount += inv.lateFeeAmount;
+        monthlyMap[monthKey].lateFeeAmount += (inv as any).lateFeeAmount ?? 0;
         monthlyMap[monthKey].count += 1;
       }
     }
@@ -96,7 +147,7 @@ export async function getRevenueReport(year?: number) {
         taxAmount: annual._sum.taxAmount ?? 0,
         discount: annual._sum.discount ?? 0,
         amountPaid: annual._sum.amountPaid ?? 0,
-        lateFeeAmount: annual._sum.lateFeeAmount ?? 0,
+        lateFeeAmount: (annual._sum as any).lateFeeAmount ?? 0,
         count: annual._count._all ?? 0,
       },
     };
@@ -109,16 +160,42 @@ export async function getOutstandingReport() {
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
 
-    const invoices = await db.invoice.findMany({
-      where: {
-        orgId,
-        status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"] },
-      },
-      include: {
-        customer: { select: { name: true, email: true } },
-      },
-      orderBy: { dueDate: "asc" },
-    });
+    let invoices;
+    try {
+      invoices = await db.invoice.findMany({
+        where: {
+          orgId,
+          status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"] },
+        },
+        include: {
+          customer: { select: { name: true, email: true } },
+        },
+        orderBy: { dueDate: "asc" },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        invoices = await db.invoice.findMany({
+          where: {
+            orgId,
+            status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"] },
+          },
+          select: {
+            id: true,
+            number: true,
+            customerId: true,
+            dueDate: true,
+            total: true,
+            amountPaid: true,
+            status: true,
+            currency: true,
+            customer: { select: { name: true, email: true } },
+          },
+          orderBy: { dueDate: "asc" },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const outstanding = invoices.map((inv) => {
       const balance = inv.total - inv.amountPaid;
@@ -288,15 +365,47 @@ export async function exportInvoices(format: "csv" | "xlsx") {
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
 
-    const invoices = await db.invoice.findMany({
-      where: { orgId },
-      include: {
-        customer: { select: { name: true, email: true } },
-        items: true,
-        payments: { select: { amount: true, method: true, createdAt: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    let invoices;
+    try {
+      invoices = await db.invoice.findMany({
+        where: { orgId },
+        include: {
+          customer: { select: { name: true, email: true } },
+          items: true,
+          payments: { select: { amount: true, method: true, createdAt: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        invoices = await db.invoice.findMany({
+          where: { orgId },
+          select: {
+            id: true,
+            number: true,
+            customerId: true,
+            type: true,
+            status: true,
+            issueDate: true,
+            dueDate: true,
+            currency: true,
+            subtotal: true,
+            taxRate: true,
+            taxAmount: true,
+            discount: true,
+            total: true,
+            amountPaid: true,
+            notes: true,
+            createdAt: true,
+            customer: { select: { name: true, email: true } },
+            items: { select: { description: true, quantity: true, unitPrice: true, amount: true } },
+          },
+          orderBy: { createdAt: "asc" },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const data = invoices.map((inv) => ({
       "Invoice #": inv.number,
@@ -309,7 +418,7 @@ export async function exportInvoices(format: "csv" | "xlsx") {
         "Subtotal": inv.subtotal,
         "Tax Amount": inv.taxAmount,
         "Discount": inv.discount,
-        "Late Fee": inv.lateFeeAmount,
+        "Late Fee": (inv as any).lateFeeAmount ?? 0,
         "Total": inv.total,
         "Amount Paid": inv.amountPaid,
         "Balance": inv.total - inv.amountPaid,
