@@ -16,33 +16,58 @@ export default async function InvoicePrintPage({
   if (!user.organizationId) return null;
 
   let invoice;
+  let org;
   try {
-    invoice = await db.invoice.findFirst({
-      where: { id: params.id, orgId: user.organizationId },
-      include: { customer: true, project: true, items: { orderBy: { sortOrder: "asc" } } },
-    });
+    [invoice, org] = await Promise.all([
+      db.invoice.findFirst({
+        where: { id: params.id, orgId: user.organizationId },
+        include: { customer: true, project: true, items: { orderBy: { sortOrder: "asc" } } },
+      }),
+      db.organization.findUnique({
+        where: { id: user.organizationId },
+        select: {
+          brandColor: true,
+          accentColor: true,
+          fontFamily: true,
+          template: true,
+          layout: true,
+        },
+      }),
+    ]);
   } catch (err) {
     logServerError("InvoicePrintPage", err);
     throw err;
   }
   if (!invoice) notFound();
 
+  const templateClass = `template-${org?.template?.toLowerCase?.() ?? "standard"}`;
+  const layoutClass = `layout-${org?.layout ?? "default"}`;
+
   return (
-    <div className="mx-auto max-w-3xl bg-white p-10 text-black">
+    <div className={`mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: org.fontFamily } : undefined}>
       <div className="mb-8 flex items-start justify-between border-b pb-6">
         <div className="flex items-start gap-4">
           {invoice.logoUrl && (
             <img src={invoice.logoUrl} alt="Invoice logo" className="h-16 w-auto object-contain" />
           )}
           <div>
-            <p className="text-lg font-semibold text-orange-600">Prince</p>
+            <p className="text-lg font-semibold" style={org?.brandColor ? { color: org.brandColor } : undefined}>
+              Prince
+            </p>
             <p className="text-xs text-gray-500">Construction Invoicing</p>
           </div>
         </div>
         <div className="text-right">
-          <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-600">
-            Invoice
-          </span>
+          <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider type-badge ${
+            org?.template === "MODERN"
+              ? "bg-orange-600 text-white"
+              : org?.template === "CLASSIC"
+              ? "bg-gray-800 text-white"
+              : org?.template === "MINIMAL"
+              ? "border border-gray-400 text-gray-700"
+              : "bg-gray-100 text-gray-600"
+          }`}>
+            Invoice</span>
           <h2 className="text-2xl font-bold mt-2">{invoice.number}</h2>
           <p className="text-sm text-gray-500 mt-1">Issued {formatDate(invoice.issueDate)}</p>
           <p className="text-sm text-gray-500">Due {formatDate(invoice.dueDate)}</p>

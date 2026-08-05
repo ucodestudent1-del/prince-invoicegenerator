@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/org";
+import { requireUser, getActivePlan } from "@/lib/org";
 import { db } from "@/lib/db";
 import { deleteCustomer } from "@/lib/actions/customers";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, MapPin } from "lucide-react";
 import { logServerError } from "@/lib/errors";
+import { hasFeature } from "@/lib/plans";
 
 export default async function CustomersPage() {
   const user = await requireUser();
@@ -22,10 +23,15 @@ export default async function CustomersPage() {
 
   let customers;
   try {
+    const plan = await getActivePlan(user);
+    const includeAddresses = hasFeature(plan, "savedAddresses");
     customers = await db.customer.findMany({
       where: { orgId },
       orderBy: { name: "asc" },
-      include: { _count: { select: { invoices: true } } },
+      include: {
+        _count: { select: { invoices: true } },
+        ...(includeAddresses && { addresses: { where: { orgId } } }),
+      },
     });
   } catch (err) {
     logServerError("CustomersPage", err);
@@ -55,6 +61,7 @@ export default async function CustomersPage() {
                   <TableHead>Company</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead>Saved addresses</TableHead>
                   <TableHead className="text-right">Invoices</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -66,6 +73,16 @@ export default async function CustomersPage() {
                     <TableCell>{c.company ?? "—"}</TableCell>
                     <TableCell>{c.email ?? "—"}</TableCell>
                     <TableCell>{c.phone ?? "—"}</TableCell>
+                    <TableCell>
+                      {(c as any).addresses?.length > 0 ? (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          {(c as any).addresses.length}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">{c._count.invoices}</TableCell>
                     <TableCell className="text-right">
                       <form

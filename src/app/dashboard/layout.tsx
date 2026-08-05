@@ -17,10 +17,12 @@ import {
   Bell,
   BarChart3,
   Calendar,
+  Palette,
 } from "lucide-react";
 import { logServerError } from "@/lib/errors";
 import { UserMenu } from "@/components/user-menu";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggleForm } from "@/components/theme-toggle";
 
 const nav = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -35,8 +37,11 @@ const nav = [
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { href: "/dashboard/recurring", label: "Recurring", icon: Calendar },
-  { href: "/dashboard/settings/reminders", label: "Reminders", icon: Bell },
-  { href: "/dashboard/settings/late-fees", label: "Late fees", icon: Receipt },
+   { href: "/dashboard/settings/reminders", label: "Reminders", icon: Bell, feature: "automaticReminders" as FeatureKey },
+  { href: "/dashboard/settings/late-fees", label: "Late fees", icon: Receipt, feature: "lateFees" as FeatureKey },
+  { href: "/dashboard/settings/scheduled", label: "Scheduled", icon: Calendar, feature: "scheduledInvoices" as FeatureKey },
+  { href: "/dashboard/settings/templates", label: "Templates", icon: FileText, feature: "invoiceTemplates" as FeatureKey },
+  { href: "/dashboard/settings/customization", label: "Customization", icon: Palette, feature: "customBranding" as FeatureKey },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -64,7 +69,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className={`flex min-h-screen ${org.theme === "dark" ? "dark" : ""}`}>
       <aside className="hidden w-60 flex-col border-r bg-muted/30 p-4 md:flex">
         <Link href="/" className="mb-6 flex items-center gap-2 font-bold">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs">
@@ -99,7 +104,10 @@ export default async function DashboardLayout({
               {plan} plan
             </Badge>
           </div>
-          <UserMenu email={user.email} name={user.name} />
+          <div className="flex items-center gap-4">
+            <ThemeToggleForm current={org.theme} />
+            <UserMenu email={user.email} name={user.name} />
+          </div>
         </header>
         <main className="flex-1 p-6">{children}</main>
       </div>

@@ -38,7 +38,7 @@ export default async function NewInvoicePage() {
           Current plan: <strong>{plan}</strong>
         </p>
       </div>
-      <InvoiceForm
+       <InvoiceForm
         customers={customers}
         projects={projects}
         canRetainage={hasFeature(plan, "retainage")}
@@ -46,6 +46,8 @@ export default async function NewInvoicePage() {
         canRecurring={hasFeature(plan, "recurring")}
         canCustomizeInvoiceNumber={true}
         canProjectManagement={hasFeature(plan, "projectManagement")}
+        canSchedule={hasFeature(plan, "scheduledInvoices")}
+        hasSavedAddresses={hasFeature(plan, "savedAddresses")}
       />
     </div>
   );

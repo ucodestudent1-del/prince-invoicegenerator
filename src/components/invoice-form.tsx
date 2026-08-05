@@ -19,6 +19,8 @@ export function InvoiceForm({
   canRecurring,
   canCustomizeInvoiceNumber,
   canProjectManagement,
+  canSchedule,
+  hasSavedAddresses,
 }: {
   customers: { id: string; name: string }[];
   projects: { id: string; name: string }[];
@@ -27,6 +29,8 @@ export function InvoiceForm({
   canRecurring: boolean;
   canCustomizeInvoiceNumber: boolean;
   canProjectManagement: boolean;
+  canSchedule: boolean;
+  hasSavedAddresses: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
@@ -262,7 +266,7 @@ export function InvoiceForm({
               onChange={(e) => setDueDate(e.target.value)}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1" hidden={!canSchedule}>
             <Label htmlFor="scheduledFor">Schedule for later</Label>
             <Input
               id="scheduledFor"

@@ -555,3 +555,24 @@ export async function deleteInvoice(id: string) {
     revalidatePath("/dashboard/invoices");
   });
 }
+
+export async function getScheduledInvoices(orgId: string) {
+  return withActionError("getScheduledInvoices", async () => {
+    const user = await requireUser();
+    if (!user.organizationId) actionError("No organization");
+
+    const invoices = await db.invoice.findMany({
+      where: {
+        orgId: user.organizationId,
+        status: "DRAFT",
+        scheduledFor: { not: null },
+      },
+      include: {
+        customer: { select: { name: true } },
+      },
+      orderBy: { scheduledFor: "asc" },
+    });
+
+    return invoices;
+  });
+}

@@ -1,0 +1,50 @@
+"use client";
+
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { Moon, Sun } from "lucide-react";
+
+export function ThemeToggle({
+  theme,
+  onToggle,
+}: {
+  theme: string;
+  onToggle: (theme: string) => void;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => onToggle(theme === "dark" ? "light" : "dark")}
+      aria-label="Toggle theme"
+    >
+      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </Button>
+  );
+}
+
+export function ThemeToggleForm({ current }: { current: string }) {
+  const [theme, setTheme] = React.useState(current);
+  const [saving, setSaving] = React.useState(false);
+
+  async function toggle() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    try {
+      await fetch("/api/customization", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "theme", value: next }),
+      });
+      window.location.reload();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Button variant="ghost" size="icon" onClick={toggle} disabled={saving} aria-label="Toggle theme">
+      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </Button>
+  );
+}
