@@ -166,6 +166,16 @@ export function isMissingColumnError(err: unknown): boolean {
   );
 }
 
+// Detects Prisma errors where an enum value is missing from the database (schema drift).
+export function isInvalidEnumValueError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message;
+  return (
+    msg.includes("invalid input value for enum") ||
+    msg.includes("22P02") // PostgreSQL invalid_text_representation error code
+  );
+}
+
 export async function getActivePlan(user?: AppUser): Promise<SubscriptionPlan> {
   const org = await getCurrentOrg(user);
   return org?.plan ?? "FREE";

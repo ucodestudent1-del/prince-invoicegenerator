@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logError } from "@/lib/logging";
+import { isInvalidEnumValueError } from "@/lib/org";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,13 +23,28 @@ export async function GET() {
     for (const config of configs) {
       const orgId = config.orgId;
 
-      const invoices = await db.invoice.findMany({
-        where: {
-          orgId,
-          status: { in: ["SENT", "UNPAID", "OVERDUE", "VIEWED"] },
-        },
-        include: { customer: { select: { name: true, email: true } } },
-      });
+      let invoices;
+      try {
+        invoices = await db.invoice.findMany({
+          where: {
+            orgId,
+            status: { in: ["SENT", "UNPAID", "OVERDUE", "VIEWED"] },
+          },
+          include: { customer: { select: { name: true, email: true } } },
+        });
+      } catch (err) {
+        if (isInvalidEnumValueError(err)) {
+          invoices = await db.invoice.findMany({
+            where: {
+              orgId,
+              status: { in: ["SENT", "OVERDUE", "VIEWED"] },
+            },
+            include: { customer: { select: { name: true, email: true } } },
+          });
+        } else {
+          throw err;
+        }
+      }
 
       for (const invoice of invoices) {
         if (!invoice.dueDate) continue;

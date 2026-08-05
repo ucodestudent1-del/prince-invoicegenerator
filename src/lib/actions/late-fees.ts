@@ -3,7 +3,7 @@
 import { addDays } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { db, withRetry } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isInvalidEnumValueError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 
 export interface LateFeeConfigInput {
@@ -71,13 +71,28 @@ export async function applyLateFees() {
       if (!org.lateFeeConfig || !org.lateFeeConfig.enabled) continue;
       const cfg = org.lateFeeConfig;
 
-      const invoices = await db.invoice.findMany({
-        where: {
-          orgId: org.id,
-          status: { in: ["UNPAID", "OVERDUE", "SENT", "VIEWED"] },
-          dueDate: { lte: addDays(now, -cfg.graceDays) },
-        },
-      });
+      let invoices;
+      try {
+        invoices = await db.invoice.findMany({
+          where: {
+            orgId: org.id,
+            status: { in: ["UNPAID", "OVERDUE", "SENT", "VIEWED"] },
+            dueDate: { lte: addDays(now, -cfg.graceDays) },
+          },
+        });
+      } catch (err) {
+        if (isInvalidEnumValueError(err)) {
+          invoices = await db.invoice.findMany({
+            where: {
+              orgId: org.id,
+              status: { in: ["OVERDUE", "SENT", "VIEWED"] },
+              dueDate: { lte: addDays(now, -cfg.graceDays) },
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
 
       for (const invoice of invoices) {
         if (invoice.lateFeeAmount > 0) continue;

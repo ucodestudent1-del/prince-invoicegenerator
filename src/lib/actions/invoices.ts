@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db, withRetry } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError, isInvalidEnumValueError } from "@/lib/org";
 import { INVOICE_LIMITS } from "@/lib/plans";
 import { withActionError, actionError } from "@/lib/action-errors";
 import type { InvoiceType, PaymentMethod, PaymentStatus, InvoiceStatus } from "@prisma/client";
@@ -161,10 +161,23 @@ export async function markInvoiceStatus(id: string, status: InvoiceStatus) {
       amountPaid = 0;
     }
 
-    await db.invoice.update({
-      where: { id },
-      data: { status, amountPaid },
-    });
+    try {
+      await db.invoice.update({
+        where: { id },
+        data: { status, amountPaid },
+      });
+    } catch (err: any) {
+      if (isInvalidEnumValueError(err) && status === "UNPAID") {
+        // UNPAID enum value may not exist in the database yet —
+        // fall back to SENT status to indicate the invoice has a balance
+        await db.invoice.update({
+          where: { id },
+          data: { status: "SENT", amountPaid },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     await db.invoiceAudit.create({
       data: {
@@ -236,10 +249,21 @@ export async function recordPayment(input: {
         newStatus = "UNPAID";
       }
 
-      await tx.invoice.update({
-        where: { id: input.invoiceId },
-        data: { amountPaid: newAmountPaid, status: newStatus },
-      });
+      try {
+        await tx.invoice.update({
+          where: { id: input.invoiceId },
+          data: { amountPaid: newAmountPaid, status: newStatus },
+        });
+      } catch (err: any) {
+        if (isInvalidEnumValueError(err) && newStatus === "UNPAID") {
+          await tx.invoice.update({
+            where: { id: input.invoiceId },
+            data: { amountPaid: newAmountPaid, status: "SENT" },
+          });
+        } else {
+          throw err;
+        }
+      }
 
       await tx.invoiceAudit.create({
         data: {
@@ -460,13 +484,39 @@ export async function sendReminder(invoiceId: string) {
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
 
-    const [invoice, config] = await Promise.all([
-      db.invoice.findFirst({
-        where: { id: invoiceId, orgId },
-        include: { customer: true },
-      }),
-      db.reminderConfig.findUnique({ where: { orgId } }),
-    ]);
+    let invoice;
+    let config;
+    try {
+      const result = await Promise.all([
+        db.invoice.findFirst({
+          where: { id: invoiceId, orgId },
+          include: { customer: true },
+        }),
+        db.reminderConfig.findUnique({ where: { orgId } }),
+      ]);
+      invoice = result[0];
+      config = result[1];
+    } catch (err: any) {
+      if (isMissingColumnError(err)) {
+        invoice = await db.invoice.findFirst({
+          where: { id: invoiceId, orgId },
+          select: {
+            id: true,
+            number: true,
+            total: true,
+            amountPaid: true,
+            status: true,
+            currency: true,
+            issueDate: true,
+            dueDate: true,
+            customer: true,
+          },
+        });
+        config = await db.reminderConfig.findUnique({ where: { orgId } });
+      } else {
+        throw err;
+      }
+    }
 
     if (!invoice) actionError("Invoice not found.");
     if (!config?.enabled) actionError("Reminders are disabled for this organization.");
@@ -561,17 +611,26 @@ export async function getScheduledInvoices(orgId: string) {
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
-    const invoices = await db.invoice.findMany({
-      where: {
-        orgId: user.organizationId,
-        status: "DRAFT",
-        scheduledFor: { not: null },
-      },
-      include: {
-        customer: { select: { name: true } },
-      },
-      orderBy: { scheduledFor: "asc" },
-    });
+    let invoices: any[] = [];
+    try {
+      invoices = await db.invoice.findMany({
+        where: {
+          orgId: user.organizationId,
+          status: "DRAFT",
+          scheduledFor: { not: null },
+        },
+        include: {
+          customer: { select: { name: true } },
+        },
+        orderBy: { scheduledFor: "asc" },
+      });
+    } catch (err: any) {
+      if (isMissingColumnError(err)) {
+        invoices = [];
+      } else {
+        throw err;
+      }
+    }
 
     return invoices;
   });

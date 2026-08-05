@@ -2,7 +2,7 @@
 
 import { format as formatDateFn } from "date-fns";
 import { db } from "@/lib/db";
-import { requireUser, isMissingColumnError } from "@/lib/org";
+import { requireUser, isMissingColumnError, isInvalidEnumValueError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 
 export async function getRevenueReport(year?: number) {
@@ -178,6 +178,25 @@ export async function getOutstandingReport() {
           where: {
             orgId,
             status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"] },
+          },
+          select: {
+            id: true,
+            number: true,
+            customerId: true,
+            dueDate: true,
+            total: true,
+            amountPaid: true,
+            status: true,
+            currency: true,
+            customer: { select: { name: true, email: true } },
+          },
+          orderBy: { dueDate: "asc" },
+        });
+      } else if (isInvalidEnumValueError(err)) {
+        invoices = await db.invoice.findMany({
+          where: {
+            orgId,
+            status: { in: ["SENT", "VIEWED", "OVERDUE"] },
           },
           select: {
             id: true,
