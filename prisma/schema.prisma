@@ -45,11 +45,29 @@ enum InvoiceType {
   RECURRING
 }
 
+enum PaymentMethod {
+  CASH
+  CHECK
+  CREDIT_CARD
+  STRIPE
+  PAYPAL
+  BANK_TRANSFER
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
 enum InvoiceStatus {
   DRAFT
   SENT
   VIEWED
   PAID
+  UNPAID
   OVERDUE
   VOID
 }
@@ -172,6 +190,10 @@ model Organization {
   subcontractors Subcontractor[]
   photoAttachments PhotoAttachment[]
   recurringConfigs RecurringInvoiceConfig[]
+  payments       Payment[]
+  auditLogs      InvoiceAudit[]
+  reminderConfigs ReminderConfig[]
+  reminders      Reminder[]
 }
 
 // ---------------------------------------------------------------------------
@@ -271,6 +293,9 @@ model Invoice {
 
   items         InvoiceItem[]
   changeOrders  ChangeOrder[]
+  payments      Payment[]
+  auditLogs     InvoiceAudit[]
+  reminders     Reminder[]
 
   @@unique([orgId, number])
   @@index([orgId])
@@ -439,8 +464,90 @@ model PhotoAttachment {
 }
 
 // ---------------------------------------------------------------------------
-// Recurring invoices (Pro tier)
+// Payments (track partial/full payments against invoices)
 // ---------------------------------------------------------------------------
+
+model Payment {
+  id                  String        @id @default(cuid())
+  invoiceId           String
+  invoice             Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  orgId               String
+  org                 Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  amount              Float
+  method              PaymentMethod @default(OTHER)
+  status              PaymentStatus @default(COMPLETED)
+  stripePaymentId     String?
+  paypalTransactionId String?
+  note                String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([invoiceId])
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Invoice Audit Trail (status changes and significant events)
+// ---------------------------------------------------------------------------
+
+model InvoiceAudit {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  action      String   // STATUS_CHANGE, PAYMENT_RECORDED, PAYMENT_LINK_SENT, etc.
+  fromStatus  String?
+  toStatus    String?
+  amount      Float?
+  note        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Reminders (automated payment reminders)
+// ---------------------------------------------------------------------------
+
+model ReminderConfig {
+  id               String   @id @default(cuid())
+  orgId            String
+  org              Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  enabled          Boolean  @default(true)
+  remindBeforeDue  Int      @default(3) // days before due date
+  remindAfterDue   Int      @default(1) // days after due date
+  frequencyHours   Int      @default(24) // minimum hours between reminders
+  maxReminders     Int      @default(3) // max reminders per invoice
+  emailSubject     String?  @default("Payment reminder for invoice {{invoiceNumber}}")
+  emailTemplate    String?  @default("Dear {{customerName}}, this is a reminder that invoice {{invoiceNumber}} for {{amount}} is due on {{dueDate}}.")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([orgId])
+  @@index([orgId])
+}
+
+model Reminder {
+  id          String    @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invoiceId   String?
+  invoice     Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  type        String    // DUE_DATE, OVERDUE
+  scheduledAt DateTime
+  sentAt      DateTime?
+  status      String    @default("PENDING") // PENDING, SENT, FAILED
+  channel     String    @default("EMAIL")
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([orgId])
+  @@index([invoiceId])
+}
 
 model RecurringInvoiceConfig {
   id          String   @id @default(cuid())

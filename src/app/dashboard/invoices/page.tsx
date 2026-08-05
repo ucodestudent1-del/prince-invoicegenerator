@@ -20,6 +20,7 @@ const statusVariant: Record<string, any> = {
   DRAFT: "secondary",
   SENT: "default",
   PAID: "success",
+  UNPAID: "outline",
   OVERDUE: "destructive",
   VOID: "outline",
 };
@@ -69,33 +70,40 @@ export default async function InvoicesPage() {
                   <TableHead>Due</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Outstanding</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((inv) => (
-                  <TableRow key={inv.id}>
-                    <TableCell>
-                      <Link
-                        href={`/dashboard/invoices/${inv.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {inv.number}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{inv.customer?.name ?? "Unknown"}</TableCell>
-                    <TableCell className="text-muted-foreground">{inv.type}</TableCell>
-                    <TableCell>{formatDate(inv.issueDate)}</TableCell>
-                    <TableCell>{formatDate(inv.dueDate)}</TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant[inv.status] ?? "secondary"}>
-                        {inv.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(inv.total, inv.currency)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {invoices.map((inv) => {
+                  const outstanding = inv.total - inv.amountPaid;
+                  return (
+                    <TableRow key={inv.id}>
+                      <TableCell>
+                        <Link
+                          href={`/dashboard/invoices/${inv.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {inv.number}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{inv.customer?.name ?? "Unknown"}</TableCell>
+                      <TableCell className="text-muted-foreground">{inv.type}</TableCell>
+                      <TableCell>{formatDate(inv.issueDate)}</TableCell>
+                      <TableCell>{formatDate(inv.dueDate)}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusVariant[inv.status] ?? "secondary"}>
+                          {inv.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(inv.total, inv.currency)}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(outstanding, inv.currency)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

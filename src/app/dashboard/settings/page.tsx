@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/org";
 import { db } from "@/lib/db";
 import {
@@ -108,6 +109,20 @@ export default async function SettingsPage() {
         <CardContent>
           <Button asChild variant="outline" size="sm">
             <a href="/dashboard/billing">Open billing settings</a>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Automated reminders</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Configure automatic payment reminders for your invoices.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/settings/reminders">Open reminder settings</Link>
           </Button>
         </CardContent>
       </Card>

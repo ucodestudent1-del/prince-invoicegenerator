@@ -14,6 +14,7 @@ import {
   CreditCard,
   Lock,
   Settings,
+  Bell,
 } from "lucide-react";
 import { logServerError } from "@/lib/errors";
 import { UserMenu } from "@/components/user-menu";
@@ -30,6 +31,7 @@ const nav = [
   { href: "/dashboard/subcontractors", label: "Subcontractors", icon: UserPlus, feature: "subcontractorTracking" as FeatureKey },
   { href: "/dashboard/team", label: "Team", icon: Users, feature: "multipleUsers" as FeatureKey },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
+  { href: "/dashboard/settings/reminders", label: "Reminders", icon: Bell },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
