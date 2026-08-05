@@ -15,17 +15,37 @@ export default function LoginPage() {
   const [email, setEmail] = React.useState("");
   const [name, setName] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   async function devLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const res = await signIn("credentials", {
-      email,
-      name,
-      redirect: false,
-    });
-    setLoading(false);
-    if (res?.ok) router.push("/dashboard");
+    setError(null);
+    try {
+      const res = await signIn("credentials", {
+        email,
+        name,
+        redirect: false,
+      });
+      if (res?.ok) {
+        router.push("/dashboard");
+      } else {
+        setError(res?.error || "Sign in failed. Please try again.");
+      }
+    } catch (err: any) {
+      setError(err?.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function googleLogin() {
+    setError(null);
+    try {
+      await signIn("google", { callbackUrl: "/dashboard" });
+    } catch (err: any) {
+      setError(err?.message || "Google sign in failed.");
+    }
   }
 
   return (
@@ -44,6 +64,11 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && (
+            <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
           <form onSubmit={devLogin} className="space-y-3">
             <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
@@ -74,7 +99,7 @@ export default function LoginPage() {
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+              onClick={googleLogin}
             >
               Continue with Google
             </Button>
