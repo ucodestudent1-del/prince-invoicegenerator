@@ -14,20 +14,29 @@ export const metadata: Metadata = {
 async function getInitialTheme() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return { theme: "light", brandColor: null };
-    const user = await db.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        organization: {
-          select: { theme: true, brandColor: true, fontFamily: true },
+    if (!session?.user?.id) return { theme: "light", brandColor: null, fontFamily: null };
+
+    // Wrap in try/catch because the Organization table may not have
+    // the new template/theme/brandColor/fontFamily columns yet
+    // (migration 0003 hasn't been applied to the database).
+    try {
+      const user = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          organization: {
+            select: { theme: true, brandColor: true, fontFamily: true },
+          },
         },
-      },
-    });
-    return {
-      theme: user?.organization?.theme ?? "light",
-      brandColor: user?.organization?.brandColor ?? null,
-      fontFamily: user?.organization?.fontFamily ?? null,
-    };
+      });
+      return {
+        theme: user?.organization?.theme ?? "light",
+        brandColor: user?.organization?.brandColor ?? null,
+        fontFamily: user?.organization?.fontFamily ?? null,
+      };
+    } catch (dbErr) {
+      console.error("getInitialTheme DB error:", dbErr);
+      return { theme: "light", brandColor: null, fontFamily: null };
+    }
   } catch {
     return { theme: "light", brandColor: null, fontFamily: null };
   }

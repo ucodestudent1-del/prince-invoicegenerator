@@ -74,6 +74,29 @@ export async function ensureOrganization(userId: string) {
       throw err;
     }
   } catch (err) {
+    // If Organization columns are missing (schema drift), try fetching
+    // the user with safe columns and use getCurrentOrg's fallback.
+    if (isMissingColumnError(err)) {
+      try {
+        const user = await db.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            name: true,
+            organizationId: true,
+          },
+        });
+        if (!user) return null;
+        if (user.organizationId) {
+          // Use getCurrentOrg which has the column fallback
+          return getCurrentOrg({ id: user.id } as AppUser);
+        }
+        // Can't create a new org — return null
+        return null;
+      } catch {
+        return null;
+      }
+    }
     logServerError("ensureOrganization", err);
     return null;
   }
@@ -88,9 +111,57 @@ export async function getCurrentOrg(user?: AppUser) {
       db.organization.findUnique({ where: { id: orgId } })
     );
   } catch (err) {
+    // If the Organization table has new columns from the latest schema
+    // but migrations haven't been applied to the database, the standard
+    // query will fail. Fall back to selecting only original columns and
+    // provide default values for the newer fields.
+    if (isMissingColumnError(err)) {
+      try {
+        const org = await db.organization.findUnique({
+          where: { id: orgId },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            plan: true,
+            ownerId: true,
+            stripeCustomerId: true,
+            stripeSubscriptionId: true,
+            stripePriceId: true,
+            subscriptionStatus: true,
+            currentPeriodEnd: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+        if (!org) return null;
+        return {
+          ...org,
+          template: "STANDARD" as const,
+          theme: "light",
+          brandColor: null,
+          accentColor: null,
+          fontFamily: null,
+          layout: "default",
+        };
+      } catch {
+        return null;
+      }
+    }
     logServerError("getCurrentOrg", err);
     return null;
   }
+}
+
+// Detects Prisma errors where a database column is missing (schema drift).
+function isMissingColumnError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message;
+  return (
+    msg.includes("does not exist in the current database") ||
+    msg.includes("column") && msg.includes("does not exist") ||
+    msg.includes("42703") // PostgreSQL undefined_column error code
+  );
 }
 
 export async function getActivePlan(user?: AppUser): Promise<SubscriptionPlan> {
