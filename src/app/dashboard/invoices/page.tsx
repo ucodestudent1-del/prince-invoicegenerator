@@ -13,8 +13,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Plus, Download } from "lucide-react";
+import { Plus } from "lucide-react";
 import { logServerError } from "@/lib/errors";
+import { ExportCsvButton } from "@/components/export-csv-button";
 
 const statusVariant: Record<string, any> = {
   DRAFT: "secondary",
@@ -52,13 +53,7 @@ export default async function InvoicesPage() {
               <Plus className="mr-2 h-4 w-4" /> New invoice
             </Link>
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => (window.location.href = `/api/export/invoices?format=csv`)}
-          >
-            <Download className="mr-2 h-4 w-4" /> Export CSV
-          </Button>
+          <ExportCsvButton orgId={orgId} />
         </div>
       </div>
 
