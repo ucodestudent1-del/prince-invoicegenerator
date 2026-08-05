@@ -25,14 +25,39 @@ export default async function CustomersPage() {
   try {
     const plan = await getActivePlan(user);
     const includeAddresses = hasFeature(plan, "savedAddresses");
-    customers = await db.customer.findMany({
-      where: { orgId },
-      orderBy: { name: "asc" },
-      include: {
-        _count: { select: { invoices: true } },
-        ...(includeAddresses && { addresses: { where: { orgId } } }),
-      },
-    });
+    if (includeAddresses) {
+      try {
+        customers = await db.customer.findMany({
+          where: { orgId },
+          orderBy: { name: "asc" },
+          include: {
+            _count: { select: { invoices: true } },
+            addresses: { where: { orgId } },
+          },
+        });
+      } catch (addrErr: any) {
+        // CustomerAddress table may not exist yet — fall back without addresses
+        if (addrErr?.message?.includes("CustomerAddress") || addrErr?.message?.includes("does not exist")) {
+          customers = await db.customer.findMany({
+            where: { orgId },
+            orderBy: { name: "asc" },
+            include: {
+              _count: { select: { invoices: true } },
+            },
+          });
+        } else {
+          throw addrErr;
+        }
+      }
+    } else {
+      customers = await db.customer.findMany({
+        where: { orgId },
+        orderBy: { name: "asc" },
+        include: {
+          _count: { select: { invoices: true } },
+        },
+      });
+    }
   } catch (err) {
     logServerError("CustomersPage", err);
     throw err;

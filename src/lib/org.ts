@@ -154,7 +154,7 @@ export async function getCurrentOrg(user?: AppUser) {
 }
 
 // Detects Prisma errors where a database column is missing (schema drift).
-function isMissingColumnError(err: unknown): boolean {
+export function isMissingColumnError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   const msg = err.message;
   return (

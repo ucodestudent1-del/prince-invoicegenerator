@@ -13,6 +13,45 @@ BEGIN
     END IF;
 END $$;
 
+-- CreateEnum if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PaymentMethod') THEN
+        CREATE TYPE "PaymentMethod" AS ENUM ('CASH', 'CHECK', 'CREDIT_CARD', 'STRIPE', 'PAYPAL', 'BANK_TRANSFER', 'OTHER');
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PaymentStatus') THEN
+        CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED');
+    END IF;
+END $$;
+
+-- AlterTable: RecurringInvoiceConfig (add missing projectId column)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'RecurringInvoiceConfig' AND column_name = 'projectId') THEN
+        ALTER TABLE "RecurringInvoiceConfig" ADD COLUMN "projectId" TEXT;
+    END IF;
+END $$;
+
+-- AddForeignKey: RecurringInvoiceConfig.projectId
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'RecurringInvoiceConfig_projectId_fkey' AND table_name = 'RecurringInvoiceConfig') THEN
+        ALTER TABLE "RecurringInvoiceConfig" ADD CONSTRAINT "RecurringInvoiceConfig_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+END $$;
+
+-- CreateIndex
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'RecurringInvoiceConfig_projectId_idx') THEN
+        CREATE INDEX "RecurringInvoiceConfig_projectId_idx" ON "RecurringInvoiceConfig"("projectId");
+    END IF;
+END $$;
+
 -- AlterTable: Organization
 DO $$
 BEGIN

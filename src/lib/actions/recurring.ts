@@ -3,7 +3,7 @@
 import { addMonths, addDays, addWeeks, addYears } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { db, withRetry } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { InvoiceStatus } from "@prisma/client";
 
@@ -66,16 +66,34 @@ export async function createRecurringConfig(input: RecurringConfigInput) {
     const frequency = input.frequency.toUpperCase();
     const nextRunDate = FREQUENCY_MAP[frequency] ? FREQUENCY_MAP[frequency](startDate, 1) : addMonths(startDate, 1);
 
-    const config = await db.recurringInvoiceConfig.create({
-      data: {
-        orgId,
-        customerId: input.customerId,
-        projectId: input.projectId ?? null,
-        frequency,
-        nextRunDate,
-        active: true,
-      },
-    });
+    let config;
+    try {
+      config = await db.recurringInvoiceConfig.create({
+        data: {
+          orgId,
+          customerId: input.customerId,
+          projectId: input.projectId ?? null,
+          frequency,
+          nextRunDate,
+          active: true,
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        // projectId column may not exist — retry without it
+        config = await db.recurringInvoiceConfig.create({
+          data: {
+            orgId,
+            customerId: input.customerId,
+            frequency,
+            nextRunDate,
+            active: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     revalidatePath("/dashboard/recurring");
     return config;
@@ -88,13 +106,39 @@ export async function getRecurringConfigs() {
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
 
-    const configs = await db.recurringInvoiceConfig.findMany({
-      where: { orgId },
-      include: {
-        customer: { select: { name: true, email: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    let configs;
+    try {
+      configs = await db.recurringInvoiceConfig.findMany({
+        where: { orgId },
+        include: {
+          customer: { select: { name: true, email: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (err) {
+      // Fallback: select only columns that definitely exist in the database
+      if (isMissingColumnError(err)) {
+        configs = await db.recurringInvoiceConfig.findMany({
+          where: { orgId },
+          select: {
+            id: true,
+            orgId: true,
+            customerId: true,
+            projectId: true,
+            frequency: true,
+            nextRunDate: true,
+            active: true,
+            lastInvoiceId: true,
+            createdAt: true,
+            updatedAt: true,
+            customer: { select: { name: true, email: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const configIds = configs.map((c) => c.lastInvoiceId).filter(Boolean) as string[];
     const invoices: Record<string, any> = {};
@@ -131,16 +175,45 @@ export async function toggleRecurringConfig(id: string, active: boolean) {
 
 export async function getRecurringConfig(id: string) {
   return withActionError("getRecurringConfig", async () => {
-    const user = await requireUser();
+    let user;
+    try {
+      user = await requireUser();
+    } catch {
+      return;
+    }
     if (!user.organizationId) actionError("No organization");
 
-    const config = await db.recurringInvoiceConfig.findFirst({
-      where: { id, orgId: user.organizationId },
-      include: {
-        customer: true,
-        project: { select: { name: true } },
-      },
-    });
+    let config;
+    try {
+      config = await db.recurringInvoiceConfig.findFirst({
+        where: { id, orgId: user.organizationId },
+        include: {
+          customer: true,
+          project: { select: { name: true } },
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        config = await db.recurringInvoiceConfig.findFirst({
+          where: { id, orgId: user.organizationId },
+          select: {
+            id: true,
+            orgId: true,
+            customerId: true,
+            projectId: true,
+            frequency: true,
+            nextRunDate: true,
+            active: true,
+            lastInvoiceId: true,
+            createdAt: true,
+            updatedAt: true,
+            customer: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     if (!config) actionError("Recurring config not found.");
 
@@ -162,10 +235,34 @@ export async function generateNextInvoice(configId: string) {
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
 
-    const config = await db.recurringInvoiceConfig.findFirst({
-      where: { id: configId, orgId },
-      include: { customer: true },
-    });
+    let config;
+    try {
+      config = await db.recurringInvoiceConfig.findFirst({
+        where: { id: configId, orgId },
+        include: { customer: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        config = await db.recurringInvoiceConfig.findFirst({
+          where: { id: configId, orgId },
+          select: {
+            id: true,
+            orgId: true,
+            customerId: true,
+            projectId: true,
+            frequency: true,
+            nextRunDate: true,
+            active: true,
+            lastInvoiceId: true,
+            createdAt: true,
+            updatedAt: true,
+            customer: { select: { name: true, email: true, company: true, address: true } },
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
     if (!config) actionError("Recurring config not found.");
 
     const template = config.lastInvoiceId
@@ -258,9 +355,25 @@ export async function generateNextInvoice(configId: string) {
 
 export async function processRecurringInvoices() {
   return withActionError("processRecurringInvoices", async () => {
-    const orgs = await db.organization.findMany({
-      include: { recurringConfigs: { where: { active: true } } },
-    });
+    let orgs;
+    try {
+      orgs = await db.organization.findMany({
+        include: { recurringConfigs: { where: { active: true } } },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        orgs = await db.organization.findMany({
+          select: {
+            id: true,
+            recurringConfigs: {
+              where: { active: true },
+            },
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const results: { configId: string; invoiceId: string | null; error?: string }[] = [];
 
