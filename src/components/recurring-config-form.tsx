@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { createRecurringConfig } from "@/lib/actions/recurring";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,37 +91,61 @@ export function RecurringConfigForm({
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
-            <Label htmlFor="customer">Customer</Label>
-            <select
-              id="customer"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-              required
-            >
-              <option value="">Select a customer…</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="project">Project</Label>
-            <select
-              id="project"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-            >
-              <option value="">None</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+             <Label htmlFor="customer">Customer</Label>
+             {customers.length === 0 ? (
+               <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                 No customers found.{" "}
+                 <Link
+                   href="/dashboard/customers/new"
+                   className="text-primary underline"
+                 >
+                   Create one first.
+                 </Link>
+               </div>
+             ) : (
+               <select
+                 id="customer"
+                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                 value={customerId}
+                 onChange={(e) => setCustomerId(e.target.value)}
+                 required
+               >
+                 <option value="">Select a customer…</option>
+                 {customers.map((c) => (
+                   <option key={c.id} value={c.id}>
+                     {c.name}
+                   </option>
+                 ))}
+               </select>
+             )}
+           </div>
+           <div className="space-y-1">
+             <Label htmlFor="project">Project</Label>
+            {projects.length === 0 ? (
+              <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                No projects found.{" "}
+                <Link
+                  href="/dashboard/projects/new"
+                  className="text-primary underline"
+                >
+                  Create one first.
+                </Link>
+              </div>
+            ) : (
+              <select
+                id="project"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+              >
+                <option value="">None</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="space-y-1">
             <Label htmlFor="frequency">Frequency</Label>
