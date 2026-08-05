@@ -1,12 +1,20 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createEstimate } from "@/lib/actions/features";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 
@@ -69,21 +77,33 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
           <CardTitle className="text-lg">Details</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label>Customer</Label>
-            <select
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-            >
-              <option value="">Select…</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+           <div className="space-y-1">
+             <Label htmlFor="customer">Customer</Label>
+             {customers.length === 0 ? (
+               <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                 No customers found.{" "}
+                 <Link
+                   href="/dashboard/customers/new"
+                   className="text-primary underline"
+                 >
+                   Create one first.
+                 </Link>
+               </div>
+             ) : (
+               <Select value={customerId} onValueChange={setCustomerId}>
+                 <SelectTrigger id="customer">
+                   <SelectValue placeholder="Select a customer…" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {customers.map((c) => (
+                     <SelectItem key={c.id} value={c.id}>
+                       {c.name}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             )}
+           </div>
           <div className="space-y-1">
             <Label>Valid until</Label>
             <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
