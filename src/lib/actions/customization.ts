@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import type { TemplateStyle } from "@prisma/client";
 
@@ -40,10 +40,25 @@ export async function saveThemeSettings(theme: string) {
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
-    await db.organization.update({
-      where: { id: user.organizationId },
-      data: { theme },
-    });
+    try {
+      await db.organization.update({
+        where: { id: user.organizationId },
+        data: { theme },
+      });
+    } catch (err: any) {
+      if (isMissingColumnError(err)) {
+        // Column doesn't exist — write a cookie so the preference persists.
+        // The client reads it on reload and passes it back as initialTheme.
+        // Once the migration is applied, the DB column takes over.
+        const { cookies } = await import("next/headers");
+        cookies().set("theme", theme, {
+          maxAge: 60 * 60 * 24 * 365,
+          path: "/",
+        });
+      } else {
+        throw err;
+      }
+    }
 
     revalidatePath("/dashboard");
   });
@@ -54,12 +69,25 @@ export async function getThemeSettings() {
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
-    const org = await db.organization.findUnique({
-      where: { id: user.organizationId },
-      select: { theme: true },
-    });
+    try {
+      const org = await db.organization.findUnique({
+        where: { id: user.organizationId },
+        select: { theme: true },
+      });
 
-    return org?.theme ?? "light";
+      return org?.theme ?? "light";
+    } catch (err: any) {
+      if (isMissingColumnError(err)) {
+        const { cookies } = await import("next/headers");
+        const cookieTheme = cookies().get("theme")?.value;
+        if (cookieTheme === "dark" || cookieTheme === "light") {
+          return cookieTheme;
+        }
+        return "light";
+      } else {
+        throw err;
+      }
+    }
   });
 }
 

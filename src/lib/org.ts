@@ -1,6 +1,7 @@
 import { logServerError, validateEnv } from "@/lib/errors";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { db, withRetry } from "@/lib/db";
 import type { SubscriptionPlan } from "@prisma/client";
@@ -115,8 +116,9 @@ export async function getCurrentOrg(user?: AppUser) {
     // but migrations haven't been applied to the database, the standard
     // query will fail. Fall back to selecting only original columns and
     // provide default values for the newer fields.
-    if (isMissingColumnError(err)) {
+     if (isMissingColumnError(err)) {
       try {
+        const cookieTheme = cookies().get("theme")?.value;
         const org = await db.organization.findUnique({
           where: { id: orgId },
           select: {
@@ -138,7 +140,7 @@ export async function getCurrentOrg(user?: AppUser) {
         return {
           ...org,
           template: "STANDARD" as const,
-          theme: "light",
+          theme: cookieTheme === "dark" || cookieTheme === "light" ? cookieTheme : "light",
           brandColor: null,
           accentColor: null,
           fontFamily: null,

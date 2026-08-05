@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const fonts = [
   { value: "Inter", label: "Inter" },
@@ -35,17 +34,15 @@ export function CustomizationSettings() {
   const [brandColor, setBrandColor] = React.useState("#ea5804");
   const [accentColor, setAccentColor] = React.useState("#ea5804");
   const [fontFamily, setFontFamily] = React.useState("");
-  const [theme, setTheme] = React.useState("light");
   const [layout, setLayout] = React.useState("default");
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     async function load() {
       try {
-        const [colorsRes, fontsRes, themeRes, layoutRes] = await Promise.all([
+        const [colorsRes, fontsRes, layoutRes] = await Promise.all([
           fetch("/api/customization?key=colors"),
           fetch("/api/customization?key=fonts"),
-          fetch("/api/customization?key=theme"),
           fetch("/api/customization?key=layout"),
         ]);
         if (colorsRes.ok) {
@@ -56,10 +53,6 @@ export function CustomizationSettings() {
         if (fontsRes.ok) {
           const data = await fontsRes.json();
           setFontFamily(data || "");
-        }
-        if (themeRes.ok) {
-          const data = await themeRes.json();
-          setTheme(data || "light");
         }
         if (layoutRes.ok) {
           const data = await layoutRes.json();
@@ -99,15 +92,6 @@ export function CustomizationSettings() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: "layout", value: layout }),
-    });
-  }
-
-  function handleThemeToggle(nextTheme: string) {
-    setTheme(nextTheme);
-    fetch("/api/customization", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "theme", value: nextTheme }),
     });
   }
 
@@ -178,19 +162,7 @@ export function CustomizationSettings() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={saveFont}>Save font</Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Appearance</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Label>Dark / Light mode</Label>
-            <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
-          </div>
+          <Button onClick={saveFont}>Save font          </Button>
         </CardContent>
       </Card>
 
