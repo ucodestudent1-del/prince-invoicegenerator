@@ -129,6 +129,20 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-lg">Late fees</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Configure automatic late fee calculation for overdue invoices.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/settings/late-fees">Open late fee settings</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-lg">Data management</CardTitle>
           <p className="text-sm text-muted-foreground">
             Permanently remove past records for your organization. Each action

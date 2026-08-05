@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { logServerError } from "@/lib/errors";
 
 const statusVariant: Record<string, any> = {
@@ -46,11 +46,20 @@ export default async function InvoicesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Invoices</h1>
-        <Button asChild>
-          <Link href="/dashboard/invoices/new">
-            <Plus className="mr-2 h-4 w-4" /> New invoice
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href="/dashboard/invoices/new">
+              <Plus className="mr-2 h-4 w-4" /> New invoice
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => (window.location.href = `/api/export/invoices?format=csv`)}
+          >
+            <Download className="mr-2 h-4 w-4" /> Export CSV
+          </Button>
+        </div>
       </div>
 
       <Card>

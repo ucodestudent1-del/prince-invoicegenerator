@@ -38,6 +38,7 @@ export function InvoiceForm({
     new Date().toISOString().slice(0, 10)
   );
   const [dueDate, setDueDate] = React.useState("");
+  const [scheduledFor, setScheduledFor] = React.useState("");
   const [taxRate, setTaxRate] = React.useState<string | number>(0);
   const [discount, setDiscount] = React.useState<string | number>(0);
   const [retainageRate, setRetainageRate] = React.useState<string | number>(0);
@@ -129,6 +130,7 @@ export function InvoiceForm({
           logoUrl: uploadedLogoUrl ?? logoUrl ?? null,
           billToAddress: billToAddress || null,
           shipToAddress: shipToAddress || null,
+          scheduledFor: scheduledFor || null,
           items: items
             .filter((i) => i.description)
             .map((i) => ({
@@ -259,6 +261,21 @@ export function InvoiceForm({
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
             />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="scheduledFor">Schedule for later</Label>
+            <Input
+              id="scheduledFor"
+              type="date"
+              value={scheduledFor}
+              onChange={(e) => setScheduledFor(e.target.value)}
+              min={issueDate}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave empty to create the invoice immediately. When set, the
+              invoice will be saved as a draft and automatically marked as SENT
+              on the scheduled date.
+            </p>
           </div>
           <div className="space-y-1">
             <Label htmlFor="logo">Logo</Label>

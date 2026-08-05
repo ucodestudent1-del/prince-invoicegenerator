@@ -29,6 +29,7 @@ export interface CreateInvoiceInput {
   billToAddress?: string | null;
   shipToAddress?: string | null;
   items: InvoiceItemInput[];
+  scheduledFor?: string | null;
 }
 
 export async function createInvoice(input: CreateInvoiceInput) {
@@ -119,6 +120,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
         logoUrl: input.logoUrl ?? null,
         billToAddress: input.billToAddress ?? null,
         shipToAddress: input.shipToAddress ?? null,
+        scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
         createdById: user.id,
         items: {
           create: validItems.map((it, i) => ({

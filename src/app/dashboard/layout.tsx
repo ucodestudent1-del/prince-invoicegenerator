@@ -15,6 +15,8 @@ import {
   Lock,
   Settings,
   Bell,
+  BarChart3,
+  Calendar,
 } from "lucide-react";
 import { logServerError } from "@/lib/errors";
 import { UserMenu } from "@/components/user-menu";
@@ -31,7 +33,10 @@ const nav = [
   { href: "/dashboard/subcontractors", label: "Subcontractors", icon: UserPlus, feature: "subcontractorTracking" as FeatureKey },
   { href: "/dashboard/team", label: "Team", icon: Users, feature: "multipleUsers" as FeatureKey },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
+  { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
+  { href: "/dashboard/recurring", label: "Recurring", icon: Calendar },
   { href: "/dashboard/settings/reminders", label: "Reminders", icon: Bell },
+  { href: "/dashboard/settings/late-fees", label: "Late fees", icon: Receipt },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
