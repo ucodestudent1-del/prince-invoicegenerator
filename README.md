@@ -20,7 +20,6 @@ A subscription-based invoicing web app for construction contractors.
 | Starter    | $15–25   | Unlimited invoices, branding, estimates, customer DB             |
 | Pro        | $39–59   | Progress invoices, change orders, retainage, recurring, expenses, photos |
 | Business   | $79–149  | Multiple users, project management, subcontractor tracking, reports |
-| Enterprise | Custom   | Unlimited users, API, custom integrations, priority support      |
 
 ## Getting started
 
