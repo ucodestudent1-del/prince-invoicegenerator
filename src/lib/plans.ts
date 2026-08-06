@@ -199,9 +199,9 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
 
 // Human-friendly allowance text per plan for the "invoicesPerMonth" feature.
 export const INVOICE_LIMITS: Record<SubscriptionPlan, number | null> = {
-  FREE: null, /* TEMPORARILY UNLIMITED FOR TESTING - revert to 5 in production */
-  STARTER: null, // unlimited
-  PRO: null,
+  FREE: 5,
+  STARTER: 50,
+  PRO: 500,
   BUSINESS: null,
   ENTERPRISE: null,
 };
@@ -210,8 +210,7 @@ export function getPlan(id: SubscriptionPlan): PlanDefinition {
   return PLANS.find((p) => p.id === id) ?? PLANS[0];
 }
 
-// TEMPORARILY UNLOCKED ALL FEATURES FOR TESTING - revert in production
-export function hasFeature(plan: SubscriptionPlan, feature: FeatureKey) {
-
-  return true;
+export function hasFeature(plan: SubscriptionPlan, feature: FeatureKey): boolean {
+  const planDef = getPlan(plan);
+  return planDef.features.includes(feature);
 }

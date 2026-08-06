@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processRecurringInvoices } from "@/lib/actions/recurring";
+import { isBackgroundJobAuthorized } from "@/lib/background-job-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isBackgroundJobAuthorized(req)) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
   try {
     const results = await processRecurringInvoices();
     return NextResponse.json({ success: true, results });
@@ -14,5 +18,5 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  return GET();
+  return GET(req);
 }

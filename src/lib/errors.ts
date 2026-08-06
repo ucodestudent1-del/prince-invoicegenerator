@@ -8,6 +8,14 @@ const REQUIRED_ENV_VARS = [
   "NEXTAUTH_URL",
 ] as const;
 
+const PROD_ONLY_ENV_VARS = [
+  "BACKGROUND_JOB_API_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "STRIPE_PRICE_STARTER_MONTHLY",
+  "STRIPE_PRICE_PRO_MONTHLY",
+  "STRIPE_PRICE_BUSINESS_MONTHLY",
+] as const;
+
 export function validateEnv(): void {
   if (typeof window !== "undefined") return;
   const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
@@ -17,6 +25,13 @@ export function validateEnv(): void {
     if (process.env.NODE_ENV === "production") {
       throw new Error(msg);
     }
+  }
+
+  // Log warnings for production-only env vars that are missing.
+  // Only warn (don't throw) so builds don't fail in CI/preview environments.
+  const missingProd = PROD_ONLY_ENV_VARS.filter((key) => !process.env[key]);
+  if (missingProd.length > 0) {
+    console.warn(`[env] Production environment variables not set: ${missingProd.join(", ")}`);
   }
 }
 

@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { processRecurringInvoices, processScheduledInvoices } from "@/lib/actions/recurring";
 import { applyLateFees } from "@/lib/actions/late-fees";
 import { logError } from "@/lib/logging";
+import { isBackgroundJobAuthorized } from "@/lib/background-job-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  if (!isBackgroundJobAuthorized(req)) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
   try {
     const url = new URL(req.url);
     const steps = url.searchParams.get("steps")?.split(",") || ["all"];
