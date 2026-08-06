@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function POST() {
   try {
-    await prisma.$executeRaw`
+    await db.$executeRaw`
       DELETE FROM _prisma_migrations 
       WHERE migration_name = '0004_reconcile_schema_drift'
     `;
 
-    await prisma.$executeRaw`
+    await db.$executeRaw`
       DO $$
       DECLARE
           type_oid oid;
