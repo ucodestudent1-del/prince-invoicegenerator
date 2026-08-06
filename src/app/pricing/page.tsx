@@ -29,7 +29,7 @@ export default function PricingPage() {
           </p>
         </section>
 
-        <section className="container grid gap-6 pb-20 md:grid-cols-2 lg:grid-cols-5">
+        <section className="container grid gap-6 pb-20 md:grid-cols-2 lg:grid-cols-4">
           {display.map((plan, i) => {
             const highlighted = plan.id === "PRO";
             return (
@@ -63,13 +63,6 @@ export default function PricingPage() {
               </Card>
             );
           })}
-        </section>
-
-        <section className="container pb-20 text-center text-sm text-muted-foreground">
-          Need a custom Enterprise plan?{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
-            Contact sales
-          </Link>
         </section>
       </main>
       <SiteFooter />
