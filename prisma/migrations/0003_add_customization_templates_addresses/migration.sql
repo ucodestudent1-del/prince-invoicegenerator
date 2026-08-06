@@ -1,8 +1,11 @@
 -- Add missing UNPAID value to InvoiceStatus enum (added in schema but not in migration 0000)
 DO $$
+DECLARE
+    type_oid oid;
 BEGIN
-    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'InvoiceStatus') THEN
-        IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumtypid = 'InvoiceStatus'::regtype AND enumlabel = 'UNPAID') THEN
+    SELECT oid INTO type_oid FROM pg_type WHERE typname = 'InvoiceStatus';
+    IF type_oid IS NOT NULL THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumtypid = type_oid AND enumlabel = 'UNPAID') THEN
             ALTER TYPE "InvoiceStatus" ADD VALUE 'UNPAID';
         END IF;
     END IF;
