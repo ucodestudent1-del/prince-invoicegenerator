@@ -3,9 +3,10 @@ import { getScheduledInvoices } from "@/lib/actions/invoices";
 import { hasFeature } from "@/lib/plans";
 import { getCurrentUser, getActivePlan } from "@/lib/org";
 import { PricingFeature } from "@/components/pricing-feature";
-import { Calendar } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 export const metadata = {
   title: "Scheduled Invoices",
@@ -21,10 +22,12 @@ export default async function ScheduledPage() {
             Invoices scheduled to be sent on a future date.
           </p>
         </div>
-        <Link href="/dashboard/invoices/new">
-          <Calendar className="h-4 w-4 inline mr-2" />
-          Schedule invoice
-        </Link>
+        <Button asChild>
+          <Link href="/dashboard/invoices/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Schedule invoice
+          </Link>
+        </Button>
       </div>
       <Suspense fallback={<p>Loading…</p>}>
         <ScheduledContent />
