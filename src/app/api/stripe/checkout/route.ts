@@ -4,11 +4,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getPlan } from "@/lib/plans";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const limit = rateLimit(req);
+  if (!limit.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const authSession = await getServerSession(authOptions);
   if (!authSession?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

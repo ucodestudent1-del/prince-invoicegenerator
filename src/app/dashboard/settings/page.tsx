@@ -9,6 +9,7 @@ import {
   removeAllCustomers,
   removeAllTeamMembers,
   removeAllSubcontractors,
+  deleteOrganization,
 } from "@/lib/actions/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -195,11 +196,22 @@ export default async function SettingsPage() {
           </p>
         </CardHeader>
         <CardContent>
-          <Badge variant={canManageData ? "destructive" : "secondary"}>
-            {canManageData
-              ? "Contact support to delete your organization."
-              : "Owner or admin access required."}
-          </Badge>
+          {canManageData ? (
+            <form
+              action={async () => {
+                "use server";
+                await deleteOrganization();
+              }}
+            >
+              <ConfirmSubmit
+                message="Delete this organization and all its data? This cannot be undone."
+              />
+            </form>
+          ) : (
+            <Badge variant="secondary">
+              Owner or admin access required.
+            </Badge>
+          )}
         </CardContent>
       </Card>
 

@@ -191,9 +191,6 @@ export async function removeAllTeamMembers(): Promise<ActionResult> {
   return withActionError("removeAllTeamMembers", async () => {
     const { orgId, userId } = await requireOrgAdmin();
 
-    // Detach every non-owner member. We never remove the owner so the org
-    // remains usable. Detaching (rather than deleting the User) keeps their
-    // auth identity intact and is reversible on re-invitation.
     const res = await db.user.updateMany({
       where: { organizationId: orgId, id: { not: userId } },
       data: { organizationId: null },
@@ -201,5 +198,48 @@ export async function removeAllTeamMembers(): Promise<ActionResult> {
 
     revalidateOrg();
     return { count: res.count };
+  });
+}
+
+export async function deleteOrganization(): Promise<ActionResult> {
+  return withActionError("deleteOrganization", async () => {
+    const { orgId, userId } = await requireOrgAdmin();
+
+    await db.$transaction(async (tx) => {
+      await tx.invoiceAudit.deleteMany({ where: { orgId } });
+      await tx.payment.deleteMany({ where: { orgId } });
+      await tx.reminder.deleteMany({ where: { orgId } });
+      await tx.reminderConfig.deleteMany({ where: { orgId } });
+      await tx.lateFeeConfig.deleteMany({ where: { orgId } });
+      await tx.recurringInvoiceConfig.deleteMany({ where: { orgId } });
+      await tx.invoiceItem.deleteMany({
+        where: { invoice: { orgId } },
+      } as any);
+      await tx.invoice.deleteMany({ where: { orgId } });
+      await tx.estimateItem.deleteMany({
+        where: { estimate: { orgId } },
+      } as any);
+      await tx.estimate.deleteMany({ where: { orgId } });
+      await tx.changeOrder.deleteMany({ where: { orgId } });
+      await tx.expense.deleteMany({ where: { orgId } });
+      await tx.project.deleteMany({ where: { orgId } });
+      await tx.subcontractorProject.deleteMany({
+        where: {
+          project: { orgId },
+        } as any,
+      });
+      await tx.subcontractor.deleteMany({ where: { orgId } });
+      await tx.customerAddress.deleteMany({ where: { orgId } });
+      await tx.customer.deleteMany({ where: { orgId } });
+      await tx.photoAttachment.deleteMany({ where: { orgId } });
+      await tx.user.updateMany({
+        where: { organizationId: orgId, id: { not: userId } },
+        data: { organizationId: null },
+      });
+      await tx.organization.delete({ where: { id: orgId } });
+    });
+
+    revalidateOrg();
+    return { count: 1 };
   });
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeClient } from "@/components/theme-client";
+import { CookieConsent } from "@/components/cookie-consent";
+import { Analytics } from "@/components/analytics";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -8,9 +10,46 @@ import { isMissingColumnError } from "@/lib/org";
 import { cookies } from "next/headers";
 
 export const metadata: Metadata = {
-  title: "Prince — Construction Invoice Generator",
+  title: {
+    default: "Prince — Construction Invoice Generator",
+    template: "%s — Prince",
+  },
   description:
     "Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://princeinvoicegenerator.up.railway.app",
+    title: "Prince — Construction Invoice Generator",
+    description:
+      "Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
+    siteName: "Prince Invoice Generator",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Prince — Construction Invoice Generator",
+    description:
+      "Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
+  },
+  alternates: {
+    canonical: "https://princeinvoicegenerator.up.railway.app",
+  },
+  other: {
+    "application/ld+json": JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Prince Invoice Generator",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description:
+        "Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
+      url: "https://princeinvoicegenerator.up.railway.app",
+      provider: {
+        "@type": "Organization",
+        name: "Prince Invoice Generator",
+      },
+    }),
+  },
 };
 
 async function getInitialTheme() {
@@ -73,6 +112,8 @@ export default async function RootLayout({
           brandColor={brandColor}
           fontFamily={fontFamily}
         />
+        <CookieConsent />
+        <Analytics />
         {children}
       </body>
     </html>

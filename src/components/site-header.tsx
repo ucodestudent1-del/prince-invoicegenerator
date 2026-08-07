@@ -55,6 +55,12 @@ export function SiteFooter() {
           <Link href="/privacy" className="hover:text-foreground">
             Privacy
           </Link>
+          <Link href="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
+          <Link href="/support" className="hover:text-foreground">
+            Support
+          </Link>
           <Link href="/login" className="hover:text-foreground">
             Sign in
           </Link>

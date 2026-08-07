@@ -96,43 +96,67 @@ export async function createInvoice(input: CreateInvoiceInput) {
     const total = subtotal + taxAmount - input.discount;
     const retainageAmount = (total * input.retainageRate) / 100;
 
-    const count = await withRetry(() => db.invoice.count({ where: { orgId } }));
-    const number = input.invoiceNumber || `INV-${String(count + 1).padStart(4, "0")}`;
+    let number = input.invoiceNumber;
+    if (!number) {
+      const count = await withRetry(() =>
+        db.invoice.count({ where: { orgId } })
+      );
+      number = `INV-${String(count + 1).padStart(4, "0")}`;
+    }
 
-    const invoice = await db.invoice.create({
-      data: {
-        orgId,
-        number,
-        customerId: input.customerId,
-        projectId: input.projectId ?? null,
-        type: input.type,
-        issueDate: new Date(input.issueDate),
-        dueDate: input.dueDate ? new Date(input.dueDate) : null,
-        currency: input.currency ?? "USD",
-        taxRate: input.taxRate,
-        discount: input.discount,
-        retainageRate: input.retainageRate,
-        retainageAmount,
-        subtotal,
-        taxAmount,
-        total,
-        notes: input.notes,
-        logoUrl: input.logoUrl ?? null,
-        billToAddress: input.billToAddress ?? null,
-        shipToAddress: input.shipToAddress ?? null,
-        scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
-        createdById: user.id,
-        items: {
-          create: validItems.map((it, i) => ({
-            description: it.description,
-            quantity: it.quantity,
-            unitPrice: it.unitPrice,
-            amount: it.quantity * it.unitPrice,
-            sortOrder: i,
-          })),
-        },
-      },
-    });
+    let invoice;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        invoice = await db.invoice.create({
+          data: {
+            orgId,
+            number,
+            customerId: input.customerId,
+            projectId: input.projectId ?? null,
+            type: input.type,
+            issueDate: new Date(input.issueDate),
+            dueDate: input.dueDate ? new Date(input.dueDate) : null,
+            currency: input.currency ?? "USD",
+            taxRate: input.taxRate,
+            discount: input.discount,
+            retainageRate: input.retainageRate,
+            retainageAmount,
+            subtotal,
+            taxAmount,
+            total,
+            notes: input.notes,
+            logoUrl: input.logoUrl ?? null,
+            billToAddress: input.billToAddress ?? null,
+            shipToAddress: input.shipToAddress ?? null,
+            scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
+            createdById: user.id,
+            items: {
+              create: validItems.map((it, i) => ({
+                description: it.description,
+                quantity: it.quantity,
+                unitPrice: it.unitPrice,
+                amount: it.quantity * it.unitPrice,
+                sortOrder: i,
+              })),
+            },
+          },
+        });
+        break;
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message.includes("Unique constraint failed") &&
+          attempt < 3
+        ) {
+          const nextCount = await withRetry(() =>
+            db.invoice.count({ where: { orgId } })
+          );
+          number = `INV-${String(nextCount + attempt + 1).padStart(4, "0")}`;
+          continue;
+        }
+        throw err;
+      }
+    }
 
     revalidatePath("/dashboard/invoices");
     revalidatePath("/dashboard");

@@ -143,7 +143,10 @@ export function InvoiceForm({
               unitPrice: Number(i.unitPrice) || 0,
             })),
         });
-      router.push(`/dashboard/invoices/${invoice.id}`);
+        if (!invoice) {
+          throw new Error("Failed to create invoice.");
+        }
+        router.push(`/dashboard/invoices/${invoice.id}`);
     } catch (err: any) {
       setError(err?.message ?? "Failed to create invoice.");
       setSaving(false);

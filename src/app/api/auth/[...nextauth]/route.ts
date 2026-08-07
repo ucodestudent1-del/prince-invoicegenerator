@@ -1,9 +1,25 @@
 import NextAuth from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
+import { NextRequest, NextResponse } from "next/server";
 
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST };
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
+  const limit = rateLimit(request);
+  if (!limit.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+  return handler.GET(request);
+}
+
+export async function POST(request: NextRequest) {
+  const limit = rateLimit(request);
+  if (!limit.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+  return handler.POST(request);
+}
