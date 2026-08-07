@@ -26,7 +26,8 @@ export type FeatureKey =
   | "multipleLayouts"
   | "automaticReminders"
   | "lateFees"
-  | "scheduledInvoices";
+  | "scheduledInvoices"
+  | "pdfExport";
 
 export interface PlanDefinition {
   id: SubscriptionPlan;
@@ -66,6 +67,8 @@ export const PLANS: PlanDefinition[] = [
       "expenseTracking",
       "savedAddresses",
       "darkMode",
+      "invoiceTemplates",
+      "customBranding",
     ],
     stripePriceId: process.env.STRIPE_PRICE_STARTER_MONTHLY,
   },
@@ -91,6 +94,7 @@ export const PLANS: PlanDefinition[] = [
       "darkMode",
       "invoiceTemplates",
       "customBranding",
+      "pdfExport",
     ],
     stripePriceId: process.env.STRIPE_PRICE_PRO_MONTHLY,
   },
@@ -125,6 +129,7 @@ export const PLANS: PlanDefinition[] = [
       "automaticReminders",
       "lateFees",
       "scheduledInvoices",
+      "pdfExport",
     ],
     stripePriceId: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
   },
@@ -157,6 +162,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   automaticReminders: "Automatic due-date reminders",
   lateFees: "Automatic late fee calculation",
   scheduledInvoices: "Scheduled invoices",
+  pdfExport: "PDF export without watermark",
 };
 
 // Human-friendly allowance text per plan for the "invoicesPerMonth" feature.

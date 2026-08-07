@@ -32,6 +32,7 @@ export default function PricingPage() {
         <section className="container grid gap-6 pb-20 md:grid-cols-2 lg:grid-cols-4">
           {display.map((plan, i) => {
             const highlighted = plan.id === "PRO";
+            const isStarter = plan.id === "STARTER";
             return (
               <Card
                 key={plan.id}
@@ -41,8 +42,13 @@ export default function PricingPage() {
                   <CardTitle className="flex items-center justify-between text-lg">
                     {plan.name}
                     {highlighted && (
-                      <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                      <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
                         Popular
+                      </span>
+                    )}
+                    {isStarter && (
+                      <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+                        Most popular free upgrade
                       </span>
                     )}
                   </CardTitle>
@@ -58,6 +64,18 @@ export default function PricingPage() {
                       </li>
                     ))}
                   </ul>
+                  {isStarter && (
+                    <p className="text-xs text-muted-foreground border-t pt-3">
+                      Includes &quot;Powered by Prince&quot; branding on invoices.
+                      Upgrade to Pro to remove the watermark and unlock change orders,
+                      retainage, photo attachments, and PDF export.
+                    </p>
+                  )}
+                  {plan.id === "FREE" && (
+                    <p className="text-xs text-muted-foreground border-t pt-3">
+                      Includes &quot;Powered by Prince&quot; branding on invoices.
+                    </p>
+                  )}
                   <PricingCheckout planId={plan.id} planName={plan.name} />
                 </CardContent>
               </Card>

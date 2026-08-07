@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/org";
+import { requireUser, getActivePlan } from "@/lib/org";
+import { hasFeature } from "@/lib/plans";
 import { db } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { PrintButton } from "@/components/print-button";
 import { logServerError } from "@/lib/errors";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +17,8 @@ export default async function InvoicePrintPage({
 }) {
   const user = await requireUser();
   if (!user.organizationId) return null;
+  const plan = await getActivePlan(user);
+  const canPdfExport = hasFeature(plan, "pdfExport");
 
   let invoice;
   let org;
@@ -45,6 +50,11 @@ export default async function InvoicePrintPage({
 
   return (
     <div className={`mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: org.fontFamily } : undefined}>
+      {!canPdfExport && (
+        <div className="mb-6 rounded-md border border-yellow-400 bg-yellow-50 p-3 text-sm text-yellow-800">
+          Upgrade to <strong>Pro</strong> to remove the &quot;Powered by Prince&quot; watermark and enable PDF export.
+        </div>
+      )}
       <div className="mb-8 flex items-start justify-between border-b pb-6">
         <div className="flex items-start gap-4">
           {invoice.logoUrl && (
@@ -55,6 +65,9 @@ export default async function InvoicePrintPage({
               Prince
             </p>
             <p className="text-xs text-gray-500">Construction Invoicing</p>
+            {!canPdfExport && (
+              <p className="text-xs text-gray-400 mt-1">Powered by Prince</p>
+            )}
           </div>
         </div>
         <div className="text-right">
@@ -171,8 +184,13 @@ export default async function InvoicePrintPage({
         </div>
       )}
 
-      <div className="mt-10">
+      <div className="mt-10 flex items-center gap-3">
         <PrintButton />
+        {canPdfExport && (
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Download className="mr-2 h-4 w-4" /> Download PDF
+          </Button>
+        )}
       </div>
     </div>
   );
