@@ -8,18 +8,34 @@ const handler = NextAuth(authOptions);
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
-  const limit = rateLimit(request);
-  if (!limit.ok) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ nextauth: string[] }> }
+) {
+  try {
+    const limit = rateLimit(request);
+    if (!limit.ok) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+    return handler(request, context);
+  } catch (err) {
+    console.error("Auth GET error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-  return handler.GET(request);
 }
 
-export async function POST(request: NextRequest) {
-  const limit = rateLimit(request);
-  if (!limit.ok) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ nextauth: string[] }> }
+) {
+  try {
+    const limit = rateLimit(request);
+    if (!limit.ok) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+    return handler(request, context);
+  } catch (err) {
+    console.error("Auth POST error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-  return handler.POST(request);
 }
