@@ -65,7 +65,6 @@ export const PLANS: PlanDefinition[] = [
       "progressInvoices",
       "recurring",
       "savedAddresses",
-      "invoiceTemplates",
       "customBranding",
     ],
     stripePriceId: process.env.STRIPE_PRICE_STARTER_MONTHLY,
