@@ -232,7 +232,8 @@ export async function recordPayment(input: {
     const orgId = user.organizationId;
 
     if (!input.invoiceId) actionError("Invoice is required.");
-    if (!input.amount || input.amount <= 0) actionError("Payment amount must be greater than zero.");
+    const roundedAmount = Math.round(input.amount * 100) / 100;
+    if (!roundedAmount || roundedAmount <= 0) actionError("Payment amount must be greater than zero.");
 
     const invoice = await db.invoice.findFirst({
       where: { id: input.invoiceId, orgId },
@@ -240,19 +241,31 @@ export async function recordPayment(input: {
     });
     if (!invoice) actionError("Invoice not found.");
 
-    const remaining = invoice.total - invoice.amountPaid;
-    if (input.amount > remaining + 0.01) {
+    const roundedTotal = Math.round(invoice.total * 100) / 100;
+    const roundedAmountPaid = Math.round(invoice.amountPaid * 100) / 100;
+    const remaining = Math.round((roundedTotal - roundedAmountPaid) * 100) / 100;
+    if (roundedAmount > remaining + 0.01) {
       actionError(`Payment amount exceeds remaining balance of ${remaining.toFixed(2)}.`);
     }
 
-    const newAmountPaid = Math.min(invoice.amountPaid + input.amount, invoice.total);
+    const newAmountPaid = Math.round((Math.min(roundedAmountPaid + roundedAmount, roundedTotal)) * 100) / 100;
 
     await db.$transaction(async (tx) => {
+      const freshInvoice = await tx.invoice.findFirst({
+        where: { id: input.invoiceId, orgId },
+        select: { id: true, total: true, amountPaid: true, status: true },
+      });
+      if (!freshInvoice) actionError("Invoice not found.");
+
+      const freshTotal = Math.round(freshInvoice.total * 100) / 100;
+      const freshAmountPaid = Math.round(freshInvoice.amountPaid * 100) / 100;
+      const adjustedAmountPaid = Math.round((Math.min(freshAmountPaid + roundedAmount, freshTotal)) * 100) / 100;
+
       const payment = await tx.payment.create({
         data: {
           invoiceId: input.invoiceId,
           orgId,
-          amount: input.amount,
+          amount: roundedAmount,
           method: input.method ?? "OTHER",
           status: "COMPLETED",
           stripePaymentId: input.stripePaymentId,
@@ -261,23 +274,23 @@ export async function recordPayment(input: {
         },
       });
 
-      let newStatus = invoice.status;
-      if (newAmountPaid >= invoice.total) {
+      let newStatus = freshInvoice.status;
+      if (adjustedAmountPaid >= freshTotal) {
         newStatus = "PAID";
-      } else if (invoice.status === "PAID" || invoice.status === "VOID") {
+      } else if (freshInvoice.status === "PAID" || freshInvoice.status === "VOID") {
         newStatus = "UNPAID";
       }
 
       try {
         await tx.invoice.update({
           where: { id: input.invoiceId },
-          data: { amountPaid: newAmountPaid, status: newStatus },
+          data: { amountPaid: adjustedAmountPaid, status: newStatus },
         });
       } catch (err: any) {
         if (isInvalidEnumValueError(err) && newStatus === "UNPAID") {
           await tx.invoice.update({
             where: { id: input.invoiceId },
-            data: { amountPaid: newAmountPaid, status: "SENT" },
+            data: { amountPaid: adjustedAmountPaid, status: "SENT" },
           });
         } else {
           throw err;
@@ -290,7 +303,7 @@ export async function recordPayment(input: {
           orgId,
           action: "PAYMENT_RECORDED",
           toStatus: newStatus,
-          amount: input.amount,
+          amount: roundedAmount,
           note: input.note,
           createdById: user.id,
         },
