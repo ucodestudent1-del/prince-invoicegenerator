@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Crown } from "lucide-react";
+import { HardHat } from "lucide-react";
 
 export function SiteHeader({ cta = true }: { cta?: boolean }) {
   return (
@@ -7,7 +7,7 @@ export function SiteHeader({ cta = true }: { cta?: boolean }) {
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Crown className="h-5 w-5" />
+            <HardHat className="h-5 w-5" />
           </span>
           Prince
         </Link>
