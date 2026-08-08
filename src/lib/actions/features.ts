@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
+import { getNextEstimateNumber, getNextChangeOrderNumber } from "@/lib/numbering";
 import type { EstimateStatus, ExpenseCategory } from "@prisma/client";
 
 // --------------------------- Estimates ---------------------------
@@ -33,8 +34,7 @@ export async function createEstimate(input: {
     const taxAmount = (subtotal * input.taxRate) / 100;
     const total = subtotal + taxAmount - input.discount;
 
-    const count = await db.estimate.count({ where: { orgId } });
-    const number = `EST-${String(count + 1).padStart(4, "0")}`;
+    const number = await getNextEstimateNumber(db, orgId);
 
     const estimate = await db.estimate.create({
       data: {
@@ -82,8 +82,7 @@ export async function createChangeOrder(input: {
 
     if (!input.title) actionError("Title is required.");
 
-    const count = await db.changeOrder.count({ where: { orgId } });
-    const number = `CO-${String(count + 1).padStart(4, "0")}`;
+    const number = await getNextChangeOrderNumber(db, orgId);
     const co = await db.changeOrder.create({
       data: {
         orgId,

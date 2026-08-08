@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db, withRetry } from "@/lib/db";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
+import { getNextInvoiceNumber } from "@/lib/numbering";
 import { InvoiceStatus } from "@prisma/client";
 
 export interface RecurringConfigInput {
@@ -271,8 +272,7 @@ export async function generateNextInvoice(configId: string) {
 
     if (!template) actionError("No template invoice found. Create an invoice linked to this recurring config first.");
 
-    const count = await withRetry(() => db.invoice.count({ where: { orgId } }));
-    const number = `INV-${String(count + 1).padStart(4, "0")}`;
+    let number = await getNextInvoiceNumber(db, orgId);
 
     const issueDate = new Date();
     const today = new Date();
@@ -281,42 +281,58 @@ export async function generateNextInvoice(configId: string) {
       ? addDays(today, 7)
       : addMonths(today, 1);
 
-    const invoice = await db.invoice.create({
-      data: {
-        orgId,
-        number,
-        customerId: config.customerId,
-        projectId: (config as any).projectId ?? null,
-        type: "RECURRING",
-        status: "DRAFT",
-        issueDate,
-        dueDate,
-        currency: "USD",
-        subtotal: template.subtotal,
-        taxRate: template.taxRate,
-        taxAmount: template.taxAmount,
-        discount: template.discount,
-        retainageRate: template.retainageRate,
-        retainageAmount: template.retainageAmount,
-        total: template.total,
-        amountPaid: 0,
-        notes: template.notes,
-        logoUrl: template.logoUrl,
-        billToAddress: template.billToAddress,
-        shipToAddress: template.shipToAddress,
-        recurringConfigId: configId,
-        createdById: user.id,
-        items: {
-          create: template.items.map((it) => ({
-            description: it.description,
-            quantity: it.quantity,
-            unitPrice: it.unitPrice,
-            amount: it.amount,
-            sortOrder: it.sortOrder,
-          })),
-        },
-      },
-    });
+    let invoice;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        invoice = await db.invoice.create({
+          data: {
+            orgId,
+            number,
+            customerId: config.customerId,
+            projectId: (config as any).projectId ?? null,
+            type: "RECURRING",
+            status: "DRAFT",
+            issueDate,
+            dueDate,
+            currency: "USD",
+            subtotal: template.subtotal,
+            taxRate: template.taxRate,
+            taxAmount: template.taxAmount,
+            discount: template.discount,
+            retainageRate: template.retainageRate,
+            retainageAmount: template.retainageAmount,
+            total: template.total,
+            amountPaid: 0,
+            notes: template.notes,
+            logoUrl: template.logoUrl,
+            billToAddress: template.billToAddress,
+            shipToAddress: template.shipToAddress,
+            recurringConfigId: configId,
+            createdById: user.id,
+            items: {
+              create: template.items.map((it) => ({
+                description: it.description,
+                quantity: it.quantity,
+                unitPrice: it.unitPrice,
+                amount: it.amount,
+                sortOrder: it.sortOrder,
+              })),
+            },
+          },
+        });
+        break;
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message.includes("Unique constraint failed") &&
+          attempt < 3
+        ) {
+          number = await getNextInvoiceNumber(db, orgId);
+          continue;
+        }
+        throw err;
+      }
+    }
 
     const frequency = config.frequency;
     const addFn = FREQUENCY_MAP[frequency] || (() => addMonths(new Date(), 1));
@@ -325,14 +341,14 @@ export async function generateNextInvoice(configId: string) {
     await db.recurringInvoiceConfig.update({
       where: { id: configId },
       data: {
-        lastInvoiceId: invoice.id,
+        lastInvoiceId: invoice!.id,
         nextRunDate,
       },
     });
 
     await db.invoiceAudit.create({
       data: {
-        invoiceId: invoice.id,
+        invoiceId: invoice!.id,
         orgId,
         action: "RECURRING_INVOICE_GENERATED",
         fromStatus: null,
@@ -391,8 +407,7 @@ export async function processRecurringInvoices() {
             continue;
           }
 
-          const count = await db.invoice.count({ where: { orgId: org.id } });
-          const number = `INV-${String(count + 1).padStart(4, "0")}`;
+          let number = await getNextInvoiceNumber(db, org.id);
 
           const issueDate = new Date();
           const today = new Date();
@@ -401,41 +416,57 @@ export async function processRecurringInvoices() {
             ? addDays(today, 7)
             : addMonths(today, 1);
 
-          const invoice = await db.invoice.create({
-            data: {
-              orgId: org.id,
-              number,
-              customerId: config.customerId,
-        projectId: (config as any).projectId ?? null,
-              type: "RECURRING",
-              status: "DRAFT",
-              issueDate,
-              dueDate,
-              currency: "USD",
-              subtotal: template.subtotal,
-              taxRate: template.taxRate,
-              taxAmount: template.taxAmount,
-              discount: template.discount,
-              retainageRate: template.retainageRate,
-              retainageAmount: template.retainageAmount,
-              total: template.total,
-              amountPaid: 0,
-              notes: template.notes,
-              logoUrl: template.logoUrl,
-              billToAddress: template.billToAddress,
-              shipToAddress: template.shipToAddress,
-              recurringConfigId: config.id,
-              items: {
-                create: template.items.map((it) => ({
-                  description: it.description,
-                  quantity: it.quantity,
-                  unitPrice: it.unitPrice,
-                  amount: it.amount,
-                  sortOrder: it.sortOrder,
-                })),
-              },
-            },
-          });
+          let invoice;
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              invoice = await db.invoice.create({
+                data: {
+                  orgId: org.id,
+                  number,
+                  customerId: config.customerId,
+                  projectId: (config as any).projectId ?? null,
+                  type: "RECURRING",
+                  status: "DRAFT",
+                  issueDate,
+                  dueDate,
+                  currency: "USD",
+                  subtotal: template.subtotal,
+                  taxRate: template.taxRate,
+                  taxAmount: template.taxAmount,
+                  discount: template.discount,
+                  retainageRate: template.retainageRate,
+                  retainageAmount: template.retainageAmount,
+                  total: template.total,
+                  amountPaid: 0,
+                  notes: template.notes,
+                  logoUrl: template.logoUrl,
+                  billToAddress: template.billToAddress,
+                  shipToAddress: template.shipToAddress,
+                  recurringConfigId: config.id,
+                  items: {
+                    create: template.items.map((it) => ({
+                      description: it.description,
+                      quantity: it.quantity,
+                      unitPrice: it.unitPrice,
+                      amount: it.amount,
+                      sortOrder: it.sortOrder,
+                    })),
+                  },
+                },
+              });
+              break;
+            } catch (err) {
+              if (
+                err instanceof Error &&
+                err.message.includes("Unique constraint failed") &&
+                attempt < 3
+              ) {
+                number = await getNextInvoiceNumber(db, org.id);
+                continue;
+              }
+              throw err;
+            }
+          }
 
           const addFn = FREQUENCY_MAP[config.frequency] || (() => addMonths(new Date(), 1));
           const nextRunDate = addFn(new Date(), 1);
@@ -443,12 +474,12 @@ export async function processRecurringInvoices() {
           await db.recurringInvoiceConfig.update({
             where: { id: config.id },
             data: {
-              lastInvoiceId: invoice.id,
+              lastInvoiceId: invoice!.id,
               nextRunDate,
             },
           });
 
-          results.push({ configId: config.id, invoiceId: invoice.id });
+          results.push({ configId: config.id, invoiceId: invoice!.id });
         } catch (err: any) {
           results.push({ configId: config.id, invoiceId: null, error: err.message });
         }

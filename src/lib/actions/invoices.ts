@@ -5,6 +5,7 @@ import { db, withRetry } from "@/lib/db";
 import { requireUser, isMissingColumnError, isInvalidEnumValueError } from "@/lib/org";
 import { INVOICE_LIMITS } from "@/lib/plans";
 import { withActionError, actionError } from "@/lib/action-errors";
+import { getNextInvoiceNumber } from "@/lib/numbering";
 import type { InvoiceType, PaymentMethod, PaymentStatus, InvoiceStatus } from "@prisma/client";
 
 export interface InvoiceItemInput {
@@ -98,10 +99,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
 
     let number = input.invoiceNumber;
     if (!number) {
-      const count = await withRetry(() =>
-        db.invoice.count({ where: { orgId } })
-      );
-      number = `INV-${String(count + 1).padStart(4, "0")}`;
+      number = await getNextInvoiceNumber(db, orgId);
     }
 
     let invoice;
@@ -148,10 +146,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
           err.message.includes("Unique constraint failed") &&
           attempt < 3
         ) {
-          const nextCount = await withRetry(() =>
-            db.invoice.count({ where: { orgId } })
-          );
-          number = `INV-${String(nextCount + attempt + 1).padStart(4, "0")}`;
+          number = await getNextInvoiceNumber(db, orgId);
           continue;
         }
         throw err;
