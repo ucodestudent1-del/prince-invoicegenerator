@@ -18,10 +18,11 @@ export async function POST(req: NextRequest) {
   }
 
   const form = await req.formData();
-  const file = form.get("file");
-  if (!(file instanceof File)) {
+  const rawFile = form.get("file");
+  if (!rawFile || typeof rawFile !== "object" || typeof (rawFile as any).name !== "string") {
     return NextResponse.json({ error: "No file" }, { status: 400 });
   }
+  const file = rawFile as any;
 
   if (!ALLOWED_TYPES.includes(file.type)) {
     return NextResponse.json(
