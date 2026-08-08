@@ -177,6 +177,9 @@ export function getPlan(id: SubscriptionPlan): PlanDefinition {
 }
 
 export function hasFeature(plan: SubscriptionPlan, feature: FeatureKey): boolean {
+  if (process.env.NEXT_PUBLIC_UNLOCK_ALL_FEATURES === "true") {
+    return true;
+  }
   const planDef = getPlan(plan);
   return planDef.features.includes(feature);
 }
