@@ -15,7 +15,6 @@ import {
   Mail,
 } from "lucide-react";
 import { InvoiceStatusManager } from "@/components/invoice-status-manager";
-import { PaymentForm } from "@/components/payment-form";
 import { PaymentHistory } from "@/components/payment-history";
 import { PaymentLinks } from "@/components/payment-links";
 import { AuditLog } from "@/components/audit-log";
@@ -235,11 +234,6 @@ export default async function InvoiceDetailPage({
           <InvoiceStatusManager
             invoiceId={invoice.id}
             currentStatus={invoice.status}
-          />
-          <PaymentForm
-            invoiceId={invoice.id}
-            remainingBalance={remainingBalance}
-            currency={invoice.currency}
           />
           <PaymentLinks
             invoiceId={invoice.id}
