@@ -2,8 +2,10 @@
 
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useTranslations } from "next-intl";
 
 export function UserMenu({ email, name }: { email?: string | null; name?: string | null }) {
+  const t = useTranslations("common");
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-muted-foreground">{email}</span>
@@ -14,7 +16,7 @@ export function UserMenu({ email, name }: { email?: string | null; name?: string
         onClick={() => signOut({ callbackUrl: "/login" })}
         className="text-sm text-muted-foreground hover:text-foreground"
       >
-        Sign out
+        {t("signOut")}
       </button>
     </div>
   );

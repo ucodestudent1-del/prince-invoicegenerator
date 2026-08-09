@@ -17,8 +17,10 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export function EstimateForm({ customers }: { customers: { id: string; name: string }[] }) {
+  const t = useTranslations("estimates");
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -40,7 +42,7 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!customerId) return setError("Select a customer.");
+    if (!customerId) return setError(t("customerRequired"));
     setSaving(true);
     try {
       await createEstimate({
@@ -60,7 +62,7 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
       router.push("/dashboard/estimates");
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Failed.");
+      setError(err?.message ?? t("failed"));
       setSaving(false);
     }
   }
@@ -74,25 +76,25 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
       )}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Details</CardTitle>
+          <CardTitle className="text-lg">{t("details")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
            <div className="space-y-1">
-             <Label htmlFor="customer">Customer</Label>
+             <Label htmlFor="customer">{t("customer")}</Label>
              {customers.length === 0 ? (
                <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                 No customers found.{" "}
+                 {t("noCustomersFound")}{" "}
                  <Link
                    href="/dashboard/customers/new"
                    className="text-primary underline"
                  >
-                   Create one first.
+                   {t("create")}.
                  </Link>
                </div>
              ) : (
                <Select value={customerId} onValueChange={setCustomerId}>
                  <SelectTrigger id="customer">
-                   <SelectValue placeholder="Select a customer…" />
+                   <SelectValue placeholder={t("selectCustomer")} />
                  </SelectTrigger>
                  <SelectContent>
                    {customers.map((c) => (
@@ -105,7 +107,7 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
              )}
            </div>
           <div className="space-y-1">
-            <Label>Valid until</Label>
+            <Label htmlFor="validUntil">{t("validUntil")}</Label>
             <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
           </div>
         </CardContent>
@@ -113,21 +115,21 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Line items</CardTitle>
+          <CardTitle className="text-lg">{t("lineItems")}</CardTitle>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setItems((p) => [...p, { description: "", quantity: 1, unitPrice: 0 }])}
           >
-            Add item
+            {t("addItem")}
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
           {items.map((it, idx) => (
             <div key={idx} className="flex gap-2">
               <Input
-                placeholder="Description"
+                placeholder={t("description")}
                 className="flex-1"
                 value={it.description}
                 onChange={(e) => updateItem(idx, "description", e.target.value)}
@@ -157,29 +159,29 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
           ))}
           <div className="grid gap-4 pt-2 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label>Tax rate %</Label>
+              <Label htmlFor="taxRate">{t("taxRate")}</Label>
               <Input type="number" value={taxRate} onChange={(e) => setTaxRate(e.target.value === "" ? "" : Number(e.target.value))} />
             </div>
             <div className="space-y-1">
-              <Label>Discount</Label>
+              <Label htmlFor="discount">{t("discount")}</Label>
               <Input type="number" step="0.01" value={discount} onChange={(e) => setDiscount(e.target.value === "" ? "" : Number(e.target.value))} />
             </div>
           </div>
-          <Textarea placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Textarea placeholder={t("notes")} value={notes} onChange={(e) => setNotes(e.target.value)} />
           <div className="flex justify-end gap-6 text-sm">
-            <div>Subtotal: <strong>{formatCurrency(subtotal)}</strong></div>
-            <div>Tax: <strong>{formatCurrency(taxAmount)}</strong></div>
-            <div>Total: <strong className="text-base">{formatCurrency(total)}</strong></div>
+            <div>{t("subtotal")}: <strong>{formatCurrency(subtotal)}</strong></div>
+            <div>{t("tax")}: <strong>{formatCurrency(taxAmount)}</strong></div>
+            <div>{t("total")}: <strong className="text-base">{formatCurrency(total)}</strong></div>
           </div>
         </CardContent>
       </Card>
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={() => router.back()}>
-          Cancel
+          {t("cancel")}
         </Button>
         <Button type="submit" disabled={saving}>
-          {saving ? "Saving…" : "Create estimate"}
+          {saving ? t("saving") : t("createEstimate")}
         </Button>
       </div>
     </form>

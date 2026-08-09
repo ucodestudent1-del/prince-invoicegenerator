@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 
 export function ProjectForm({ customers }: { customers: { id: string; name: string }[] }) {
+  const t = useTranslations("projects");
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -30,7 +32,7 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
       router.push("/dashboard/projects");
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Failed.");
+      setError(err?.message ?? t("failed"));
       setSaving(false);
     }
   }
@@ -38,7 +40,7 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
   return (
     <Card className="max-w-xl">
       <CardHeader>
-        <CardTitle className="text-lg">New project</CardTitle>
+        <CardTitle className="text-lg">{t("new")}</CardTitle>
       </CardHeader>
       <CardContent>
         {error && (
@@ -48,19 +50,19 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
         )}
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{t("name")}</Label>
             <Input id="name" name="name" required />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="customerId">Customer</Label>
+            <Label htmlFor="customerId">{t("customer")}</Label>
             {customers.length === 0 ? (
               <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                No customers found.{" "}
+                {t("noCustomersFound")}{" "}
                 <Link
                   href="/dashboard/customers/new"
                   className="text-primary underline"
                 >
-                  Create one first.
+                  {t("create")}.
                 </Link>
               </div>
             ) : (
@@ -69,7 +71,7 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
                 name="customerId"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
               >
-                <option value="">None</option>
+                <option value="">{t("none")}</option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -79,22 +81,22 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
             )}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="address">Address</Label>
+            <Label htmlFor="address">{t("address")}</Label>
             <Input id="address" name="address" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="startDate">Start date</Label>
+              <Label htmlFor="startDate">{t("startDate")}</Label>
               <Input id="startDate" name="startDate" type="date" />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="endDate">End date</Label>
+              <Label htmlFor="endDate">{t("endDate")}</Label>
               <Input id="endDate" name="endDate" type="date" />
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-            <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Create"}</Button>
+            <Button type="button" variant="outline" onClick={() => router.back()}>{t("cancel")}</Button>
+            <Button type="submit" disabled={saving}>{saving ? t("saving") : t("create")}</Button>
           </div>
         </form>
       </CardContent>

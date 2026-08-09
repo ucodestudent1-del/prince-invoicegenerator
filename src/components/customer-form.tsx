@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 
 export function CustomerForm() {
+  const t = useTranslations("customers");
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -31,7 +33,7 @@ export function CustomerForm() {
       router.push("/dashboard/customers");
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Failed to save.");
+      setError(err?.message ?? t("failedToSave"));
       setSaving(false);
     }
   }
@@ -39,7 +41,7 @@ export function CustomerForm() {
   return (
     <Card className="max-w-xl">
       <CardHeader>
-        <CardTitle className="text-lg">New customer</CardTitle>
+        <CardTitle className="text-lg">{t("new")}</CardTitle>
       </CardHeader>
       <CardContent>
         {error && (
@@ -50,36 +52,36 @@ export function CustomerForm() {
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">{t("name")} *</Label>
               <Input id="name" name="name" required />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="company">Company</Label>
+              <Label htmlFor="company">{t("company")}</Label>
               <Input id="company" name="company" />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("email")}</Label>
               <Input id="email" name="email" type="email" />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">{t("phone")}</Label>
               <Input id="phone" name="phone" />
             </div>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="address">Address</Label>
+            <Label htmlFor="address">{t("address")}</Label>
             <Input id="address" name="address" />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">{t("notes")}</Label>
             <Textarea id="notes" name="notes" />
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save customer"}
+              {saving ? t("saving") : t("save")}
             </Button>
           </div>
         </form>
