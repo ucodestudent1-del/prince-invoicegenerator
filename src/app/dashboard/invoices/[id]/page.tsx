@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { InvoiceStatusManager } from "@/components/invoice-status-manager";
 import { PaymentHistory } from "@/components/payment-history";
-import { PaymentLinks } from "@/components/payment-links";
 import { AuditLog } from "@/components/audit-log";
 import { logServerError } from "@/lib/errors";
 
@@ -234,10 +233,6 @@ export default async function InvoiceDetailPage({
           <InvoiceStatusManager
             invoiceId={invoice.id}
             currentStatus={invoice.status}
-          />
-          <PaymentLinks
-            invoiceId={invoice.id}
-            invoiceStatus={invoice.status}
           />
           {invoice.status !== "PAID" && (
             <form
