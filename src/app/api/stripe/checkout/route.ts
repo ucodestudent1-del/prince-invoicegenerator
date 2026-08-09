@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getPlan } from "@/lib/plans";
 import { rateLimit } from "@/lib/rate-limit";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,40 +25,51 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No organization" }, { status: 400 });
   }
 
-  const { plan } = await req.json();
-  const planDef = getPlan(plan);
-  const priceId = planDef.stripePriceId;
-  if (!priceId) {
-    return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
-  }
+  try {
+    const { plan } = await req.json();
+    const planDef = getPlan(plan);
+    const priceId = planDef.stripePriceId;
+    if (!priceId) {
+      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    }
 
-  const org = await db.organization.findUnique({
-    where: { id: user.organizationId },
-  });
-
-  let customerId = org?.stripeCustomerId;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email ?? undefined,
-      name: org?.name,
-      metadata: { orgId: org!.id },
+    const org = await db.organization.findUnique({
+      where: { id: user.organizationId },
     });
-    customerId = customer.id;
-    await db.organization.update({
-      where: { id: org!.id },
-      data: { stripeCustomerId: customerId },
+
+    if (!org) {
+      return NextResponse.json({ error: "Organization not found" }, { status: 400 });
+    }
+
+    let customerId = org.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email ?? undefined,
+        name: org.name,
+        metadata: { orgId: org.id },
+      });
+      customerId = customer.id;
+      await db.organization.update({
+        where: { id: org.id },
+        data: { stripeCustomerId: customerId },
+      });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=1`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+      subscription_data: { metadata: { orgId: org.id } },
+      metadata: { orgId: org.id },
     });
+
+    return NextResponse.json({ url: session.url });
+  } catch (err: any) {
+    logError("stripe-checkout", err);
+    const message = err?.message || "Checkout failed";
+    const status = err?.statusCode === 400 ? 400 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
-
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=1`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
-    subscription_data: { metadata: { orgId: org!.id } },
-    metadata: { orgId: org!.id },
-  });
-
-  return NextResponse.json({ url: session.url });
 }
