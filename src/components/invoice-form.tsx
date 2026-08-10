@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "@/i18n/navigation";
+import Image from "next/image";
 import { createInvoice } from "@/lib/actions/invoices";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -293,11 +294,7 @@ export function InvoiceForm({
               onChange={handleLogoChange}
             />
             {logoPreview && (
-              <img
-                src={logoPreview}
-                alt="Logo preview"
-                className="mt-2 h-16 object-contain"
-              />
+              <Image src={logoPreview} alt="Logo preview" width={64} height={64} className="mt-2 h-16 w-auto object-contain" />
             )}
           </div>
         </CardContent>

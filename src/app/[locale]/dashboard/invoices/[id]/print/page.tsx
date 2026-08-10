@@ -58,6 +58,7 @@ export default async function InvoicePrintPage({
       <div className="mb-8 flex items-start justify-between border-b pb-6">
         <div className="flex items-start gap-4">
           {invoice.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={invoice.logoUrl} alt="Invoice logo" className="h-16 w-auto object-contain" />
           )}
           <div>

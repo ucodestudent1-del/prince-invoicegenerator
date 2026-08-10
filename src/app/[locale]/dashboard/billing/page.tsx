@@ -5,7 +5,7 @@ import { logServerError } from "@/lib/errors";
 
 export default async function BillingPage() {
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const orgId = user.organizationId;
 
    let org;
