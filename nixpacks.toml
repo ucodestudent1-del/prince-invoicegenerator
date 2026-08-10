@@ -1,0 +1,5 @@
+[phases.setup]
+npm = "20.x"
+
+[phases.install]
+cmd = "npm ci"
