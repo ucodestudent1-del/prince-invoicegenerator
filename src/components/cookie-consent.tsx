@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 
 const COOKIE_CONSENT_KEY = "prince_cookie_consent";
@@ -38,9 +39,9 @@ export function CookieConsent() {
       <p className="text-sm text-muted-foreground">
         We use essential cookies for authentication and session management. We do not use tracking cookies.
         By continuing, you agree to our{" "}
-        <a href="/privacy" className="text-primary hover:underline">
+        <Link href="/privacy" className="text-primary hover:underline">
           Privacy Policy
-        </a>
+        </Link>
         .
       </p>
       <div className="mt-3 flex gap-2">

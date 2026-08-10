@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +30,8 @@ export function BillingPanel({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Billing</h1>
-        <Button asChild variant="outline" onClick={() => router.push("/pricing")}>
-          <span>Change plan</span>
+        <Button asChild variant="outline">
+          <Link href="/pricing">Change plan</Link>
         </Button>
       </div>
 

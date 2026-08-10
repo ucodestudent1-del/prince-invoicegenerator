@@ -1,6 +1,6 @@
 import { logServerError, validateEnv } from "@/lib/errors";
 import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
 import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { db, withRetry } from "@/lib/db";

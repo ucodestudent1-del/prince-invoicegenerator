@@ -3,9 +3,12 @@
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useTranslations } from "next-intl";
+import { usePathname } from "@/i18n/navigation";
 
 export function UserMenu({ email, name }: { email?: string | null; name?: string | null }) {
   const t = useTranslations("common");
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-muted-foreground">{email}</span>
@@ -13,7 +16,7 @@ export function UserMenu({ email, name }: { email?: string | null; name?: string
         <AvatarFallback>{(name ?? "U").slice(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
       <button
-        onClick={() => signOut({ callbackUrl: "/login" })}
+        onClick={() => signOut({ callbackUrl: `/${locale}/login` })}
         className="text-sm text-muted-foreground hover:text-foreground"
       >
         {t("signOut")}

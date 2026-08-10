@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import type { SubscriptionPlan } from "@prisma/client";
 
@@ -63,7 +63,7 @@ export function PricingCheckout({
   if (planId === "FREE") {
     return (
       <Button asChild className="w-full" variant="outline">
-        <a href="/login">Start for free</a>
+        <Link href="/login">Start for free</Link>
       </Button>
     );
   }
