@@ -234,7 +234,8 @@
     "customers": "Clients",
     "recentInvoices": "Factures récentes",
     "noInvoicesYet": "Aucune facture pour le moment. Créez votre première facture.",
-    "planBadge": "Plan {plan}"
+    "planBadge": "{plan} plan",
+    "create": "Créer"
   },
   "invoices": {
     "title": "Factures",
@@ -324,16 +325,14 @@
     "failed": "Échec."
   },
   "changeOrders": {
-    "title": "Ordres de modification",
+    "title": "Titre",
     "newChangeOrder": "Nouvel ordre de modification",
     "noChangeOrders": "Aucun ordre de modification pour le moment.",
     "number": "Numéro",
-    "title": "Titre",
     "project": "Projet",
     "status": "Statut",
     "amount": "Montant",
     "new": "Nouvel ordre de modification",
-    "enterProjectName": "Entrez le nom du projet",
     "enterProjectName": "Entrez le nom du projet",
     "linkedInvoice": "Facture liée",
     "description": "Description",

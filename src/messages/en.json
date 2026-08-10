@@ -234,7 +234,8 @@
     "customers": "Customers",
     "recentInvoices": "Recent invoices",
     "noInvoicesYet": "No invoices yet. Create your first invoice.",
-    "planBadge": "{plan} plan"
+    "planBadge": "{plan} plan",
+    "create": "Create"
   },
   "invoices": {
     "title": "Invoices",
@@ -324,16 +325,14 @@
     "failed": "Failed."
   },
   "changeOrders": {
-    "title": "Change Orders",
+    "title": "Title",
     "newChangeOrder": "New change order",
     "noChangeOrders": "No change orders yet.",
     "number": "Number",
-    "title": "Title",
     "project": "Project",
     "status": "Status",
     "amount": "Amount",
     "new": "New change order",
-    "enterProjectName": "Enter project name",
     "enterProjectName": "Enter project name",
     "linkedInvoice": "Linked invoice",
     "description": "Description",

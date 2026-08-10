@@ -234,7 +234,8 @@
     "customers": "Kunden",
     "recentInvoices": "Letzte Rechnungen",
     "noInvoicesYet": "Noch keine Rechnungen. Erstelle deine erste Rechnung.",
-    "planBadge": "{plan}-Plan"
+    "planBadge": "{plan}-Plan",
+    "create": "Erstellen"
   },
   "invoices": {
     "title": "Rechnungen",
@@ -324,16 +325,14 @@
     "failed": "Fehlgeschlagen."
   },
   "changeOrders": {
-    "title": "Änderungsaufträge",
+    "title": "Titel",
     "newChangeOrder": "Neuer Änderungsauftrag",
     "noChangeOrders": "Noch keine Änderungsaufträge.",
     "number": "Nummer",
-    "title": "Titel",
     "project": "Projekt",
     "status": "Status",
     "amount": "Betrag",
     "new": "Neuer Änderungsauftrag",
-    "enterProjectName": "Projektname eingeben",
     "enterProjectName": "Projektnamen eingeben",
     "linkedInvoice": "Verknüpfte Rechnung",
     "description": "Beschreibung",
