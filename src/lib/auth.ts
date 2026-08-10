@@ -5,6 +5,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 import { APP_NAME } from "@/lib/app-name";
 
+export { APP_NAME };
+
 const providers: NextAuthOptions["providers"] = [];
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -47,7 +49,6 @@ export const authOptions: NextAuthOptions = {
   theme: {
     brandColor: "#ea5804",
     colorScheme: "auto",
-    logo: "/logo.png",
   },
   callbacks: {
     async session({ session, user }) {

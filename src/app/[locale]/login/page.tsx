@@ -59,7 +59,7 @@ export default function LoginPage() {
             <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <HardHat className="h-5 w-5" />
             </span>
-             {APP_NAME}
+              {APP_NAME}
           </Link>
           <CardTitle>{t("signInTitle")}</CardTitle>
           <CardDescription>
