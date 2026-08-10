@@ -106,6 +106,10 @@
     "tooManyRequests": "Zu viele Anfragen. Bitte warte einen Moment und versuche es erneut.",
     "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung und versuche es erneut."
   },
+  "errors": {
+    "notFound": "Die gesuchte Seite existiert nicht.",
+    "goHome": "Zur Startseite"
+  },
   "auth": {
     "signInTitle": "Anmelden",
     "signInSubtitle": "Nutze deine E-Mail, um die Plattform zu erkunden (Entwicklungsmodus).",
@@ -118,6 +122,8 @@
     "devModeNote": "Entwicklungsmodus: Jede E-Mail/Passwort-Kombination funktioniert."
   },
   "navigation": {
+    "appName": "Prince",
+    "signIn": "Anmelden",
     "overview": "Übersicht",
     "invoices": "Rechnungen",
     "estimates": "Angebote",

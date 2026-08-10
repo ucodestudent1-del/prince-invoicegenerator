@@ -106,6 +106,10 @@
     "tooManyRequests": "Too many requests. Please wait a moment and try again.",
     "networkError": "Network error. Please check your connection and try again."
   },
+  "errors": {
+    "notFound": "The page you are looking for does not exist.",
+    "goHome": "Go Home"
+  },
   "auth": {
     "signInTitle": "Sign in",
     "signInSubtitle": "Use your email to explore the platform (dev mode).",
@@ -118,6 +122,8 @@
     "devModeNote": "Development mode: any email/password works."
   },
   "navigation": {
+    "appName": "Prince",
+    "signIn": "Sign In",
     "overview": "Overview",
     "invoices": "Invoices",
     "estimates": "Estimates",

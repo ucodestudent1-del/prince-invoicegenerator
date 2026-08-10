@@ -106,6 +106,10 @@
     "tooManyRequests": "Demasiadas solicitudes. Por favor, espera un momento e inténtalo de nuevo.",
     "networkError": "Error de red. Verifica tu conexión e inténtalo de nuevo."
   },
+  "errors": {
+    "notFound": "La página que buscas no existe.",
+    "goHome": "Ir a inicio"
+  },
   "auth": {
     "signInTitle": "Iniciar sesión",
     "signInSubtitle": "Usa tu correo electrónico para explorar la plataforma (modo dev).",
@@ -118,6 +122,8 @@
     "devModeNote": "Modo desarrollo: cualquier correo y contraseña funciona."
   },
   "navigation": {
+    "appName": "Prince",
+    "signIn": "Iniciar sesión",
     "overview": "Resumen",
     "invoices": "Facturas",
     "estimates": "Presupuestos",

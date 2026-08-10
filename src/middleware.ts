@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { locales, defaultLocale } from "@/i18n";
+import { locales, defaultLocale } from "@/i18n/request";
 
 const PUBLIC_FILE = /\.(?!css|tsx?|jsx?|json|txt|png|jpg|jpeg|gif|svg|ico|webp|woff2?|ttf|eot|map)$/;
 

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getRequestConfig } from "@/i18n";
 import { cookies } from "next/headers";
 import "./globals.css";
 import { ThemeClient } from "@/components/theme-client";
@@ -103,13 +102,12 @@ export default async function RootLayout({
   children: React.ReactNode;
   params: { locale: string };
 }) {
-  const { messages } = await getRequestConfig();
   const { theme, brandColor, fontFamily } = await getInitialTheme();
 
   return (
     <html lang={params.locale}>
       <body className="min-h-screen antialiased">
-        <NextIntlClientProvider locale={params.locale} messages={messages}>
+        <NextIntlClientProvider>
           <ThemeClient
             initialTheme={theme}
             brandColor={brandColor}

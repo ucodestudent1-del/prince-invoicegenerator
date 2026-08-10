@@ -1,14 +1,15 @@
 import { cookies, headers } from "next/headers";
+import { getRequestConfig } from "next-intl/server";
 
-const locales = ["en", "fr", "es", "de"];
-const defaultLocale = "en";
+export const locales = ["en", "fr", "es", "de"];
+export const defaultLocale = "en";
 
 async function getLocale() {
   const cookieStore = await cookies();
   const headerStore = await headers();
-  
+
   let locale = cookieStore.get("locale")?.value;
-  
+
   if (!locale || !locales.includes(locale as any)) {
     const acceptLanguage = headerStore.get("accept-language");
     if (acceptLanguage) {
@@ -18,7 +19,7 @@ async function getLocale() {
       }
     }
   }
-  
+
   if (!locale || !locales.includes(locale as any)) {
     locale = defaultLocale;
   }
@@ -26,14 +27,12 @@ async function getLocale() {
   return locale;
 }
 
-export async function getRequestConfig() {
+export default getRequestConfig(async () => {
   const locale = await getLocale();
-  const messages = (await import(`./messages/${locale}.json`)).default;
+  const messages = (await import(`../messages/${locale}.json`)).default;
 
   return {
     locale,
     messages,
   };
-}
-
-export { locales, defaultLocale };
+});
