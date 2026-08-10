@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { requireUser, getActivePlan } from "@/lib/org";
 import { db } from "@/lib/db";
 import { deleteCustomer } from "@/lib/actions/customers";

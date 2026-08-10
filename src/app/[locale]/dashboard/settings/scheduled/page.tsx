@@ -4,7 +4,7 @@ import { hasFeature } from "@/lib/plans";
 import { getCurrentUser, getActivePlan } from "@/lib/org";
 import { PricingFeature } from "@/components/pricing-feature";
 import { Plus } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "next-intl/server";

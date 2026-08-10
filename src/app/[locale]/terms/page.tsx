@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 
 export const metadata = {

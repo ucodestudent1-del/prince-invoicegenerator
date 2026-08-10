@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { requireUser, ensureOrganization, getCurrentOrg, getActivePlan } from "@/lib/org";
 import { hasFeature, type FeatureKey } from "@/lib/plans";

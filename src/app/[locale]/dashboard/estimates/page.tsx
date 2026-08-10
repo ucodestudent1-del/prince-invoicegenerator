@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { requireUser, requireFeature } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";

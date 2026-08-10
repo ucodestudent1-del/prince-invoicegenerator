@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { FEATURE_LABELS } from "@/lib/plans";
 import type { FeatureKey } from "@/lib/plans";
 import type { SubscriptionPlan } from "@prisma/client";
@@ -34,3 +34,4 @@ export function PricingFeature({ feature, plan }: {
     </Card>
   );
 }
+

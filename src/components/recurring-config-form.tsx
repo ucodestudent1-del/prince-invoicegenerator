@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { createRecurringConfig } from "@/lib/actions/recurring";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -265,3 +265,4 @@ export function RecurringConfigForm({
     </form>
   );
 }
+

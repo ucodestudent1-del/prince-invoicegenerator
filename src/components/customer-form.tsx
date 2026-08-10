@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { createCustomer } from "@/lib/actions/customers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
