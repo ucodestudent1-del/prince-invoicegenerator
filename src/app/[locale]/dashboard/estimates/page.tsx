@@ -28,7 +28,7 @@ const variant: Record<string, any> = {
 export default async function EstimatesPage({ params }: { params: { locale: string } }) {
   await requireFeature("estimates");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const orgId = user.organizationId;
   const t = await getTranslations("estimates");
 

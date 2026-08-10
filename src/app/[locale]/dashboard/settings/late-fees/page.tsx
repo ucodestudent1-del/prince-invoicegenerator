@@ -12,7 +12,7 @@ export default async function LateFeesPage({ params }: { params: { locale: strin
     logServerError("LateFeesPage", err);
     throw err;
   }
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
 
   return (
     <div className="space-y-6 max-w-3xl">

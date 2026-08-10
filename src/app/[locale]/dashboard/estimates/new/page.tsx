@@ -8,7 +8,7 @@ export default async function NewEstimatePage({ params }: { params: { locale: st
   const t = await getTranslations("estimates");
   await requireFeature("estimates");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   let customers;
   try {
     customers = await db.customer.findMany({

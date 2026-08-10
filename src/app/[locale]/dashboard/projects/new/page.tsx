@@ -8,7 +8,7 @@ export default async function NewProjectPage({ params }: { params: { locale: str
   const t = await getTranslations("projects");
   await requireFeature("projectManagement");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
 
   let customers;
   try {

@@ -27,7 +27,7 @@ export default async function InvoiceDetailPage({
   params: { id: string; locale: string };
 }) {
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const t = await getTranslations("invoices");
 
   let invoice;

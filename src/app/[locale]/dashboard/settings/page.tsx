@@ -37,7 +37,7 @@ interface Section {
 
 export default async function SettingsPage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const orgId = user.organizationId;
   const canManageData = user.role === "OWNER" || user.role === "ADMIN";
   const t = await getTranslations("settings");

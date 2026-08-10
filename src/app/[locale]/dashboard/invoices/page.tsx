@@ -29,7 +29,7 @@ const statusVariant: Record<string, any> = {
 
 export default async function InvoicesPage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const orgId = user.organizationId;
   const t = await getTranslations("invoices");
 

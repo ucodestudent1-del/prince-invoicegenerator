@@ -20,7 +20,7 @@ import { getTranslations } from "next-intl/server";
 export default async function SubcontractorsPage({ params }: { params: { locale: string } }) {
   await requireFeature("subcontractorTracking");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const t = await getTranslations("subcontractors");
 
   let subs;

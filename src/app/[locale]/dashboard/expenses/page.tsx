@@ -20,7 +20,7 @@ import { getTranslations } from "next-intl/server";
 export default async function ExpensesPage({ params }: { params: { locale: string } }) {
   await requireFeature("expenseTracking");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const t = await getTranslations("expenses");
   let expenses;
   try {

@@ -27,7 +27,7 @@ const variant: Record<string, any> = {
 export default async function ChangeOrdersPage({ params }: { params: { locale: string } }) {
   await requireFeature("changeOrders");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const t = await getTranslations("changeOrders");
   let cos;
   try {

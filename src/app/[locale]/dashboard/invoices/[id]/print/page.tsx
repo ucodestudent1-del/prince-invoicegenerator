@@ -16,7 +16,7 @@ export default async function InvoicePrintPage({
   params: { id: string };
 }) {
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const plan = await getActivePlan(user);
   const canPdfExport = hasFeature(plan, "pdfExport");
 

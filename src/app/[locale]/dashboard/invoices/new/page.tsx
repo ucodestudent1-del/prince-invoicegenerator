@@ -7,7 +7,7 @@ import { getTranslations } from "next-intl/server";
 
 export default async function NewInvoicePage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const orgId = user.organizationId;
   const plan = await getActivePlan(user);
   const t = await getTranslations("invoices");

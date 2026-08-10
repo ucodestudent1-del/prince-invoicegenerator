@@ -10,7 +10,7 @@ import { getTranslations } from "next-intl/server";
 
 export default async function DashboardPage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const orgId = user.organizationId;
   const t = await getTranslations("dashboard");
 

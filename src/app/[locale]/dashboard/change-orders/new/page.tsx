@@ -8,7 +8,7 @@ export default async function NewChangeOrderPage({ params }: { params: { locale:
   const t = await getTranslations("changeOrders");
   await requireFeature("changeOrders");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   let invoices;
   try {
     invoices = await db.invoice.findMany({ where: { orgId: user.organizationId }, orderBy: { number: "asc" } });

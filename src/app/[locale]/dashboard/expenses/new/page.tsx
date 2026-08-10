@@ -7,7 +7,7 @@ export default async function NewExpensePage({ params }: { params: { locale: str
   const t = await getTranslations("expenses");
   await requireFeature("expenseTracking");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const r2 = isR2Configured();
   return (
     <div className="space-y-6">

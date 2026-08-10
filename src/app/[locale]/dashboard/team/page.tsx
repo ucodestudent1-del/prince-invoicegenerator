@@ -17,7 +17,7 @@ import { getTranslations } from "next-intl/server";
 export default async function TeamPage({ params }: { params: { locale: string } }) {
   await requireFeature("multipleUsers");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const orgId = user.organizationId;
   const t = await getTranslations("team");
 

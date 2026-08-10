@@ -20,7 +20,7 @@ import { getTranslations } from "next-intl/server";
 export default async function ProjectsPage({ params }: { params: { locale: string } }) {
   await requireFeature("projectManagement");
   const user = await requireUser();
-  if (!user.organizationId) return null;
+  if (!user || !user.organizationId) return null;
   const orgId = user.organizationId;
   const t = await getTranslations("projects");
 

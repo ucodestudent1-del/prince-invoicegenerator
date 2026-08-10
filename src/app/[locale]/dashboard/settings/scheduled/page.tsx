@@ -40,13 +40,13 @@ export default async function ScheduledPage({ params }: { params: { locale: stri
 
 async function ScheduledContent({ locale, t }: { locale: string; t: any }) {
   const user = await getCurrentUser();
-  if (!user) return null;
+  if (!user || !user.organizationId) return null;
   const plan = await getActivePlan(user);
   if (!hasFeature(plan, "scheduledInvoices")) {
     return <PricingFeature feature="scheduledInvoices" plan={plan} />;
   }
 
-  const invoices = await getScheduledInvoices(user.organizationId!);
+  const invoices = await getScheduledInvoices(user.organizationId);
 
   if (invoices.length === 0) {
     return (
