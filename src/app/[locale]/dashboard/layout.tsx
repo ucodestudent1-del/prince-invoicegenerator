@@ -61,7 +61,6 @@ export default async function DashboardLayout({
   let plan;
   try {
     user = await requireUser();
-    if (!user) throw new Error("User not found");
     org = (await getCurrentOrg(user)) ?? (await ensureOrganization(user.id));
     plan = await getActivePlan(user);
   } catch (err) {

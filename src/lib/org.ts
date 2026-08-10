@@ -17,7 +17,7 @@ type AppUser = DefaultSession["user"] & {
   role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
 };
 
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<AppUser | null> {
   try {
     const session = await getServerSession(authOptions);
     return session?.user ?? null;
@@ -27,10 +27,11 @@ export async function getCurrentUser() {
   }
 }
 
-export async function requireUser() {
+export async function requireUser(): Promise<AppUser> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login?error=session");
+    throw new Error("Unreachable: redirect should have exited");
   }
   return user;
 }
