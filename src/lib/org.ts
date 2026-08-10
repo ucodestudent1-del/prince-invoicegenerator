@@ -30,7 +30,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
 export async function requireUser(): Promise<AppUser> {
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/login?error=session");
+    redirect({ href: "/login?error=session" });
     throw new Error("Unreachable: redirect should have exited");
   }
   return user;
@@ -195,9 +195,9 @@ export async function requireFeature(feature: FeatureKey) {
       })
     );
     const plan = org?.plan ?? "FREE";
-    if (!hasFeature(plan, feature)) redirect("/pricing?upgrade=1");
+    if (!hasFeature(plan, feature)) redirect({ href: "/pricing?upgrade=1" });
   } catch (err) {
     logServerError("requireFeature", err);
-    redirect("/login?error=session");
+    redirect({ href: "/login?error=session" });
   }
 }
