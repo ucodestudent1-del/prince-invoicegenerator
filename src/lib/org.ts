@@ -1,6 +1,6 @@
 import { logServerError, validateEnv } from "@/lib/errors";
 import { getServerSession } from "next-auth";
-import { redirect } from "@/i18n/navigation";
+import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { db, withRetry } from "@/lib/db";
@@ -30,7 +30,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
 export async function requireUser(): Promise<AppUser> {
   const user = await getCurrentUser();
   if (!user) {
-    redirect({ href: "/login?error=session" });
+    redirect("/login?error=session");
     throw new Error("Unreachable: redirect should have exited");
   }
   return user;
@@ -195,9 +195,9 @@ export async function requireFeature(feature: FeatureKey) {
       })
     );
     const plan = org?.plan ?? "FREE";
-    if (!hasFeature(plan, feature)) redirect({ href: "/pricing?upgrade=1" });
+    if (!hasFeature(plan, feature)) redirect("/pricing?upgrade=1");
   } catch (err) {
     logServerError("requireFeature", err);
-    redirect({ href: "/login?error=session" });
+    redirect("/login?error=session");
   }
 }
