@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useTranslations } from "next-intl";
+import { APP_NAME } from "@/lib/app-name";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
@@ -58,7 +59,7 @@ export default function LoginPage() {
             <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <HardHat className="h-5 w-5" />
             </span>
-            {t("appName")}
+             {APP_NAME}
           </Link>
           <CardTitle>{t("signInTitle")}</CardTitle>
           <CardDescription>

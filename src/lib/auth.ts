@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
+import { APP_NAME } from "@/lib/app-name";
 
 const providers: NextAuthOptions["providers"] = [];
 
@@ -40,7 +41,14 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   providers,
   session: { strategy: "database" },
-  pages: { signIn: "/login" },
+  pages: {
+    signIn: "/login",
+  },
+  theme: {
+    brandColor: "#ea5804",
+    colorScheme: "auto",
+    logo: "/logo.png",
+  },
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
@@ -52,7 +60,7 @@ export const authOptions: NextAuthOptions = {
         session.user.organizationId = dbUser?.organizationId ?? null;
         session.user.role = dbUser?.role ?? "OWNER";
       }
-      return session;
+      return { ...session, appName: APP_NAME };
     },
   },
 };
@@ -64,5 +72,9 @@ declare module "next-auth" {
       organizationId: string | null;
       role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
     } & DefaultSession["user"];
+  }
+
+  interface JWT {
+    appName?: string;
   }
 }

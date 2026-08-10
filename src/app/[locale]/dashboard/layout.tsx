@@ -24,6 +24,7 @@ import { UserMenu } from "@/components/user-menu";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggleForm } from "@/components/theme-toggle";
 import { getTranslations } from "next-intl/server";
+import { APP_NAME } from "@/lib/app-name";
 
 const nav = [
   { href: "/dashboard", label: "navigation.overview", icon: LayoutDashboard },
@@ -80,7 +81,7 @@ export default async function DashboardLayout({
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs">
             P
           </span>
-          {t("appName")}
+  {APP_NAME}
         </Link>
         <nav className="flex-1 space-y-1">
           {nav.map((item) => {

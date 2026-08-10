@@ -1,6 +1,7 @@
 import { Link } from "@/i18n/navigation";
 import { HardHat } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { APP_NAME } from "@/lib/app-name";
 
 export async function SiteHeader({ cta = true }: { cta?: boolean }) {
   const t = await getTranslations("navigation");
@@ -12,7 +13,7 @@ export async function SiteHeader({ cta = true }: { cta?: boolean }) {
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <HardHat className="h-5 w-5" />
           </span>
-          {t("appName")}
+          {APP_NAME}
         </Link>
         <nav className="hidden items-center gap-6 text-sm md:flex">
           <Link href="/#features" className="text-muted-foreground hover:text-foreground">
@@ -52,7 +53,7 @@ export async function SiteFooter() {
   return (
     <footer className="border-t py-8">
       <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
-        <p>© {new Date().getFullYear()} Prince Invoice Generator. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} {APP_NAME} Invoice Generator. All rights reserved.</p>
         <div className="flex gap-4">
           <Link href="/pricing" className="hover:text-foreground">
             {t("pricing")}
