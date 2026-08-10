@@ -43,9 +43,6 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   providers,
   session: { strategy: "database" },
-  pages: {
-    signIn: "/login",
-  },
   theme: {
     brandColor: "#ea5804",
     colorScheme: "auto",
