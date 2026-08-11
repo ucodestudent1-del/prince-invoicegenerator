@@ -3,3 +3,6 @@ npm = "20.x"
 
 [phases.install]
 cmd = "npm ci"
+
+[phases.build]
+cmd = "npm run build"
