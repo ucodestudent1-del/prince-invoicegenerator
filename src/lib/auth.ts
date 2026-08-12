@@ -43,7 +43,6 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   providers,
   session: { strategy: "database" },
-  trustHost: true,
   theme: {
     brandColor: "#ea5804",
     colorScheme: "auto",
