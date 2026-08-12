@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, usePathname, getPathname } from "@/i18n/navigation";
 import { createSubcontractor } from "@/lib/actions/features";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function SubcontractorForm() {
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
@@ -27,7 +29,7 @@ export function SubcontractorForm() {
         phone: String(fd.get("phone") || "") || undefined,
         rate: fd.get("rate") ? Number(fd.get("rate")) : undefined,
       });
-      router.push("/dashboard/subcontractors");
+      router.push(getPathname({ href: "/dashboard/subcontractors", locale }));
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? "Failed.");

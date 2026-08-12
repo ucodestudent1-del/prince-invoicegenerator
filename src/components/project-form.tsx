@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Link } from "@/i18n/navigation";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter, usePathname, getPathname } from "@/i18n/navigation";
 import { createProject } from "@/lib/actions/features";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,8 @@ import { useTranslations } from "next-intl";
 export function ProjectForm({ customers }: { customers: { id: string; name: string }[] }) {
   const t = useTranslations("projects");
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
@@ -29,7 +30,7 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
         startDate: String(fd.get("startDate") || "") || null,
         endDate: String(fd.get("endDate") || "") || null,
       });
-      router.push("/dashboard/projects");
+      router.push(getPathname({ href: "/dashboard/projects", locale }));
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? t("failed"));

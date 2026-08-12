@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, usePathname, getPathname } from "@/i18n/navigation";
 import { createCustomer } from "@/lib/actions/customers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { useTranslations } from "next-intl";
 export function CustomerForm() {
   const t = useTranslations("customers");
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
@@ -30,7 +32,7 @@ export function CustomerForm() {
         address: String(fd.get("address") || "") || undefined,
         notes: String(fd.get("notes") || "") || undefined,
       });
-      router.push("/dashboard/customers");
+      router.push(getPathname({ href: "/dashboard/customers", locale }));
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? t("failedToSave"));

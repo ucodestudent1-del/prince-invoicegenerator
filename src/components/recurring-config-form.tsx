@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link, useRouter, usePathname, getPathname } from "@/i18n/navigation";
 import { createRecurringConfig } from "@/lib/actions/recurring";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,9 @@ export function RecurringConfigForm({
   customers: { id: string; name: string }[];
   projects: { id: string; name: string }[];
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
   const [customerId, setCustomerId] = React.useState("");
   const [projectId, setProjectId] = React.useState("");
   const [frequency, setFrequency] = React.useState("MONTHLY");
@@ -37,7 +40,6 @@ export function RecurringConfigForm({
   ]);
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
-  const router = useRouter();
 
   function updateItem(idx: number, field: string, value: any) {
     setItems((prev) =>
@@ -70,7 +72,7 @@ export function RecurringConfigForm({
             unitPrice: Number(i.unitPrice) || 0,
           })),
       });
-      router.push("/dashboard/recurring");
+      router.push(getPathname({ href: "/dashboard/recurring", locale }));
     } catch (err: any) {
       setError(err?.message ?? "Failed to create recurring config.");
     } finally {
@@ -256,7 +258,7 @@ export function RecurringConfigForm({
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => router.push("/dashboard/recurring")}>
+        <Button type="button" variant="outline" onClick={() => router.push(getPathname({ href: "/dashboard/recurring", locale }))}>
           Cancel
         </Button>
         <Button type="submit" disabled={saving}>

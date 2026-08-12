@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, usePathname, getPathname } from "@/i18n/navigation";
 import { createChangeOrder } from "@/lib/actions/features";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,10 @@ export function ChangeOrderForm({
 }: {
   invoices: { id: string; number: string }[];
 }) {
-  const t = useTranslations("changeOrders");
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
+  const t = useTranslations("changeOrders");
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
@@ -33,7 +35,7 @@ export function ChangeOrderForm({
         invoiceId: String(fd.get("invoiceId") || "") || null,
         amount: Number(fd.get("amount") || 0),
       });
-      router.push("/dashboard/change-orders");
+      router.push(getPathname({ href: "/dashboard/change-orders", locale }));
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? t("failed"));

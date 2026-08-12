@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, usePathname, getPathname } from "@/i18n/navigation";
 import { createExpense } from "@/lib/actions/features";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,8 @@ export function ExpenseForm({
 }) {
   const t = useTranslations("expenses");
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -59,7 +61,7 @@ export function ExpenseForm({
         projectId: String(fd.get("projectId") || "") || null,
         photoId,
       });
-      router.push("/dashboard/expenses");
+      router.push(getPathname({ href: "/dashboard/expenses", locale }));
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? t("failed"));
