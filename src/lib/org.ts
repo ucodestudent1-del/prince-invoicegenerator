@@ -1,6 +1,8 @@
-import { logServerError, validateEnv } from "@/lib/errors";
+import { logServerError } from "@/lib/errors";
+import { ensureEnv } from "@/lib/env";
 import { getServerSession } from "next-auth";
 import { redirect } from "@/i18n/navigation";
+import { getLocale } from "next-intl/server";
 import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { db, withRetry } from "@/lib/db";
@@ -9,7 +11,10 @@ import { Prisma } from "@prisma/client";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
 import type { DefaultSession } from "next-auth";
 
-validateEnv();
+// validateEnv() is intentionally NOT called here.
+// Call ensureEnv() from server entry points (layout, API routes) instead.
+
+export { ensureEnv };
 
 type AppUser = DefaultSession["user"] & {
   id: string;
@@ -30,7 +35,8 @@ export async function getCurrentUser(): Promise<AppUser | null> {
 export async function requireUser(): Promise<AppUser> {
   const user = await getCurrentUser();
   if (!user) {
-    redirect({ href: "/login?error=session", locale: "en" });
+    const locale = await getLocale();
+    redirect({ href: "/login?error=session", locale });
     throw new Error("Unreachable: redirect should have exited");
   }
   return user;
@@ -195,9 +201,13 @@ export async function requireFeature(feature: FeatureKey) {
       })
     );
     const plan = org?.plan ?? "FREE";
-    if (!hasFeature(plan, feature)) redirect({ href: "/pricing?upgrade=1", locale: "en" });
+    if (!hasFeature(plan, feature)) {
+      const locale = await getLocale();
+      redirect({ href: "/pricing?upgrade=1", locale });
+    }
   } catch (err) {
     logServerError("requireFeature", err);
-    redirect({ href: "/login?error=session", locale: "en" });
+    const locale = await getLocale();
+    redirect({ href: "/login?error=session", locale });
   }
 }

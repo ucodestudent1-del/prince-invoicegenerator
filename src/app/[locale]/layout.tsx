@@ -8,7 +8,7 @@ import { Analytics } from "@/components/analytics";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { isMissingColumnError } from "@/lib/org";
+import { isMissingColumnError, ensureEnv } from "@/lib/org";
 
 export const metadata: Metadata = {
   title: {
@@ -102,6 +102,7 @@ export default async function RootLayout({
   children: React.ReactNode;
   params: { locale: string };
 }) {
+  ensureEnv();
   const { theme, brandColor, fontFamily } = await getInitialTheme();
 
   return (

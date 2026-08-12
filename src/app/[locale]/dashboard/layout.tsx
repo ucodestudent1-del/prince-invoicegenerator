@@ -1,6 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { requireUser, ensureOrganization, getCurrentOrg, getActivePlan } from "@/lib/org";
+import { requireUser, ensureOrganization, getCurrentOrg, getActivePlan, ensureEnv } from "@/lib/org";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
 import {
   LayoutDashboard,
@@ -60,6 +60,7 @@ export default async function DashboardLayout({
   let org;
   let plan;
   try {
+    ensureEnv();
     user = await requireUser();
     org = (await getCurrentOrg(user)) ?? (await ensureOrganization(user.id));
     plan = await getActivePlan(user);

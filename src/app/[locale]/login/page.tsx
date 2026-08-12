@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, usePathname } from "@/i18n/navigation";
+import { useRouter, usePathname, getPathname } from "@/i18n/navigation";
 import { signIn } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
 import { HardHat } from "lucide-react";
@@ -33,7 +33,7 @@ export default function LoginPage() {
         redirect: false,
       });
       if (res?.ok) {
-        router.push("/dashboard");
+        router.push(getPathname({ href: "/dashboard", locale }));
       } else {
         setError(res?.error || t("signInFailed"));
       }
