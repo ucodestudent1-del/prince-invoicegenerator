@@ -1,11 +1,10 @@
 "use server";
 
 import { addDays } from "date-fns";
-import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { db, withRetry } from "@/lib/db";
 import { requireUser, isInvalidEnumValueError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
+import { revalidateWithLocale } from "@/lib/revalidate";
 
 export interface LateFeeConfigInput {
   enabled: boolean;
@@ -17,7 +16,6 @@ export interface LateFeeConfigInput {
 
 export async function saveLateFeeConfig(input: LateFeeConfigInput) {
   return withActionError("saveLateFeeConfig", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -41,7 +39,7 @@ export async function saveLateFeeConfig(input: LateFeeConfigInput) {
       },
     });
 
-    revalidatePath(`/${locale}/dashboard/settings/late-fees`);
+    await revalidateWithLocale("/dashboard/settings/late-fees");
     return config;
   });
 }
@@ -61,7 +59,6 @@ export async function getLateFeeConfig() {
 
 export async function applyLateFees() {
   return withActionError("applyLateFees", async () => {
-    const locale = await getLocale();
     const now = new Date();
 
     const orgs = await db.organization.findMany({
@@ -136,8 +133,8 @@ export async function applyLateFees() {
       }
     }
 
-    revalidatePath(`/${locale}/dashboard/invoices`);
-    revalidatePath(`/${locale}/dashboard/reports`);
+    await revalidateWithLocale("/dashboard/invoices");
+    await revalidateWithLocale("/dashboard/reports");
     return results;
   });
 }

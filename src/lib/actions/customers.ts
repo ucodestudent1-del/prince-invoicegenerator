@@ -1,10 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
+import { revalidateWithLocale } from "@/lib/revalidate";
 
 export interface CustomerInput {
   name: string;
@@ -17,7 +16,6 @@ export interface CustomerInput {
 
 export async function createCustomer(input: CustomerInput) {
   return withActionError("createCustomer", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -26,17 +24,16 @@ export async function createCustomer(input: CustomerInput) {
     const customer = await db.customer.create({
       data: { orgId: user.organizationId, ...input },
     });
-    revalidatePath(`/${locale}/dashboard/customers`);
+    await revalidateWithLocale("/dashboard/customers");
     return customer;
   });
 }
 
 export async function deleteCustomer(id: string) {
   return withActionError("deleteCustomer", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     await db.customer.deleteMany({ where: { id, orgId: user.organizationId } });
-    revalidatePath(`/${locale}/dashboard/customers`);
+    await revalidateWithLocale("/dashboard/customers");
   });
 }

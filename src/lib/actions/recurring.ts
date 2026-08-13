@@ -1,12 +1,11 @@
 "use server";
 
 import { addMonths, addDays, addWeeks, addYears } from "date-fns";
-import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { db, withRetry } from "@/lib/db";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextInvoiceNumber } from "@/lib/numbering";
+import { revalidateWithLocale } from "@/lib/revalidate";
 import { InvoiceStatus } from "@prisma/client";
 
 export interface RecurringConfigInput {
@@ -33,9 +32,29 @@ const FREQUENCY_MAP: Record<string, (d: Date, n: number) => Date> = {
   ANNUAL: (d, n) => addYears(d, n),
 };
 
+async function validateTemplateInvoice(
+  config: { lastInvoiceId: string | null; orgId: string }
+) {
+  if (!config.lastInvoiceId) {
+    actionError("No template invoice linked to this recurring config. Link an invoice first.");
+  }
+
+  const template = await db.invoice.findFirst({
+    where: { id: config.lastInvoiceId!, orgId: config.orgId },
+    include: { items: true },
+  });
+
+  if (!template) {
+    actionError(
+      "Template invoice not found. It may have been deleted. Link a new invoice to this recurring config."
+    );
+  }
+
+  return template!;
+}
+
 export async function createRecurringConfig(input: RecurringConfigInput) {
   return withActionError("createRecurringConfig", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -98,7 +117,7 @@ export async function createRecurringConfig(input: RecurringConfigInput) {
       }
     }
 
-    revalidatePath(`/${locale}/dashboard/recurring`);
+    await revalidateWithLocale("/dashboard/recurring");
     return config;
   });
 }
@@ -163,7 +182,6 @@ export async function getRecurringConfigs() {
 
 export async function toggleRecurringConfig(id: string, active: boolean) {
   return withActionError("toggleRecurringConfig", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -172,7 +190,7 @@ export async function toggleRecurringConfig(id: string, active: boolean) {
       data: { active },
     });
 
-    revalidatePath(`/${locale}/dashboard/recurring`);
+    await revalidateWithLocale("/dashboard/recurring");
   });
 }
 
@@ -185,11 +203,12 @@ export async function getRecurringConfig(id: string) {
       return;
     }
     if (!user.organizationId) actionError("No organization");
+    const orgId = user.organizationId;
 
     let config;
     try {
       config = await db.recurringInvoiceConfig.findFirst({
-        where: { id, orgId: user.organizationId },
+        where: { id, orgId },
         include: {
           customer: true,
           project: { select: { name: true } },
@@ -198,7 +217,7 @@ export async function getRecurringConfig(id: string) {
     } catch (err) {
       if (isMissingColumnError(err)) {
         config = await db.recurringInvoiceConfig.findFirst({
-          where: { id, orgId: user.organizationId },
+          where: { id, orgId },
           select: {
             id: true,
             orgId: true,
@@ -222,7 +241,7 @@ export async function getRecurringConfig(id: string) {
     let lastInvoice = null;
     if (config.lastInvoiceId) {
       lastInvoice = await db.invoice.findFirst({
-        where: { id: config.lastInvoiceId, orgId: user.organizationId },
+        where: { id: config.lastInvoiceId, orgId },
         select: { id: true, number: true, status: true, total: true, issueDate: true },
       });
     }
@@ -233,7 +252,6 @@ export async function getRecurringConfig(id: string) {
 
 export async function generateNextInvoice(configId: string) {
   return withActionError("generateNextInvoice", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -267,16 +285,9 @@ export async function generateNextInvoice(configId: string) {
     }
     if (!config) actionError("Recurring config not found.");
 
-    const template = config.lastInvoiceId
-      ? await db.invoice.findFirst({
-          where: { id: config.lastInvoiceId, orgId },
-          include: { items: true },
-        })
-      : null;
+    const template = await validateTemplateInvoice(config);
 
-    if (!template) actionError("No template invoice found. Create an invoice linked to this recurring config first.");
-
-    let number = await getNextInvoiceNumber(db, orgId);
+    const number = await getNextInvoiceNumber(db, orgId);
 
     const issueDate = new Date();
     const today = new Date();
@@ -331,12 +342,50 @@ export async function generateNextInvoice(configId: string) {
           err.message.includes("Unique constraint failed") &&
           attempt < 3
         ) {
-          number = await getNextInvoiceNumber(db, orgId);
-          continue;
+          const newNumber = await getNextInvoiceNumber(db, orgId);
+          invoice = await db.invoice.create({
+            data: {
+              orgId,
+              number: newNumber,
+              customerId: config.customerId,
+              projectId: (config as any).projectId ?? null,
+              type: "RECURRING",
+              status: "DRAFT",
+              issueDate,
+              dueDate,
+              currency: "USD",
+              subtotal: template.subtotal,
+              taxRate: template.taxRate,
+              taxAmount: template.taxAmount,
+              discount: template.discount,
+              retainageRate: template.retainageRate,
+              retainageAmount: template.retainageAmount,
+              total: template.total,
+              amountPaid: 0,
+              notes: template.notes,
+              logoUrl: template.logoUrl,
+              billToAddress: template.billToAddress,
+              shipToAddress: template.shipToAddress,
+              recurringConfigId: configId,
+              createdById: user.id,
+              items: {
+                create: template.items.map((it) => ({
+                  description: it.description,
+                  quantity: it.quantity,
+                  unitPrice: it.unitPrice,
+                  amount: it.amount,
+                  sortOrder: it.sortOrder,
+                })),
+              },
+            },
+          });
+          break;
         }
         throw err;
       }
     }
+
+    if (!invoice) actionError("Failed to create invoice after 3 attempts.");
 
     const frequency = config.frequency;
     const addFn = FREQUENCY_MAP[frequency] || (() => addMonths(new Date(), 1));
@@ -345,14 +394,14 @@ export async function generateNextInvoice(configId: string) {
     await db.recurringInvoiceConfig.update({
       where: { id: configId },
       data: {
-        lastInvoiceId: invoice!.id,
+        lastInvoiceId: invoice.id,
         nextRunDate,
       },
     });
 
     await db.invoiceAudit.create({
       data: {
-        invoiceId: invoice!.id,
+        invoiceId: invoice.id,
         orgId,
         action: "RECURRING_INVOICE_GENERATED",
         fromStatus: null,
@@ -362,10 +411,9 @@ export async function generateNextInvoice(configId: string) {
       },
     });
 
-    revalidatePath(`/${locale}/dashboard/invoices`);
-    revalidatePath(`/${locale}/dashboard/invoices/[id]`);
-    revalidatePath(`/${locale}/dashboard/recurring`);
-    revalidatePath(`/${locale}/dashboard`);
+    await revalidateWithLocale("/dashboard/invoices");
+    await revalidateWithLocale("/dashboard/recurring");
+    await revalidateWithLocale("/dashboard");
     return invoice;
   });
 }
@@ -407,7 +455,7 @@ export async function processRecurringInvoices() {
             : null;
 
           if (!template) {
-            results.push({ configId: config.id, invoiceId: null, error: "No template invoice found." });
+            results.push({ configId: config.id, invoiceId: null, error: "No template invoice found or template was deleted." });
             continue;
           }
 
@@ -472,18 +520,23 @@ export async function processRecurringInvoices() {
             }
           }
 
+          if (!invoice) {
+            results.push({ configId: config.id, invoiceId: null, error: "Failed to create invoice after 3 attempts." });
+            continue;
+          }
+
           const addFn = FREQUENCY_MAP[config.frequency] || (() => addMonths(new Date(), 1));
           const nextRunDate = addFn(new Date(), 1);
 
           await db.recurringInvoiceConfig.update({
             where: { id: config.id },
             data: {
-              lastInvoiceId: invoice!.id,
+              lastInvoiceId: invoice.id,
               nextRunDate,
             },
           });
 
-          results.push({ configId: config.id, invoiceId: invoice!.id });
+          results.push({ configId: config.id, invoiceId: invoice.id });
         } catch (err: any) {
           results.push({ configId: config.id, invoiceId: null, error: err.message });
         }
@@ -496,7 +549,6 @@ export async function processRecurringInvoices() {
 
 export async function linkInvoiceToRecurring(invoiceId: string, configId: string) {
   return withActionError("linkInvoiceToRecurring", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -510,8 +562,7 @@ export async function linkInvoiceToRecurring(invoiceId: string, configId: string
       data: { lastInvoiceId: invoiceId },
     });
 
-    revalidatePath(`/${locale}/dashboard/invoices/[id]`);
-    revalidatePath(`/${locale}/dashboard/recurring`);
+    await revalidateWithLocale("/dashboard/recurring");
   });
 }
 
@@ -557,7 +608,6 @@ export async function processScheduledInvoices() {
 
 export async function scheduleInvoice(invoiceId: string, scheduledFor: string) {
   return withActionError("scheduleInvoice", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -568,6 +618,6 @@ export async function scheduleInvoice(invoiceId: string, scheduledFor: string) {
       },
     });
 
-    revalidatePath(`/${locale}/dashboard/invoices/[id]`);
+    await revalidateWithLocale("/dashboard/invoices");
   });
 }

@@ -1,15 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { db } from "@/lib/db";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
+import { revalidateWithLocale } from "@/lib/revalidate";
 import type { TemplateStyle } from "@prisma/client";
 
 export async function saveTemplateSettings(template: TemplateStyle) {
   return withActionError("saveTemplateSettings", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -18,8 +16,8 @@ export async function saveTemplateSettings(template: TemplateStyle) {
       data: { template },
     });
 
-    revalidatePath(`/${locale}/dashboard/settings/templates`);
-    revalidatePath(`/${locale}/dashboard/invoices`);
+    await revalidateWithLocale("/dashboard/settings/templates");
+    await revalidateWithLocale("/dashboard/invoices");
   });
 }
 
@@ -39,7 +37,6 @@ export async function getTemplateSettings() {
 
 export async function saveThemeSettings(theme: string) {
   return withActionError("saveThemeSettings", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -63,7 +60,7 @@ export async function saveThemeSettings(theme: string) {
       }
     }
 
-    revalidatePath(`/${locale}/dashboard`);
+    await revalidateWithLocale("/dashboard");
   });
 }
 
@@ -99,7 +96,6 @@ export async function saveBrandColors(input: {
   accentColor?: string | null;
 }) {
   return withActionError("saveBrandColors", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -111,8 +107,8 @@ export async function saveBrandColors(input: {
       },
     });
 
-    revalidatePath(`/${locale}/dashboard/settings/customization`);
-    revalidatePath(`/${locale}/dashboard/invoices`);
+    await revalidateWithLocale("/dashboard/settings/customization");
+    await revalidateWithLocale("/dashboard/invoices");
   });
 }
 
@@ -135,7 +131,6 @@ export async function getBrandColors() {
 
 export async function saveFontSettings(fontFamily: string) {
   return withActionError("saveFontSettings", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -144,7 +139,7 @@ export async function saveFontSettings(fontFamily: string) {
       data: { fontFamily: fontFamily || null },
     });
 
-    revalidatePath(`/${locale}/dashboard/settings/customization`);
+    await revalidateWithLocale("/dashboard/settings/customization");
   });
 }
 
@@ -164,7 +159,6 @@ export async function getFontSettings() {
 
 export async function saveLayoutSettings(layout: string) {
   return withActionError("saveLayoutSettings", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -173,7 +167,7 @@ export async function saveLayoutSettings(layout: string) {
       data: { layout },
     });
 
-    revalidatePath(`/${locale}/dashboard/invoices`);
+    await revalidateWithLocale("/dashboard/invoices");
   });
 }
 

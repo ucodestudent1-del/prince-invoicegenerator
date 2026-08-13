@@ -1,12 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { db, withRetry } from "@/lib/db";
 import { requireUser, isMissingColumnError, isInvalidEnumValueError } from "@/lib/org";
 import { INVOICE_LIMITS } from "@/lib/plans";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextInvoiceNumber } from "@/lib/numbering";
+import { revalidateWithLocale } from "@/lib/revalidate";
 import type { InvoiceType, PaymentMethod, PaymentStatus, InvoiceStatus } from "@prisma/client";
 
 export interface InvoiceItemInput {
@@ -36,7 +35,6 @@ export interface CreateInvoiceInput {
 
 export async function createInvoice(input: CreateInvoiceInput) {
   return withActionError("createInvoice", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -155,15 +153,14 @@ export async function createInvoice(input: CreateInvoiceInput) {
       }
     }
 
-    revalidatePath(`/${locale}/dashboard/invoices`);
-    revalidatePath(`/${locale}/dashboard`);
+    await revalidateWithLocale("/dashboard/invoices");
+    await revalidateWithLocale("/dashboard");
     return invoice;
   });
 }
 
 export async function markInvoiceStatus(id: string, status: InvoiceStatus) {
   return withActionError("markInvoiceStatus", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -212,8 +209,8 @@ export async function markInvoiceStatus(id: string, status: InvoiceStatus) {
       },
     });
 
-    revalidatePath(`/${locale}/dashboard/invoices`);
-    revalidatePath(`/${locale}/dashboard/invoices/${id}`);
+    await revalidateWithLocale("/dashboard/invoices");
+    await revalidateWithLocale(`/dashboard/invoices/${id}`);
   });
 }
 
@@ -230,7 +227,6 @@ export async function recordPayment(input: {
   paypalTransactionId?: string;
 }) {
   return withActionError("recordPayment", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -316,8 +312,8 @@ export async function recordPayment(input: {
       return payment;
     });
 
-    revalidatePath(`/${locale}/dashboard/invoices`);
-    revalidatePath(`/${locale}/dashboard/invoices/${input.invoiceId}`);
+    await revalidateWithLocale("/dashboard/invoices");
+    await revalidateWithLocale(`/dashboard/invoices/${input.invoiceId}`);
   });
 }
 
@@ -385,7 +381,6 @@ export async function saveReminderConfig(input: {
   emailTemplate?: string;
 }) {
   return withActionError("saveReminderConfig", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -413,14 +408,13 @@ export async function saveReminderConfig(input: {
       },
     });
 
-    revalidatePath(`/${locale}/dashboard/settings/reminders`);
+    await revalidateWithLocale("/dashboard/settings/reminders");
     return config;
   });
 }
 
 export async function sendReminder(invoiceId: string) {
   return withActionError("sendReminder", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -503,7 +497,7 @@ export async function sendReminder(invoiceId: string) {
       },
     });
 
-    revalidatePath(`/${locale}/dashboard/invoices/${invoiceId}`);
+    await revalidateWithLocale(`/dashboard/invoices/${invoiceId}`);
     return reminder;
   });
 }
@@ -540,11 +534,10 @@ function formatCurrency(amount: number, currency = "USD") {
 
 export async function deleteInvoice(id: string) {
   return withActionError("deleteInvoice", async () => {
-    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     await db.invoice.deleteMany({ where: { id, orgId: user.organizationId } });
-    revalidatePath(`/${locale}/dashboard/invoices`);
+    await revalidateWithLocale("/dashboard/invoices");
   });
 }
 
