@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Link } from "@/i18n/navigation";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter, getPathname } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
 import Image from "next/image";
 import { createInvoice } from "@/lib/actions/invoices";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ export function InvoiceForm({
   hasSavedAddresses: boolean;
 }) {
   const router = useRouter();
+  const locale = useLocale();
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [customerId, setCustomerId] = React.useState("");
@@ -147,7 +148,7 @@ export function InvoiceForm({
         if (!invoice) {
           throw new Error("Failed to create invoice.");
         }
-        router.push(`/dashboard/invoices/${invoice.id}`);
+        router.push(getPathname({ href: `/dashboard/invoices/${invoice.id}`, locale }));
     } catch (err: any) {
       setError(err?.message ?? "Failed to create invoice.");
       setSaving(false);
