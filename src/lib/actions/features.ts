@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
@@ -19,6 +20,7 @@ export async function createEstimate(input: {
   items: { description: string; quantity: number; unitPrice: number }[];
 }) {
   return withActionError("createEstimate", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -61,7 +63,7 @@ export async function createEstimate(input: {
         },
       },
     });
-    revalidatePath("/dashboard/estimates");
+    revalidatePath(`/${locale}/dashboard/estimates`);
     return estimate;
   });
 }
@@ -76,6 +78,7 @@ export async function createChangeOrder(input: {
   amount: number;
 }) {
   return withActionError("createChangeOrder", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -94,7 +97,7 @@ export async function createChangeOrder(input: {
         amount: input.amount,
       },
     });
-    revalidatePath("/dashboard/change-orders");
+    revalidatePath(`/${locale}/dashboard/change-orders`);
     return co;
   });
 }
@@ -109,6 +112,7 @@ export async function createProject(input: {
   endDate?: string | null;
 }) {
   return withActionError("createProject", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -124,7 +128,7 @@ export async function createProject(input: {
         endDate: input.endDate ? new Date(input.endDate) : null,
       },
     });
-    revalidatePath("/dashboard/projects");
+    revalidatePath(`/${locale}/dashboard/projects`);
     return project;
   });
 }
@@ -141,6 +145,7 @@ export async function createExpense(input: {
   photoId?: string | null;
 }) {
   return withActionError("createExpense", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const expense = await db.expense.create({
@@ -155,7 +160,7 @@ export async function createExpense(input: {
         photoId: input.photoId ?? null,
       },
     });
-    revalidatePath("/dashboard/expenses");
+    revalidatePath(`/${locale}/dashboard/expenses`);
     return expense;
   });
 }
@@ -171,6 +176,7 @@ export async function createSubcontractor(input: {
   rate?: number;
 }) {
   return withActionError("createSubcontractor", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -187,7 +193,7 @@ export async function createSubcontractor(input: {
         rate: input.rate,
       },
     });
-    revalidatePath("/dashboard/subcontractors");
+    revalidatePath(`/${locale}/dashboard/subcontractors`);
     return sub;
   });
 }

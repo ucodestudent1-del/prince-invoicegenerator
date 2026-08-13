@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
 import { db, withRetry } from "@/lib/db";
 import { requireUser } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
@@ -21,6 +22,7 @@ export interface AddressInput {
 
 export async function createAddress(input: AddressInput) {
   return withActionError("createAddress", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -48,7 +50,7 @@ export async function createAddress(input: AddressInput) {
       },
     });
 
-    revalidatePath("/dashboard/customers");
+    revalidatePath(`/${locale}/dashboard/customers`);
     return address;
   });
 }
@@ -93,6 +95,7 @@ export async function getDefaultAddress(customerId: string, type: AddressType) {
 
 export async function updateAddress(id: string, input: Partial<AddressInput>) {
   return withActionError("updateAddress", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -127,17 +130,18 @@ export async function updateAddress(id: string, input: Partial<AddressInput>) {
       },
     });
 
-    revalidatePath("/dashboard/customers");
+    revalidatePath(`/${locale}/dashboard/customers`);
     return updated;
   });
 }
 
 export async function deleteAddress(id: string) {
   return withActionError("deleteAddress", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
     await db.customerAddress.deleteMany({ where: { id, orgId: user.organizationId } });
-    revalidatePath("/dashboard/customers");
+    revalidatePath(`/${locale}/dashboard/customers`);
   });
 }

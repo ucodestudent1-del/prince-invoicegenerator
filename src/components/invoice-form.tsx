@@ -112,6 +112,7 @@ export function InvoiceForm({
       setError("Please select a customer.");
       return;
     }
+    if (saving) return;
     setSaving(true);
     try {
       let uploadedLogoUrl: string | null = null;
@@ -145,8 +146,8 @@ export function InvoiceForm({
               unitPrice: Number(i.unitPrice) || 0,
             })),
         });
-        if (!invoice) {
-          throw new Error("Failed to create invoice.");
+        if (!invoice?.id) {
+          throw new Error("Failed to create invoice. Please try again.");
         }
         router.push(getPathname({ href: `/dashboard/invoices/${invoice.id}`, locale }));
     } catch (err: any) {

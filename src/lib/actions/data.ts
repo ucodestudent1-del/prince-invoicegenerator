@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
@@ -16,7 +17,8 @@ async function requireOrgAdmin() {
   return { userId: user.id, orgId: user.organizationId };
 }
 
-function revalidateOrg() {
+async function revalidateOrg() {
+  const locale = await getLocale();
   const paths = [
     "/dashboard",
     "/dashboard/invoices",
@@ -29,7 +31,7 @@ function revalidateOrg() {
     "/dashboard/subcontractors",
     "/dashboard/settings",
   ];
-  for (const p of paths) revalidatePath(p);
+  for (const p of paths) revalidatePath(`/${locale}${p}`);
 }
 
 function pluckIds(rows: { id: string }[]) {
@@ -65,7 +67,7 @@ export async function removeAllInvoices(): Promise<ActionResult> {
       await tx.invoice.deleteMany({ where: { orgId } });
     });
 
-    revalidateOrg();
+    await revalidateOrg();
     return { count: invoiceIds.length };
   });
 }
@@ -89,7 +91,7 @@ export async function removeAllEstimates(): Promise<ActionResult> {
       await tx.estimate.deleteMany({ where: { orgId } });
     });
 
-    revalidateOrg();
+    await revalidateOrg();
     return { count: estimateIds.length };
   });
 }
@@ -98,7 +100,7 @@ export async function removeAllChangeOrders(): Promise<ActionResult> {
   return withActionError("removeAllChangeOrders", async () => {
     const { orgId } = await requireOrgAdmin();
     const res = await db.changeOrder.deleteMany({ where: { orgId } });
-    revalidateOrg();
+    await revalidateOrg();
     return { count: res.count };
   });
 }
@@ -107,7 +109,7 @@ export async function removeAllExpenses(): Promise<ActionResult> {
   return withActionError("removeAllExpenses", async () => {
     const { orgId } = await requireOrgAdmin();
     const res = await db.expense.deleteMany({ where: { orgId } });
-    revalidateOrg();
+    await revalidateOrg();
     return { count: res.count };
   });
 }
@@ -132,7 +134,7 @@ export async function removeAllProjects(): Promise<ActionResult> {
       await tx.project.deleteMany({ where: { orgId } });
     });
 
-    revalidateOrg();
+    await revalidateOrg();
     return { count: projectIds.length };
   });
 }
@@ -156,7 +158,7 @@ export async function removeAllSubcontractors(): Promise<ActionResult> {
       await tx.subcontractor.deleteMany({ where: { orgId } });
     });
 
-    revalidateOrg();
+    await revalidateOrg();
     return { count: subIds.length };
   });
 }
@@ -182,7 +184,7 @@ export async function removeAllCustomers(): Promise<ActionResult> {
       await tx.customer.deleteMany({ where: { orgId } });
     });
 
-    revalidateOrg();
+    await revalidateOrg();
     return { count: customerCount };
   });
 }
@@ -196,7 +198,7 @@ export async function removeAllTeamMembers(): Promise<ActionResult> {
       data: { organizationId: null },
     });
 
-    revalidateOrg();
+    await revalidateOrg();
     return { count: res.count };
   });
 }
@@ -239,7 +241,7 @@ export async function deleteOrganization(): Promise<ActionResult> {
       await tx.organization.delete({ where: { id: orgId } });
     });
 
-    revalidateOrg();
+    await revalidateOrg();
     return { count: 1 };
   });
 }

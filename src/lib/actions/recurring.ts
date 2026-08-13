@@ -2,6 +2,7 @@
 
 import { addMonths, addDays, addWeeks, addYears } from "date-fns";
 import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
 import { db, withRetry } from "@/lib/db";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
@@ -34,6 +35,7 @@ const FREQUENCY_MAP: Record<string, (d: Date, n: number) => Date> = {
 
 export async function createRecurringConfig(input: RecurringConfigInput) {
   return withActionError("createRecurringConfig", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -96,7 +98,7 @@ export async function createRecurringConfig(input: RecurringConfigInput) {
       }
     }
 
-    revalidatePath("/dashboard/recurring");
+    revalidatePath(`/${locale}/dashboard/recurring`);
     return config;
   });
 }
@@ -161,6 +163,7 @@ export async function getRecurringConfigs() {
 
 export async function toggleRecurringConfig(id: string, active: boolean) {
   return withActionError("toggleRecurringConfig", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -169,7 +172,7 @@ export async function toggleRecurringConfig(id: string, active: boolean) {
       data: { active },
     });
 
-    revalidatePath("/dashboard/recurring");
+    revalidatePath(`/${locale}/dashboard/recurring`);
   });
 }
 
@@ -230,6 +233,7 @@ export async function getRecurringConfig(id: string) {
 
 export async function generateNextInvoice(configId: string) {
   return withActionError("generateNextInvoice", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
     const orgId = user.organizationId;
@@ -358,10 +362,10 @@ export async function generateNextInvoice(configId: string) {
       },
     });
 
-    revalidatePath("/dashboard/invoices");
-    revalidatePath("/dashboard/invoices/[id]");
-    revalidatePath("/dashboard/recurring");
-    revalidatePath("/dashboard");
+    revalidatePath(`/${locale}/dashboard/invoices`);
+    revalidatePath(`/${locale}/dashboard/invoices/[id]`);
+    revalidatePath(`/${locale}/dashboard/recurring`);
+    revalidatePath(`/${locale}/dashboard`);
     return invoice;
   });
 }
@@ -492,6 +496,7 @@ export async function processRecurringInvoices() {
 
 export async function linkInvoiceToRecurring(invoiceId: string, configId: string) {
   return withActionError("linkInvoiceToRecurring", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -505,8 +510,8 @@ export async function linkInvoiceToRecurring(invoiceId: string, configId: string
       data: { lastInvoiceId: invoiceId },
     });
 
-    revalidatePath("/dashboard/invoices/[id]");
-    revalidatePath("/dashboard/recurring");
+    revalidatePath(`/${locale}/dashboard/invoices/[id]`);
+    revalidatePath(`/${locale}/dashboard/recurring`);
   });
 }
 
@@ -552,6 +557,7 @@ export async function processScheduledInvoices() {
 
 export async function scheduleInvoice(invoiceId: string, scheduledFor: string) {
   return withActionError("scheduleInvoice", async () => {
+    const locale = await getLocale();
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
@@ -562,6 +568,6 @@ export async function scheduleInvoice(invoiceId: string, scheduledFor: string) {
       },
     });
 
-    revalidatePath("/dashboard/invoices/[id]");
+    revalidatePath(`/${locale}/dashboard/invoices/[id]`);
   });
 }
