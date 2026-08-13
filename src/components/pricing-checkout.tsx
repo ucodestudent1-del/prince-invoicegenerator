@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, Link, getPathname } from "@/i18n/navigation";
-import { useLocale } from "next-intl";
+import { useRouter, Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import type { SubscriptionPlan } from "@prisma/client";
 
@@ -14,7 +13,6 @@ export function PricingCheckout({
   planName: string;
 }) {
   const router = useRouter();
-  const locale = useLocale();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -31,7 +29,7 @@ export function PricingCheckout({
       if (res.status === 401 || res.status === 400) {
         const data = await res.json().catch(() => ({}));
         if (res.status === 401) {
-          router.push(getPathname({ href: "/login", locale }));
+          router.push("/login");
           return;
         }
         setError(data.error || "Checkout failed. Please try again.");

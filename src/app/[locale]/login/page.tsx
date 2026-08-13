@@ -33,7 +33,7 @@ export default function LoginPage() {
         redirect: false,
       });
       if (res?.ok) {
-        router.push(getPathname({ href: "/dashboard", locale }));
+          router.push("/dashboard");
       } else {
         setError(res?.error || t("signInFailed"));
       }
