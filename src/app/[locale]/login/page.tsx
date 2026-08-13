@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, usePathname, getPathname } from "@/i18n/navigation";
+import { useRouter, getPathname } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
 import { signIn } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
 import { HardHat } from "lucide-react";
@@ -15,8 +16,7 @@ import { APP_NAME } from "@/lib/app-name";
 export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
-  const pathname = usePathname();
-  const locale = pathname.split("/")[1] || "en";
+  const locale = useLocale();
   const [email, setEmail] = React.useState("");
   const [name, setName] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -47,7 +47,7 @@ export default function LoginPage() {
   async function googleLogin() {
     setError(null);
     try {
-      await signIn("google", { callbackUrl: `/${locale}/dashboard` });
+      await signIn("google", { callbackUrl: getPathname({ href: "/dashboard", locale }) });
     } catch (err: any) {
       setError(err?.message || t("googleSignInFailed"));
     }

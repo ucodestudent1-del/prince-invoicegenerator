@@ -6,6 +6,11 @@ let validated = false;
 
 export function ensureEnv() {
   if (validated) return;
-  validateEnv();
-  validated = true;
+  try {
+    validateEnv();
+  } catch (err: any) {
+    console.error("[env] Environment validation failed:", err.message);
+  } finally {
+    validated = true;
+  }
 }

@@ -61,7 +61,7 @@ export async function GET(
     }
     const params = await context.params;
     const authHandler = getHandler();
-    return authHandler(request, { ...context, params });
+    return authHandler(request, { params });
   } catch (err) {
     console.error("Auth GET error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -82,7 +82,7 @@ export async function POST(
     }
     const params = await context.params;
     const authHandler = getHandler();
-    return authHandler(request, { ...context, params });
+    return authHandler(request, { params });
   } catch (err) {
     console.error("Auth POST error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
