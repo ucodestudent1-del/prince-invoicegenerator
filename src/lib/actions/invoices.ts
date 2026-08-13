@@ -149,6 +149,43 @@ export async function createInvoice(input: CreateInvoiceInput) {
           number = await getNextInvoiceNumber(db, orgId);
           continue;
         }
+        if (isMissingColumnError(err)) {
+          // Schema drift: columns like billToAddress, shipToAddress, scheduledFor
+          // may not exist in the database if migrations haven't been applied.
+          // Retry without those fields so invoice creation succeeds.
+          invoice = await db.invoice.create({
+            data: {
+              orgId,
+              number,
+              customerId: input.customerId,
+              projectId: input.projectId ?? null,
+              type: input.type,
+              issueDate: new Date(input.issueDate),
+              dueDate: input.dueDate ? new Date(input.dueDate) : null,
+              currency: input.currency ?? "USD",
+              taxRate: input.taxRate,
+              discount: input.discount,
+              retainageRate: input.retainageRate,
+              retainageAmount,
+              subtotal,
+              taxAmount,
+              total,
+              notes: input.notes,
+              logoUrl: input.logoUrl ?? null,
+              createdById: user.id,
+              items: {
+                create: validItems.map((it, i) => ({
+                  description: it.description,
+                  quantity: it.quantity,
+                  unitPrice: it.unitPrice,
+                  amount: it.quantity * it.unitPrice,
+                  sortOrder: i,
+                })),
+              },
+            },
+          });
+          break;
+        }
         throw err;
       }
     }

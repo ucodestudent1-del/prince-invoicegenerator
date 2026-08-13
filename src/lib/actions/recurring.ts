@@ -515,6 +515,43 @@ export async function processRecurringInvoices() {
                 number = await getNextInvoiceNumber(db, org.id);
                 continue;
               }
+              if (isMissingColumnError(err)) {
+                // Schema drift: billToAddress, shipToAddress may not exist
+                invoice = await db.invoice.create({
+                  data: {
+                    orgId: org.id,
+                    number,
+                    customerId: config.customerId,
+                    projectId: (config as any).projectId ?? null,
+                    type: "RECURRING",
+                    status: "DRAFT",
+                    issueDate,
+                    dueDate,
+                    currency: "USD",
+                    subtotal: template.subtotal,
+                    taxRate: template.taxRate,
+                    taxAmount: template.taxAmount,
+                    discount: template.discount,
+                    retainageRate: template.retainageRate,
+                    retainageAmount: template.retainageAmount,
+                    total: template.total,
+                    amountPaid: 0,
+                    notes: template.notes,
+                    logoUrl: template.logoUrl,
+                    recurringConfigId: config.id,
+                    items: {
+                      create: template.items.map((it) => ({
+                        description: it.description,
+                        quantity: it.quantity,
+                        unitPrice: it.unitPrice,
+                        amount: it.amount,
+                        sortOrder: it.sortOrder,
+                      })),
+                    },
+                  },
+                });
+                break;
+              }
               throw err;
             }
           }

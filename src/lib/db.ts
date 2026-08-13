@@ -15,7 +15,7 @@ export const db =
             db: {
               url: process.env.DATABASE_URL.includes("pgbouncer=true")
                 ? process.env.DATABASE_URL
-                : `${process.env.DATABASE_URL}${process.env.DATABASE_URL.includes("?") ? "&" : "?"}pgbouncer=true`,
+                : `${process.env.DATABASE_URL}${process.env.DATABASE_URL.includes("?") ? "&" : "?"}pgbouncer=true&connection_limit=5`,
             },
           },
         }

@@ -44,7 +44,7 @@ export async function GET() {
 
   return NextResponse.json(
     {
-      ok: allOk,
+      ok: finalOk,
       checks,
       timestamp: new Date().toISOString(),
     },
