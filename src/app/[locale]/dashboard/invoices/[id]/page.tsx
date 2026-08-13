@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import Image from "next/image";
 import { requireUser } from "@/lib/org";
 import { db } from "@/lib/db";
@@ -45,7 +45,7 @@ export default async function InvoiceDetailPage({
     logServerError("InvoiceDetailPage", err);
     throw err;
   }
-  if (!invoice) notFound();
+  if (!invoice) redirect(`/${params.locale}/dashboard/invoices`);
   if (!invoice.customer) {
     logServerError("InvoiceDetailPage", new Error(`Invoice ${invoice.id} has no customer relation`));
   }

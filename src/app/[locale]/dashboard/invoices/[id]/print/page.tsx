@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { requireUser, getActivePlan } from "@/lib/org";
 import { hasFeature } from "@/lib/plans";
 import { db } from "@/lib/db";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function InvoicePrintPage({
   params,
 }: {
-  params: { id: string };
+  params: { id: string; locale: string };
 }) {
   const user = await requireUser();
   if (!user || !user.organizationId) return null;
@@ -43,7 +43,7 @@ export default async function InvoicePrintPage({
     logServerError("InvoicePrintPage", err);
     throw err;
   }
-  if (!invoice) notFound();
+  if (!invoice) redirect(`/${params.locale}/dashboard/invoices`);
 
   const templateClass = `template-${org?.template?.toLowerCase?.() ?? "standard"}`;
   const layoutClass = `layout-${org?.layout ?? "default"}`;

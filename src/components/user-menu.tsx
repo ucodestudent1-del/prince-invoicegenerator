@@ -3,12 +3,11 @@
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useTranslations } from "next-intl";
-import { usePathname } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
 
 export function UserMenu({ email, name }: { email?: string | null; name?: string | null }) {
   const t = useTranslations("common");
-  const pathname = usePathname();
-  const locale = pathname.split("/")[1] || "en";
+  const locale = useLocale();
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-muted-foreground">{email}</span>

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, usePathname, getPathname } from "@/i18n/navigation";
+import { useRouter, getPathname } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
 import { createExpense } from "@/lib/actions/features";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +27,7 @@ export function ExpenseForm({
 }) {
   const t = useTranslations("expenses");
   const router = useRouter();
-  const pathname = usePathname();
-  const locale = pathname.split("/")[1] || "en";
+  const locale = useLocale();
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
