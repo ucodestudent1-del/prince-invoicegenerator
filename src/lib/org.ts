@@ -2,7 +2,7 @@ import { logServerError } from "@/lib/errors";
 import { ensureEnv } from "@/lib/env";
 import { getServerSession } from "next-auth";
 import { redirect } from "@/i18n/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocaleSafe } from "@/lib/locale";
 import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { db, withRetry } from "@/lib/db";
@@ -35,7 +35,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
 export async function requireUser(): Promise<AppUser> {
   const user = await getCurrentUser();
   if (!user) {
-    const locale = await getLocale();
+    const locale = await getLocaleSafe();
     redirect({ href: "/login?error=session", locale });
     throw new Error("Unreachable: redirect should have exited");
   }
@@ -202,12 +202,12 @@ export async function requireFeature(feature: FeatureKey) {
     );
     const plan = org?.plan ?? "FREE";
     if (!hasFeature(plan, feature)) {
-      const locale = await getLocale();
+      const locale = await getLocaleSafe();
       redirect({ href: "/pricing?upgrade=1", locale });
     }
   } catch (err) {
     logServerError("requireFeature", err);
-    const locale = await getLocale();
+    const locale = await getLocaleSafe();
     redirect({ href: "/login?error=session", locale });
   }
 }

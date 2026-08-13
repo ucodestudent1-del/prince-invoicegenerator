@@ -23,7 +23,8 @@ import { logServerError } from "@/lib/errors";
 import { UserMenu } from "@/components/user-menu";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggleForm } from "@/components/theme-toggle";
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
+import { getLocaleSafe } from "@/lib/locale";
 import { APP_NAME } from "@/lib/app-name";
 
 const nav = [
@@ -70,7 +71,7 @@ export default async function DashboardLayout({
   }
 
   if (!org) {
-    const locale = await getLocale();
+    const locale = await getLocaleSafe();
     redirect({ href: "/pricing?error=no-org", locale });
     return null;
   }

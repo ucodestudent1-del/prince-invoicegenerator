@@ -1,10 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
+import { revalidateWithLocale } from "@/lib/revalidate";
 
 type ActionResult = { count: number };
 
@@ -18,7 +17,6 @@ async function requireOrgAdmin() {
 }
 
 async function revalidateOrg() {
-  const locale = await getLocale();
   const paths = [
     "/dashboard",
     "/dashboard/invoices",
@@ -31,7 +29,7 @@ async function revalidateOrg() {
     "/dashboard/subcontractors",
     "/dashboard/settings",
   ];
-  for (const p of paths) revalidatePath(`/${locale}${p}`);
+  for (const p of paths) await revalidateWithLocale(p);
 }
 
 function pluckIds(rows: { id: string }[]) {
