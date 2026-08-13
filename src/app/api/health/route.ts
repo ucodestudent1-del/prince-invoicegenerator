@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkDatabase } from "@/lib/errors";
+import { db } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,12 +23,31 @@ export async function GET() {
 
   const allOk = Object.values(checks).every((c) => c.ok);
 
+  if (allOk) {
+    // Verify schema integrity — detect missing columns that would cause
+    // invoice creation to fail with column-not-found errors.
+    try {
+      await db.$queryRaw`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'Invoice'
+          AND column_name IN ('billToAddress', 'shipToAddress', 'scheduledFor', 'lateFeeAmount')
+      `;
+      checks.schema = { ok: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      checks.schema = { ok: false, error: message };
+    }
+  }
+
+  const finalOk = Object.values(checks).every((c) => c.ok);
+
   return NextResponse.json(
     {
       ok: allOk,
       checks,
       timestamp: new Date().toISOString(),
     },
-    { status: allOk ? 200 : 503 }
+    { status: finalOk ? 200 : 503 }
   );
 }

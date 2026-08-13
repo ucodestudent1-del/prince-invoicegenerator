@@ -1,5 +1,4 @@
-import { Link } from "@/i18n/navigation";
-import { redirect } from "next/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import Image from "next/image";
 import { requireUser } from "@/lib/org";
 import { db } from "@/lib/db";
@@ -45,7 +44,11 @@ export default async function InvoiceDetailPage({
     logServerError("InvoiceDetailPage", err);
     throw err;
   }
-  if (!invoice) redirect(`/${params.locale}/dashboard/invoices`);
+  if (!invoice) {
+    redirect({ href: "/dashboard/invoices", locale: params.locale });
+    // redirect() throws in the framework, but TypeScript doesn't know that for i18n redirect
+    throw new Error("Unreachable: redirect should have exited");
+  }
   if (!invoice.customer) {
     logServerError("InvoiceDetailPage", new Error(`Invoice ${invoice.id} has no customer relation`));
   }

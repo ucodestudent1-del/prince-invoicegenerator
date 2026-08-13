@@ -9,6 +9,17 @@ export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    ...(process.env.NODE_ENV === "production" && process.env.DATABASE_URL
+      ? {
+          datasources: {
+            db: {
+              url: process.env.DATABASE_URL.includes("pgbouncer=true")
+                ? process.env.DATABASE_URL
+                : `${process.env.DATABASE_URL}${process.env.DATABASE_URL.includes("?") ? "&" : "?"}pgbouncer=true`,
+            },
+          },
+        }
+      : {}),
   });
 
 globalForPrisma.prisma = db;

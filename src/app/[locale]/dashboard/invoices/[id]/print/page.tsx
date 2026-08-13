@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
 import { requireUser, getActivePlan } from "@/lib/org";
 import { hasFeature } from "@/lib/plans";
 import { db } from "@/lib/db";
@@ -43,7 +43,10 @@ export default async function InvoicePrintPage({
     logServerError("InvoicePrintPage", err);
     throw err;
   }
-  if (!invoice) redirect(`/${params.locale}/dashboard/invoices`);
+  if (!invoice) {
+    redirect({ href: "/dashboard/invoices", locale: params.locale });
+    throw new Error("Unreachable: redirect should have exited");
+  }
 
   const templateClass = `template-${org?.template?.toLowerCase?.() ?? "standard"}`;
   const layoutClass = `layout-${org?.layout ?? "default"}`;

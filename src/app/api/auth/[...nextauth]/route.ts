@@ -3,6 +3,10 @@ import { authOptions } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 
+// Ensure host header is trusted in production behind a proxy (Railway, Vercel, etc.)
+// This prevents NextAuth from generating callback URLs with internal hostnames.
+const trustProxy = process.env.AUTH_TRUST_HOST === "true";
+
 let handler: ReturnType<typeof NextAuth> | null = null;
 
 function getHandler() {
@@ -38,6 +42,12 @@ function preflightCheck(): NextResponse | null {
             "Set it to the fully qualified public origin.",
         },
         { status: 500 }
+      );
+    }
+    if (!trustProxy) {
+      console.warn(
+        "[auth] AUTH_TRUST_HOST is not set to 'true' in production. " +
+        "Behind a proxy, this may cause incorrect callback URLs and session cookie domain issues."
       );
     }
   }

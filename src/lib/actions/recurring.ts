@@ -6,7 +6,6 @@ import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextInvoiceNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
-import { InvoiceStatus } from "@prisma/client";
 
 export interface RecurringConfigInput {
   customerId: string;
