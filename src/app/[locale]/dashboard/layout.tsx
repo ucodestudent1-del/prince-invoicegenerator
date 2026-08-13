@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
 import { requireUser, ensureOrganization, getCurrentOrg, getActivePlan, ensureEnv } from "@/lib/org";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
 import {
@@ -23,7 +23,7 @@ import { logServerError } from "@/lib/errors";
 import { UserMenu } from "@/components/user-menu";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggleForm } from "@/components/theme-toggle";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { APP_NAME } from "@/lib/app-name";
 
 const nav = [
@@ -70,7 +70,9 @@ export default async function DashboardLayout({
   }
 
   if (!org) {
-    notFound();
+    const locale = await getLocale();
+    redirect({ href: "/pricing?error=no-org", locale });
+    return null;
   }
 
   const t = await getTranslations("navigation");

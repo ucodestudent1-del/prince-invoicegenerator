@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Link, useRouter, usePathname, getPathname } from "@/i18n/navigation";
+import { Link, useRouter, getPathname } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
 import { createRecurringConfig } from "@/lib/actions/recurring";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,8 +25,7 @@ export function RecurringConfigForm({
   projects: { id: string; name: string }[];
 }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const locale = pathname.split("/")[1] || "en";
+  const locale = useLocale();
   const [customerId, setCustomerId] = React.useState("");
   const [projectId, setProjectId] = React.useState("");
   const [frequency, setFrequency] = React.useState("MONTHLY");
