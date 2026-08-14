@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
+import { LocaleRedirectGuard } from "@/components/locale-redirect-guard";
 import { setRequestLocale } from "next-intl/server";
 import { cookies } from "next/headers";
 import "./globals.css";
@@ -111,6 +112,7 @@ export default async function RootLayout({
     <html lang={params.locale}>
       <body className="min-h-screen antialiased">
         <NextIntlClientProvider locale={params.locale}>
+          <LocaleRedirectGuard />
           <ThemeClient
             initialTheme={theme}
             brandColor={brandColor}
