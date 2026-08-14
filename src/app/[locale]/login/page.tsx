@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, getPathnameWithLocale } from "@/i18n/navigation";
-import { useLocale } from "next-intl";
+import { useLocaleSafe } from "@/hooks/use-locale-safe";
 import { signIn } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
 import { HardHat } from "lucide-react";
@@ -16,7 +16,7 @@ import { APP_NAME } from "@/lib/app-name";
 export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
-  const locale = useLocale();
+  const locale = useLocaleSafe();
   const [email, setEmail] = React.useState("");
   const [name, setName] = React.useState("");
   const [loading, setLoading] = React.useState(false);
