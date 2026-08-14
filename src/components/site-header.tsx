@@ -2,6 +2,7 @@ import { Link } from "@/i18n/navigation";
 import { HardHat } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { APP_NAME } from "@/lib/app-name";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export async function SiteHeader({ cta = true }: { cta?: boolean }) {
   const t = await getTranslations("navigation");
@@ -27,6 +28,7 @@ export async function SiteHeader({ cta = true }: { cta?: boolean }) {
           </Link>
         </nav>
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           <Link
             href="/login"
             className="text-sm font-medium text-muted-foreground hover:text-foreground"

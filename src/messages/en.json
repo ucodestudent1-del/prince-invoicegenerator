@@ -301,7 +301,27 @@
       "brandName": "Prince",
       "brandTagline": "Construction Invoicing",
       "poweredBy": "Powered by Prince",
-      "downloadPdf": "Download PDF"
+      "downloadPdf": "Download PDF",
+      "billTo": "Bill To",
+      "shipTo": "Ship To",
+      "project": "Project",
+      "type": "Type",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "discount": "Discount",
+      "retainage": "Retainage",
+      "total": "Total",
+      "notes": "Notes",
+      "issued": "Issued {date}",
+      "due": "Due {date}",
+      "qty": "Qty",
+      "unitPrice": "Unit Price",
+      "amount": "Amount",
+      "description": "Description",
+      "standard": "Standard",
+      "progress": "Progress (AIA-style)",
+      "recurring": "Recurring",
+      "invoice": "Invoice"
     }
   },
   "estimates": {

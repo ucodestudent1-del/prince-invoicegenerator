@@ -126,6 +126,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  locale        String?   @default("en")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -185,12 +186,21 @@ model Organization {
   ownerId         String
   stripeCustomerId String?
   stripeSubscriptionId String?
-  stripePriceId   String?
+  stripePriceId    String?
   subscriptionStatus SubscriptionStatus?
   currentPeriodEnd DateTime?
-
+  defaultLocale   String?            @default("en")
    createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  theme          String @default("light")
+  brandColor     String? 
+  accentColor    String?
+  fontFamily     String? 
+  layout         String @default("default")
+  template       TemplateStyle @default(STANDARD)
+
+  localizedStrings LocalizedString[]
 
   users          User[]
   customers      Customer[]
@@ -208,12 +218,6 @@ model Organization {
    reminderConfigs ReminderConfig[]
   reminders      Reminder[]
   lateFeeConfig  LateFeeConfig?
-  template       TemplateStyle @default(STANDARD)
-  theme          String @default("light")
-  brandColor     String? 
-  accentColor    String?
-  fontFamily     String? 
-  layout         String @default("default")
 }
 
 // ---------------------------------------------------------------------------
@@ -636,4 +640,24 @@ model LateFeeConfig {
   updatedAt   DateTime @updatedAt
 
   @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Localized content (multilingual user-generated strings)
+// ---------------------------------------------------------------------------
+
+model LocalizedString {
+  id         String   @id @default(cuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  entityType String   // e.g. "Customer", "Project", "Invoice"
+  entityId   String
+  field      String   // e.g. "name", "description", "notes"
+  locale     String   // "en", "fr", "es", "de"
+  value      String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([orgId, entityType, entityId, field, locale])
+  @@index([orgId, entityType, entityId])
 }

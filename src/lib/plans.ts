@@ -27,7 +27,8 @@ export type FeatureKey =
   | "automaticReminders"
   | "lateFees"
   | "scheduledInvoices"
-  | "pdfExport";
+  | "pdfExport"
+  | "multilingual";
 
 export interface PlanDefinition {
   id: SubscriptionPlan;
@@ -48,7 +49,7 @@ export const PLANS: PlanDefinition[] = [
     priceMonthly: 0,
     blurb: "Trying the platform",
     audience: "New contractors getting started",
-    features: ["invoicesPerMonth", "branding", "customerDb", "savedAddresses"],
+    features: ["invoicesPerMonth", "branding", "customerDb", "savedAddresses", "multilingual"],
   },
   {
     id: "STARTER",
@@ -66,6 +67,7 @@ export const PLANS: PlanDefinition[] = [
       "recurring",
       "savedAddresses",
       "customBranding",
+      "multilingual",
     ],
     stripePriceId: process.env.STRIPE_PRICE_STARTER_MONTHLY,
   },
@@ -92,6 +94,7 @@ export const PLANS: PlanDefinition[] = [
       "invoiceTemplates",
       "customBranding",
       "pdfExport",
+      "multilingual",
     ],
     stripePriceId: process.env.STRIPE_PRICE_PRO_MONTHLY,
   },
@@ -127,6 +130,7 @@ export const PLANS: PlanDefinition[] = [
       "lateFees",
       "scheduledInvoices",
       "pdfExport",
+      "multilingual",
     ],
     stripePriceId: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
   },
@@ -160,6 +164,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   lateFees: "Automatic late fee calculation",
   scheduledInvoices: "Scheduled invoices",
   pdfExport: "PDF export without watermark",
+  multilingual: "Multilingual interface and localized content",
 };
 
 // Human-friendly allowance text per plan for the "invoicesPerMonth" feature.

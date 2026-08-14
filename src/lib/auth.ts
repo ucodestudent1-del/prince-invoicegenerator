@@ -55,22 +55,25 @@ export const authOptions: NextAuthOptions = {
         session.user.id = user.id;
         let organizationId: string | null = null;
         let role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER" = "OWNER";
+        let userLocale: string | null = null;
         try {
           const dbUser = await db.user.findUnique({
             where: { id: user.id },
-            select: { organizationId: true, role: true },
+            select: { organizationId: true, role: true, locale: true },
           });
           organizationId = dbUser?.organizationId ?? null;
           role = dbUser?.role ?? "OWNER";
+          userLocale = dbUser?.locale ?? null;
         } catch (err) {
           if (isMissingColumnError(err)) {
             try {
               const dbUser = await db.user.findUnique({
                 where: { id: user.id },
-                select: { organizationId: true, role: true },
+                select: { organizationId: true, role: true, locale: true },
               });
               organizationId = dbUser?.organizationId ?? null;
               role = dbUser?.role ?? "OWNER";
+              userLocale = dbUser?.locale ?? null;
             } catch {
               // Fall through to defaults
             }
@@ -79,6 +82,7 @@ export const authOptions: NextAuthOptions = {
         }
         session.user.organizationId = organizationId;
         session.user.role = role;
+        session.user.locale = userLocale;
       }
       return { ...session, appName: APP_NAME };
     },
@@ -116,6 +120,7 @@ declare module "next-auth" {
       id: string;
       organizationId: string | null;
       role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
+      locale: string | null;
     } & DefaultSession["user"];
   }
 

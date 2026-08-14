@@ -23,6 +23,7 @@ import { logServerError } from "@/lib/errors";
 import { UserMenu } from "@/components/user-menu";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggleForm } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { getTranslations } from "next-intl/server";
 import { getLocaleSafe } from "@/lib/locale";
 import { APP_NAME } from "@/lib/app-name";
@@ -115,6 +116,7 @@ export default async function DashboardLayout({
             </Badge>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <ThemeToggleForm current={org.theme} />
             <UserMenu email={user.email} name={user.name} />
           </div>

@@ -7,6 +7,7 @@ import { PrintButton } from "@/components/print-button";
 import { logServerError } from "@/lib/errors";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export default async function InvoicePrintPage({
   if (!user || !user.organizationId) return null;
   const plan = await getActivePlan(user);
   const canPdfExport = hasFeature(plan, "pdfExport");
+  const t = await getTranslations("invoices.print");
 
   let invoice;
   let org: any;
@@ -91,26 +93,28 @@ export default async function InvoicePrintPage({
   const templateClass = `template-${org?.template?.toLowerCase?.() ?? "standard"}`;
   const layoutClass = `layout-${org?.layout ?? "default"}`;
 
+  const typeLabel = invoice.type === "PROGRESS" ? t("progress") : invoice.type === "RECURRING" ? t("recurring") : t("standard");
+
   return (
     <div className={`mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: org.fontFamily } : undefined}>
       {!canPdfExport && (
         <div className="mb-6 rounded-md border border-yellow-400 bg-yellow-50 p-3 text-sm text-yellow-800">
-          Upgrade to <strong>Pro</strong> to remove the &quot;Powered by Prince&quot; watermark and enable PDF export.
+          {t("watermark")}
         </div>
       )}
       <div className="mb-8 flex items-start justify-between border-b pb-6">
         <div className="flex items-start gap-4">
           {invoice.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={invoice.logoUrl} alt="Invoice logo" className="h-16 w-auto object-contain" />
+            <img src={invoice.logoUrl} alt={t("brandName")} className="h-16 w-auto object-contain" />
           )}
           <div>
             <p className="text-lg font-semibold" style={org?.brandColor ? { color: org.brandColor } : undefined}>
-              Prince
+              {t("brandName")}
             </p>
-            <p className="text-xs text-gray-500">Construction Invoicing</p>
+            <p className="text-xs text-gray-500">{t("brandTagline")}</p>
             {!canPdfExport && (
-              <p className="text-xs text-gray-400 mt-1">Powered by Prince</p>
+              <p className="text-xs text-gray-400 mt-1">{t("poweredBy")}</p>
             )}
           </div>
         </div>
@@ -124,16 +128,16 @@ export default async function InvoicePrintPage({
               ? "border border-gray-400 text-gray-700"
               : "bg-gray-100 text-gray-600"
           }`}>
-            Invoice</span>
+            {t("invoice")}</span>
           <h2 className="text-2xl font-bold mt-2">{invoice.number}</h2>
-          <p className="text-sm text-gray-500 mt-1">Issued {formatDate(invoice.issueDate)}</p>
-          <p className="text-sm text-gray-500">Due {formatDate(invoice.dueDate)}</p>
+          <p className="text-sm text-gray-500 mt-1">{t("issued", { date: formatDate(invoice.issueDate) })}</p>
+          <p className="text-sm text-gray-500">{t("due", { date: formatDate(invoice.dueDate) })}</p>
         </div>
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-8 text-sm">
         <div>
-          <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Bill To</p>
+          <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("billTo")}</p>
           {invoice.billToAddress ? (
             <div className="whitespace-pre-line">{invoice.billToAddress}</div>
           ) : (
@@ -146,7 +150,7 @@ export default async function InvoicePrintPage({
           )}
           {invoice.shipToAddress && (
             <div className="mt-4 pt-4 border-t">
-              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Ship To</p>
+              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("shipTo")}</p>
               <div className="whitespace-pre-line">{invoice.shipToAddress}</div>
             </div>
           )}
@@ -154,13 +158,13 @@ export default async function InvoicePrintPage({
         <div>
           {invoice.project && (
             <div className="mb-4">
-              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Project</p>
+              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("project")}</p>
               <p>{invoice.project.name}</p>
             </div>
           )}
           <div>
-            <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Type</p>
-            <p>{invoice.type}</p>
+            <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("type")}</p>
+            <p>{typeLabel}</p>
           </div>
         </div>
       </div>
@@ -169,10 +173,10 @@ export default async function InvoicePrintPage({
         <thead>
           <tr className="border-b-2 border-gray-300 text-left">
             <th className="py-2 w-8">#</th>
-            <th className="py-2">Description</th>
-            <th className="py-2 text-right">Qty</th>
-            <th className="py-2 text-right">Unit Price</th>
-            <th className="py-2 text-right">Amount</th>
+            <th className="py-2">{t("description")}</th>
+            <th className="py-2 text-right">{t("qty")}</th>
+            <th className="py-2 text-right">{t("unitPrice")}</th>
+            <th className="py-2 text-right">{t("amount")}</th>
           </tr>
         </thead>
         <tbody>
@@ -195,27 +199,27 @@ export default async function InvoicePrintPage({
       <div className="mt-6 flex justify-end">
         <div className="w-72 space-y-1 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-500">Subtotal</span>
+            <span className="text-gray-500">{t("subtotal")}</span>
             <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">Tax</span>
+            <span className="text-gray-500">{t("tax")}</span>
             <span>{formatCurrency(invoice.taxAmount, invoice.currency)}</span>
           </div>
           {invoice.discount > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-500">Discount</span>
+              <span className="text-gray-500">{t("discount")}</span>
               <span>-{formatCurrency(invoice.discount, invoice.currency)}</span>
             </div>
           )}
           {invoice.retainageAmount > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-500">Retainage</span>
+              <span className="text-gray-500">{t("retainage")}</span>
               <span>{formatCurrency(invoice.retainageAmount, invoice.currency)}</span>
             </div>
           )}
           <div className="border-t-2 border-gray-300 pt-1 mt-1 flex justify-between text-base font-bold">
-            <span>Total</span>
+            <span>{t("total")}</span>
             <span>{formatCurrency(invoice.total, invoice.currency)}</span>
           </div>
         </div>
@@ -223,7 +227,7 @@ export default async function InvoicePrintPage({
 
       {invoice.notes && (
         <div className="mt-8 text-sm">
-          <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Notes</p>
+          <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("notes")}</p>
           <p className="text-gray-600 whitespace-pre-line">{invoice.notes}</p>
         </div>
       )}
@@ -232,7 +236,7 @@ export default async function InvoicePrintPage({
         <PrintButton />
         {canPdfExport && (
           <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Download className="mr-2 h-4 w-4" /> Download PDF
+            <Download className="mr-2 h-4 w-4" /> {t("downloadPdf")}
           </Button>
         )}
       </div>

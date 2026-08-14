@@ -301,7 +301,27 @@
       "brandName": "Prince",
       "brandTagline": "Bauabrechnung",
       "poweredBy": "Powered by Prince",
-      "downloadPdf": "PDF herunterladen"
+      "downloadPdf": "PDF herunterladen",
+      "billTo": "Rechnungsadresse",
+      "shipTo": "Lieferadresse",
+      "project": "Projekt",
+      "type": "Typ",
+      "subtotal": "Zwischensumme",
+      "tax": "Steuer",
+      "discount": "Rabatt",
+      "retainage": "Einbehalt",
+      "total": "Gesamt",
+      "notes": "Notizen",
+      "issued": "Ausgestellt am {date}",
+      "due": "Fällig am {date}",
+      "qty": "Menge",
+      "unitPrice": "Einzelpreis",
+      "amount": "Betrag",
+      "description": "Beschreibung",
+      "standard": "Standard",
+      "progress": "Fortschritt (AIA-Stil)",
+      "recurring": "Wiederkehrend",
+      "invoice": "Rechnung"
     }
   },
   "estimates": {

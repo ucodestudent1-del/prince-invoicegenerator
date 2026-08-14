@@ -301,7 +301,27 @@
       "brandName": "Prince",
       "brandTagline": "Facturación para Construcción",
       "poweredBy": "Desarrollado por Prince",
-      "downloadPdf": "Descargar PDF"
+      "downloadPdf": "Descargar PDF",
+      "billTo": "Facturar a",
+      "shipTo": "Enviar a",
+      "project": "Proyecto",
+      "type": "Tipo",
+      "subtotal": "Subtotal",
+      "tax": "Impuesto",
+      "discount": "Descuento",
+      "retainage": "Retención",
+      "total": "Total",
+      "notes": "Notas",
+      "issued": "Emitida el {date}",
+      "due": "Vence el {date}",
+      "qty": "Cant",
+      "unitPrice": "Precio unitario",
+      "amount": "Importe",
+      "description": "Descripción",
+      "standard": "Estándar",
+      "progress": "Progreso (estilo AIA)",
+      "recurring": "Recurrente",
+      "invoice": "Factura"
     }
   },
   "estimates": {
