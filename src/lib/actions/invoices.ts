@@ -607,3 +607,17 @@ export async function getScheduledInvoices(orgId: string) {
     return invoices;
   });
 }
+
+export async function getAvailableInvoices() {
+  return withActionError("getAvailableInvoices", async () => {
+    const user = await requireUser();
+    if (!user.organizationId) actionError("No organization");
+    const orgId = user.organizationId;
+
+    return await db.invoice.findMany({
+      where: { orgId, recurringConfigId: null },
+      select: { id: true, number: true, type: true },
+      orderBy: { createdAt: "desc" },
+    });
+  });
+}

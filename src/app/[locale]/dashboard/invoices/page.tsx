@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,8 +41,53 @@ export default async function InvoicesPage({ params }: { params: { locale: strin
       include: { customer: true },
     });
   } catch (err) {
-    logServerError("InvoicesPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      invoices = await db.invoice.findMany({
+        where: { orgId },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          number: true,
+          type: true,
+          status: true,
+          issueDate: true,
+          dueDate: true,
+          currency: true,
+          subtotal: true,
+          taxRate: true,
+          taxAmount: true,
+          discount: true,
+          retainageRate: true,
+          retainageAmount: true,
+          total: true,
+          amountPaid: true,
+          notes: true,
+          stripeInvoiceId: true,
+          recurringConfigId: true,
+          createdById: true,
+          createdAt: true,
+          updatedAt: true,
+          customerId: true,
+          projectId: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              company: true,
+              phone: true,
+              address: true,
+              notes: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+        },
+      });
+    } else {
+      logServerError("InvoicesPage", err);
+      throw err;
+    }
   }
 
   return (

@@ -17,7 +17,10 @@ export async function withActionError<T>(
 ): Promise<T> {
   try {
     return await fn();
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.digest === "NEXT_REDIRECT" || err?.digest === "NEXT_NOT_FOUND") {
+      throw err;
+    }
     if (err instanceof ActionError) {
       throw err;
     }

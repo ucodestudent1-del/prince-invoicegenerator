@@ -1,6 +1,6 @@
 import { Link, redirect } from "@/i18n/navigation";
 import Image from "next/image";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { markInvoicePaid, deleteInvoice, sendReminder } from "@/lib/actions/invoices";
 import { Button } from "@/components/ui/button";
@@ -41,8 +41,42 @@ export default async function InvoiceDetailPage({
       },
     });
   } catch (err) {
-    logServerError("InvoiceDetailPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      invoice = await db.invoice.findFirst({
+        where: { id: params.id, orgId: user.organizationId },
+        select: {
+          id: true,
+          number: true,
+          type: true,
+          status: true,
+          issueDate: true,
+          dueDate: true,
+          currency: true,
+          subtotal: true,
+          taxRate: true,
+          taxAmount: true,
+          discount: true,
+          retainageRate: true,
+          retainageAmount: true,
+          total: true,
+          amountPaid: true,
+          notes: true,
+          stripeInvoiceId: true,
+          recurringConfigId: true,
+          createdById: true,
+          createdAt: true,
+          updatedAt: true,
+          customerId: true,
+          projectId: true,
+          customer: true,
+          project: true,
+          items: { orderBy: { sortOrder: "asc" } },
+        },
+      }) as any;
+    } else {
+      logServerError("InvoiceDetailPage", err);
+      throw err;
+    }
   }
   if (!invoice) {
     redirect({ href: "/dashboard/invoices", locale: params.locale });
@@ -172,7 +206,7 @@ export default async function InvoiceDetailPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {invoice.items.map((it, idx) => (
+                  {invoice.items.map((it: any, idx: any) => (
                     <tr key={it.id} className="border-b">
                       <td className="py-2 text-gray-400">{idx + 1}</td>
                       <td className="py-2">{it.description}</td>

@@ -1,6 +1,10 @@
 import { Link } from "@/i18n/navigation";
 import { requireUser } from "@/lib/org";
-import { getRecurringConfigs, toggleRecurringConfig, generateNextInvoice } from "@/lib/actions/recurring";
+import {
+  getRecurringConfigs,
+  toggleRecurringConfig,
+} from "@/lib/actions/recurring";
+import { getAvailableInvoices } from "@/lib/actions/invoices";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +16,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pause, Play, Zap } from "lucide-react";
+import { Plus, Pause, Play } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
+import { GenerateInvoiceButton } from "./_components/generate-invoice-button";
+import { LinkInvoiceForm } from "./_components/link-invoice-form";
 
 export default async function RecurringPage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
@@ -28,6 +34,13 @@ export default async function RecurringPage({ params }: { params: { locale: stri
   } catch (err) {
     logServerError("RecurringPage", err);
     throw err;
+  }
+
+  let availableInvoices: { id: string; number: string; type: string }[] = [];
+  try {
+    availableInvoices = await getAvailableInvoices();
+  } catch (err) {
+    logServerError("RecurringPage", err);
   }
 
   return (
@@ -86,18 +99,14 @@ export default async function RecurringPage({ params }: { params: { locale: stri
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex gap-1 justify-end">
-                        {config.lastInvoice && (
-                          <form
-                            action={async () => {
-                              "use server";
-                              await generateNextInvoice(config.id);
-                            }}
-                          >
-                            <Button type="submit" variant="outline" size="sm">
-                              <Zap className="h-4 w-4" />
-                            </Button>
-                          </form>
+                      <div className="flex flex-col gap-2 items-end">
+                        {config.lastInvoice ? (
+                          <GenerateInvoiceButton configId={config.id} />
+                        ) : (
+                          <LinkInvoiceForm
+                            configId={config.id}
+                            invoices={availableInvoices}
+                          />
                         )}
                         <form
                           action={async () => {

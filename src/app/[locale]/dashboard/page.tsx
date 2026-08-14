@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser, getCurrentOrg } from "@/lib/org";
+import { requireUser, getCurrentOrg, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,8 +33,32 @@ export default async function DashboardPage({ params }: { params: { locale: stri
       }),
     ]);
   } catch (err) {
-    logServerError("DashboardPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      [invoiceAgg, customerCount, recentInvoices] = await Promise.all([
+        db.invoice.aggregate({
+          where: { orgId },
+          _sum: { total: true, amountPaid: true },
+          _count: { _all: true },
+        }),
+        db.customer.count({ where: { orgId } }),
+        db.invoice.findMany({
+          where: { orgId },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+          select: {
+            id: true,
+            number: true,
+            total: true,
+            createdAt: true,
+            customerId: true,
+            customer: { select: { id: true, name: true, email: true, company: true } },
+          },
+        }),
+      ]);
+    } else {
+      logServerError("DashboardPage", err);
+      throw err;
+    }
   }
 
   const outstanding =

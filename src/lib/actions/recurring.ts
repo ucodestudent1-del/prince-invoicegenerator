@@ -38,10 +38,42 @@ async function validateTemplateInvoice(
     actionError("No template invoice linked to this recurring config. Link an invoice first.");
   }
 
-  const template = await db.invoice.findFirst({
-    where: { id: config.lastInvoiceId!, orgId: config.orgId },
-    include: { items: true },
-  });
+  let template: any;
+  try {
+    template = await db.invoice.findFirst({
+      where: { id: config.lastInvoiceId!, orgId: config.orgId },
+      include: { items: true },
+    });
+  } catch (err) {
+    if (isMissingColumnError(err)) {
+      template = await db.invoice.findFirst({
+        where: { id: config.lastInvoiceId!, orgId: config.orgId },
+        select: {
+          id: true,
+          number: true,
+          type: true,
+          status: true,
+          issueDate: true,
+          dueDate: true,
+          currency: true,
+          subtotal: true,
+          taxRate: true,
+          taxAmount: true,
+          discount: true,
+          retainageRate: true,
+          retainageAmount: true,
+          total: true,
+          amountPaid: true,
+          notes: true,
+          recurringConfigId: true,
+          createdById: true,
+          items: { orderBy: { sortOrder: "asc" } },
+        },
+      });
+    } else {
+      throw err;
+    }
+  }
 
   if (!template) {
     actionError(
@@ -324,7 +356,7 @@ export async function generateNextInvoice(configId: string) {
             recurringConfigId: configId,
             createdById: user.id,
             items: {
-              create: template.items.map((it) => ({
+              create: template.items.map((it: any) => ({
                 description: it.description,
                 quantity: it.quantity,
                 unitPrice: it.unitPrice,
@@ -336,6 +368,42 @@ export async function generateNextInvoice(configId: string) {
         });
         break;
       } catch (err) {
+        if (isMissingColumnError(err)) {
+          invoice = await db.invoice.create({
+            data: {
+              orgId,
+              number,
+              customerId: config.customerId,
+              projectId: (config as any).projectId ?? null,
+              type: "RECURRING",
+              status: "DRAFT",
+              issueDate,
+              dueDate,
+              currency: "USD",
+              subtotal: template.subtotal,
+              taxRate: template.taxRate,
+              taxAmount: template.taxAmount,
+              discount: template.discount,
+              retainageRate: template.retainageRate,
+              retainageAmount: template.retainageAmount,
+              total: template.total,
+              amountPaid: 0,
+              notes: template.notes,
+              createdById: user.id,
+              recurringConfigId: configId,
+              items: {
+                create: template.items.map((it: any) => ({
+                  description: it.description,
+                  quantity: it.quantity,
+                  unitPrice: it.unitPrice,
+                  amount: it.amount,
+                  sortOrder: it.sortOrder,
+                })),
+              },
+            },
+          });
+          break;
+        }
         if (
           err instanceof Error &&
           err.message.includes("Unique constraint failed") &&
@@ -368,7 +436,7 @@ export async function generateNextInvoice(configId: string) {
               recurringConfigId: configId,
               createdById: user.id,
               items: {
-                create: template.items.map((it) => ({
+                create: template.items.map((it: any) => ({
                   description: it.description,
                   quantity: it.quantity,
                   unitPrice: it.unitPrice,
@@ -398,17 +466,21 @@ export async function generateNextInvoice(configId: string) {
       },
     });
 
-    await db.invoiceAudit.create({
-      data: {
-        invoiceId: invoice.id,
-        orgId,
-        action: "RECURRING_INVOICE_GENERATED",
-        fromStatus: null,
-        toStatus: "DRAFT",
-        note: `Generated from recurring config ${configId}`,
-        createdById: user.id,
-      },
-    });
+    try {
+      await db.invoiceAudit.create({
+        data: {
+          invoiceId: invoice.id,
+          orgId,
+          action: "RECURRING_INVOICE_GENERATED",
+          fromStatus: null,
+          toStatus: "DRAFT",
+          note: `Generated from recurring config ${configId}`,
+          createdById: user.id,
+        },
+      });
+    } catch (err: any) {
+      if (!isMissingColumnError(err)) throw err;
+    }
 
     await revalidateWithLocale("/dashboard/invoices");
     await revalidateWithLocale("/dashboard/recurring");
@@ -446,12 +518,49 @@ export async function processRecurringInvoices() {
         if (new Date() < config.nextRunDate) continue;
 
         try {
-          const template = config.lastInvoiceId
-            ? await db.invoice.findFirst({
+          let template: any;
+          if (config.lastInvoiceId) {
+            try {
+              template = await db.invoice.findFirst({
                 where: { id: config.lastInvoiceId, orgId: org.id },
                 include: { items: true },
-              })
-            : null;
+              });
+            } catch (err) {
+              if (isMissingColumnError(err)) {
+                template = await db.invoice.findFirst({
+                  where: { id: config.lastInvoiceId, orgId: org.id },
+                  select: {
+                    id: true,
+                    number: true,
+                    type: true,
+                    status: true,
+                    issueDate: true,
+                    dueDate: true,
+                    currency: true,
+                    subtotal: true,
+                    taxRate: true,
+                    taxAmount: true,
+                    discount: true,
+                    retainageRate: true,
+                    retainageAmount: true,
+                    total: true,
+                    amountPaid: true,
+                    notes: true,
+                    stripeInvoiceId: true,
+                    recurringConfigId: true,
+                    createdById: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    customerId: true,
+                    projectId: true,
+                    items: { orderBy: { sortOrder: "asc" } },
+                  },
+                });
+              } else {
+                throw err;
+              }
+            }
+          }
 
           if (!template) {
             results.push({ configId: config.id, invoiceId: null, error: "No template invoice found or template was deleted." });
@@ -495,7 +604,7 @@ export async function processRecurringInvoices() {
                   shipToAddress: template.shipToAddress,
                   recurringConfigId: config.id,
                   items: {
-                    create: template.items.map((it) => ({
+                    create: template.items.map((it: any) => ({
                       description: it.description,
                       quantity: it.quantity,
                       unitPrice: it.unitPrice,
@@ -540,7 +649,7 @@ export async function processRecurringInvoices() {
                     logoUrl: template.logoUrl,
                     recurringConfigId: config.id,
                     items: {
-                      create: template.items.map((it) => ({
+                      create: template.items.map((it: any) => ({
                         description: it.description,
                         quantity: it.quantity,
                         unitPrice: it.unitPrice,
@@ -605,35 +714,61 @@ export async function linkInvoiceToRecurring(invoiceId: string, configId: string
 export async function processScheduledInvoices() {
   return withActionError("processScheduledInvoices", async () => {
     const now = new Date();
-    const scheduled = await db.invoice.findMany({
-      where: {
-        scheduledFor: { lte: now },
-        status: "DRAFT",
-      },
-      include: { items: true },
-    });
+    let scheduled: any[];
+    try {
+      scheduled = await db.invoice.findMany({
+        where: {
+          scheduledFor: { lte: now },
+          status: "DRAFT",
+        },
+        include: { items: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        scheduled = [];
+      } else {
+        throw err;
+      }
+    }
 
     const results: { id: string; number: string }[] = [];
 
     for (const inv of scheduled) {
-      await db.invoice.update({
-        where: { id: inv.id },
-        data: {
-          scheduledFor: null,
-          status: "SENT",
-        },
-      });
+      try {
+        await db.invoice.update({
+          where: { id: inv.id },
+          data: {
+            scheduledFor: null,
+            status: "SENT",
+          },
+        });
+      } catch (err) {
+        if (isMissingColumnError(err)) {
+          await db.invoice.update({
+            where: { id: inv.id },
+            data: {
+              status: "SENT",
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
 
-      await db.invoiceAudit.create({
-        data: {
-          invoiceId: inv.id,
-          orgId: inv.orgId,
-          action: "SCHEDULED_INVOICE_SENT",
-          fromStatus: "DRAFT",
-          toStatus: "SENT",
-          note: "Automatically sent from scheduled queue",
-        },
-      });
+      try {
+        await db.invoiceAudit.create({
+          data: {
+            invoiceId: inv.id,
+            orgId: inv.orgId,
+            action: "SCHEDULED_INVOICE_SENT",
+            fromStatus: "DRAFT",
+            toStatus: "SENT",
+            note: "Automatically sent from scheduled queue",
+          },
+        });
+      } catch (err) {
+        if (!isMissingColumnError(err)) throw err;
+      }
 
       results.push({ id: inv.id, number: inv.number });
     }
@@ -647,12 +782,19 @@ export async function scheduleInvoice(invoiceId: string, scheduledFor: string) {
     const user = await requireUser();
     if (!user.organizationId) actionError("No organization");
 
-    await db.invoice.update({
-      where: { id: invoiceId, orgId: user.organizationId },
-      data: {
-        scheduledFor: new Date(scheduledFor),
-      },
-    });
+    try {
+      await db.invoice.update({
+        where: { id: invoiceId, orgId: user.organizationId },
+        data: {
+          scheduledFor: new Date(scheduledFor),
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        actionError("The scheduled invoice feature is not available on your current database schema. Please run pending migrations.");
+      }
+      throw err;
+    }
 
     await revalidateWithLocale("/dashboard/invoices");
   });

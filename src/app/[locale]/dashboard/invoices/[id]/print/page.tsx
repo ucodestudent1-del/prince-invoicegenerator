@@ -1,5 +1,5 @@
 import { redirect } from "@/i18n/navigation";
-import { requireUser, getActivePlan } from "@/lib/org";
+import { requireUser, getActivePlan, isMissingColumnError } from "@/lib/org";
 import { hasFeature } from "@/lib/plans";
 import { db } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -21,7 +21,7 @@ export default async function InvoicePrintPage({
   const canPdfExport = hasFeature(plan, "pdfExport");
 
   let invoice;
-  let org;
+  let org: any;
   try {
     [invoice, org] = await Promise.all([
       db.invoice.findFirst({
@@ -40,8 +40,48 @@ export default async function InvoicePrintPage({
       }),
     ]);
   } catch (err) {
-    logServerError("InvoicePrintPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      [invoice, org] = await Promise.all([
+        db.invoice.findFirst({
+          where: { id: params.id, orgId: user.organizationId },
+          select: {
+            id: true,
+            number: true,
+            type: true,
+            status: true,
+            issueDate: true,
+            dueDate: true,
+            currency: true,
+            subtotal: true,
+            taxRate: true,
+            taxAmount: true,
+            discount: true,
+            retainageRate: true,
+            retainageAmount: true,
+            total: true,
+            amountPaid: true,
+            notes: true,
+            stripeInvoiceId: true,
+            recurringConfigId: true,
+            createdById: true,
+            createdAt: true,
+            updatedAt: true,
+            customerId: true,
+            projectId: true,
+            customer: true,
+            project: true,
+            items: { orderBy: { sortOrder: "asc" } },
+          },
+        }) as any,
+        db.organization.findUnique({
+          where: { id: user.organizationId },
+          select: { id: true },
+        }),
+      ]);
+    } else {
+      logServerError("InvoicePrintPage", err);
+      throw err;
+    }
   }
   if (!invoice) {
     redirect({ href: "/dashboard/invoices", locale: params.locale });
@@ -136,7 +176,7 @@ export default async function InvoicePrintPage({
           </tr>
         </thead>
         <tbody>
-          {invoice.items.map((it, idx) => (
+          {invoice.items.map((it: any, idx: any) => (
             <tr key={it.id} className="border-b border-gray-100">
               <td className="py-2 text-gray-400">{idx + 1}</td>
               <td className="py-2">{it.description}</td>
