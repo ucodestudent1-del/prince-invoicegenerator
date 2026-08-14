@@ -1,5 +1,5 @@
 import { createNavigation } from "next-intl/navigation";
-import { useLocale } from "next-intl";
+import { useLocaleSafe } from "@/hooks/use-locale-safe";
 import { useMemo } from "react";
 import { routing } from "./routing";
 
@@ -13,8 +13,7 @@ const {
 
 export function useRouter() {
   const router = _useRouter();
-  const locale = useLocale();
-  const safeLocale = locale || routing.defaultLocale;
+  const safeLocale = useLocaleSafe();
   return useMemo(
     () => ({
       ...router,
