@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname, getPathnameWithLocale } from "@/i18n/navigation";
 import { useLocaleSafe } from "@/hooks/use-locale-safe";
+import { isMissingLocalePath } from "@/lib/locale-utils";
 
 export function LocaleRedirectGuard() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export function LocaleRedirectGuard() {
       return;
     }
 
-    if (!pathname.startsWith(`/${locale}`) && !pathname.startsWith(`/${locale}/`)) {
+    if (isMissingLocalePath(pathname, locale)) {
       const target = getPathnameWithLocale({ href: pathname, locale });
       router.replace(target, { locale });
     }
