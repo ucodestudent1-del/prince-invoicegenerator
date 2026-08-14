@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, getPathname } from "@/i18n/navigation";
+import { useRouter, getPathnameWithLocale } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { signIn } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
@@ -47,7 +47,7 @@ export default function LoginPage() {
   async function googleLogin() {
     setError(null);
     try {
-      await signIn("google", { callbackUrl: getPathname({ href: "/dashboard", locale, forcePrefix: true }) });
+      await signIn("google", { callbackUrl: getPathnameWithLocale({ href: "/dashboard", locale }) });
     } catch (err: any) {
       setError(err?.message || t("googleSignInFailed"));
     }

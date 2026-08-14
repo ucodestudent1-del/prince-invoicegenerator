@@ -27,4 +27,9 @@ export function useRouter() {
   );
 }
 
+// Wrapper that ensures forcePrefix is true when locale is provided
+export function getPathnameWithLocale(args: { href: string; locale: string }) {
+  return getPathname({ href: args.href, locale: args.locale, forcePrefix: true });
+}
+
 export { Link, redirect, usePathname, getPathname };
