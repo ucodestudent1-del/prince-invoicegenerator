@@ -4,6 +4,8 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 import { APP_NAME } from "@/lib/app-name";
+import { isMissingColumnError } from "@/lib/org";
+import { logServerError } from "@/lib/errors";
 
 export { APP_NAME };
 
@@ -51,12 +53,32 @@ export const authOptions: NextAuthOptions = {
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
-        const dbUser = await db.user.findUnique({
-          where: { id: user.id },
-          select: { organizationId: true, role: true },
-        });
-        session.user.organizationId = dbUser?.organizationId ?? null;
-        session.user.role = dbUser?.role ?? "OWNER";
+        let organizationId: string | null = null;
+        let role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER" = "OWNER";
+        try {
+          const dbUser = await db.user.findUnique({
+            where: { id: user.id },
+            select: { organizationId: true, role: true },
+          });
+          organizationId = dbUser?.organizationId ?? null;
+          role = dbUser?.role ?? "OWNER";
+        } catch (err) {
+          if (isMissingColumnError(err)) {
+            try {
+              const dbUser = await db.user.findUnique({
+                where: { id: user.id },
+                select: { organizationId: true, role: true },
+              });
+              organizationId = dbUser?.organizationId ?? null;
+              role = dbUser?.role ?? "OWNER";
+            } catch {
+              // Fall through to defaults
+            }
+          }
+          logServerError("auth session callback", err);
+        }
+        session.user.organizationId = organizationId;
+        session.user.role = role;
       }
       return { ...session, appName: APP_NAME };
     },
