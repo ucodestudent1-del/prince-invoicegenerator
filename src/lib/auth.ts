@@ -60,6 +60,31 @@ export const authOptions: NextAuthOptions = {
       }
       return { ...session, appName: APP_NAME };
     },
+    async redirect({ url, baseUrl }) {
+      const locales = ["en", "fr", "es", "de"] as const;
+
+      if (!url.startsWith("http")) {
+        return url;
+      }
+
+      const target = new URL(url);
+      const origin = new URL(baseUrl);
+
+      if (target.origin !== origin.origin) {
+        return baseUrl;
+      }
+
+      const pathname = target.pathname;
+      const hasLocale = locales.some(
+        (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
+      );
+
+      if (hasLocale) {
+        return url;
+      }
+
+      return `${origin.origin}/en${pathname}${target.search}${target.hash}`;
+    },
   },
 };
 
