@@ -47,7 +47,7 @@ export default function LoginPage() {
   async function googleLogin() {
     setError(null);
     try {
-      await signIn("google", { callbackUrl: getPathname({ href: "/dashboard", locale }) });
+      await signIn("google", { callbackUrl: getPathname({ href: "/dashboard", locale, forcePrefix: true }) });
     } catch (err: any) {
       setError(err?.message || t("googleSignInFailed"));
     }

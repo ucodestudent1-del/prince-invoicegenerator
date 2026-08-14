@@ -171,7 +171,6 @@ export async function createInvoice(input: CreateInvoiceInput) {
               taxAmount,
               total,
               notes: input.notes,
-              logoUrl: input.logoUrl ?? null,
               createdById: user.id,
               items: {
                 create: validItems.map((it, i) => ({
@@ -621,3 +620,4 @@ export async function getAvailableInvoices() {
     });
   });
 }
+
