@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
+import { setRequestLocale } from "next-intl/server";
 import { cookies } from "next/headers";
 import "./globals.css";
 import { ThemeClient } from "@/components/theme-client";
@@ -102,6 +103,7 @@ export default async function RootLayout({
   children: React.ReactNode;
   params: { locale: string };
 }) {
+  setRequestLocale(params.locale);
   ensureEnv();
   const { theme, brandColor, fontFamily } = await getInitialTheme();
 
