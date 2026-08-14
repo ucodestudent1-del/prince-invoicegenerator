@@ -108,7 +108,7 @@ export default async function RootLayout({
   return (
     <html lang={params.locale}>
       <body className="min-h-screen antialiased">
-        <NextIntlClientProvider>
+        <NextIntlClientProvider locale={params.locale}>
           <ThemeClient
             initialTheme={theme}
             brandColor={brandColor}
