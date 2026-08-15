@@ -5,14 +5,21 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Ensure host header is trusted in production behind a proxy (Railway, Vercel, etc.)
 // In NextAuth v4, NEXTAUTH_URL controls proxy trust. AUTH_TRUST_HOST is used as
-// a secondary signal to suppress the warning and optionally set the URL dynamically.
+// a secondary signal to suppress the warning.
 const trustProxy = process.env.AUTH_TRUST_HOST === "true";
 
 // Fallback: derive NEXTAUTH_URL from the request host if not explicitly set.
+// This is critical for Railway/Vercel where the app URL isn't known at build time.
 function ensureAuthUrl(request: NextRequest) {
-  if (!process.env.NEXTAUTH_URL && trustProxy && request.headers.get("host")) {
-    const proto = request.headers.get("x-forwarded-proto") || "https";
-    process.env.NEXTAUTH_URL = `${proto}://${request.headers.get("host")}`;
+  if (!process.env.NEXTAUTH_URL) {
+    const host = request.headers.get("host");
+    if (host) {
+      const proto = request.headers.get("x-forwarded-proto") || "https";
+      process.env.NEXTAUTH_URL = `${proto}://${host}`;
+      if (process.env.NODE_ENV === "production") {
+        console.warn(`[auth] NEXTAUTH_URL was not set; derived from request: ${process.env.NEXTAUTH_URL}`);
+      }
+    }
   }
 }
 

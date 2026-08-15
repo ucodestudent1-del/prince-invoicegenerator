@@ -96,10 +96,8 @@ export const authOptions: NextAuthOptions = {
 
       const target = new URL(url);
 
-      // If NEXTAUTH_URL is missing or empty, fall back to the target origin.
-      // This prevents a 404 when the user ends up on localhost.
+      // If baseUrl is empty, use the target origin as fallback.
       const effectiveBaseUrl = baseUrl || target.origin;
-
       const origin = new URL(effectiveBaseUrl);
 
       // If the target is on a different origin than baseUrl, return baseUrl
@@ -114,7 +112,7 @@ export const authOptions: NextAuthOptions = {
         if (hasLocale) {
           return target.origin + target.pathname + target.search + target.hash;
         }
-        return `${target.origin}${origin.pathname || "/en"}${target.search}${target.hash}`;
+        return `${target.origin}/en${pathname}${target.search}${target.hash}`;
       }
 
       if (target.origin !== origin.origin) {
@@ -130,7 +128,7 @@ export const authOptions: NextAuthOptions = {
         return url;
       }
 
-      return `${origin.origin}${origin.pathname || "/en"}${pathname}${target.search}${target.hash}`;
+      return `${origin.origin}/en${pathname}${target.search}${target.hash}`;
     },
   },
 };
