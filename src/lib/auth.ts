@@ -9,6 +9,34 @@ import { logServerError } from "@/lib/errors";
 
 export { APP_NAME };
 
+// All supported locales
+const LOCALES = ["en", "fr", "es", "de"] as const;
+
+/**
+ * Strip an existing locale prefix from a pathname to prevent double-prefixing.
+ * e.g. "/en/login" → "/login", "/en/en/login" → "/login"
+ * If the path doesn't start with a locale prefix, it's returned as-is.
+ */
+function stripLocalePrefix(pathname: string): string {
+  for (const locale of LOCALES) {
+    if (pathname === `/${locale}`) return "/";
+    if (pathname.startsWith(`/${locale}/`)) {
+      return pathname.slice(`/${locale}`.length);
+    }
+  }
+  return pathname;
+}
+
+/**
+ * Ensure a pathname has exactly one locale prefix.
+ * Strips any existing locale(s) first, then adds the given locale.
+ */
+function ensureLocalePrefix(pathname: string, locale: string = "en"): string {
+  const stripped = stripLocalePrefix(stripLocalePrefix(pathname));
+  if (stripped === "/") return `/${locale}`;
+  return `/${locale}${stripped}`;
+}
+
 const providers: NextAuthOptions["providers"] = [];
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -87,48 +115,30 @@ export const authOptions: NextAuthOptions = {
       return { ...session, appName: APP_NAME };
     },
     async redirect({ url, baseUrl }) {
-      const locales = ["en", "fr", "es", "de"] as const;
-
       // Relative URLs (e.g. callbackUrl="/en/dashboard") are returned as-is.
       if (!url.startsWith("http")) {
         return url;
       }
 
       const target = new URL(url);
-
-      // If baseUrl is empty, use the target origin as fallback.
       const effectiveBaseUrl = baseUrl || target.origin;
       const origin = new URL(effectiveBaseUrl);
 
-      // If the target is on a different origin than baseUrl, return baseUrl
-      // to prevent open redirects. But if baseUrl is localhost and the target
-      // is the real production domain, prefer the target (proxy-aware).
+      // If baseUrl is localhost but the target is the real production domain,
+      // use the target's origin (proxy-aware fallback).
       if (target.origin === "http://localhost:3000" && origin.origin !== "http://localhost:3000") {
-        // baseUrl is likely misconfigured (localhost); use the target's origin instead
-        const pathname = target.pathname;
-        const hasLocale = locales.some(
-          (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
-        );
-        if (hasLocale) {
-          return target.origin + target.pathname + target.search + target.hash;
-        }
-        return `${target.origin}/en${pathname}${target.search}${target.hash}`;
+        const pathname = stripLocalePrefix(target.pathname);
+        return `${target.origin}/${LOCALES[0]}${pathname}${target.search}${target.hash}`;
       }
 
       if (target.origin !== origin.origin) {
         return effectiveBaseUrl;
       }
 
-      const pathname = target.pathname;
-      const hasLocale = locales.some(
-        (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
-      );
-
-      if (hasLocale) {
-        return url;
-      }
-
-      return `${origin.origin}/en${pathname}${target.search}${target.hash}`;
+      // Strip any existing locale prefix and ensure exactly one is added.
+      // This prevents double-prefixing like /en/en/login.
+      const pathname = stripLocalePrefix(target.pathname);
+      return `${origin.origin}${ensureLocalePrefix(pathname)}${target.search}${target.hash}`;
     },
   },
 };

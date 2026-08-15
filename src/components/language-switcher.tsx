@@ -27,7 +27,10 @@ export function LanguageSwitcher() {
 
   function onSelect(newLocale: string) {
     startTransition(() => {
-      router.replace(`/${newLocale}${window.location.pathname.replace(/^\/(en|fr|es|de)/, "")}${window.location.search}${window.location.hash}`);
+      // The custom useRouter from @/i18n/navigation normalizes the href
+      // (strips existing locale prefix) and passes the new locale, so
+      // next-intl adds the prefix exactly once: /login → /fr/login
+      router.replace(window.location.pathname, { locale: newLocale });
     });
   }
 

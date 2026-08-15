@@ -2,6 +2,7 @@ import { createNavigation } from "next-intl/navigation";
 import { useLocaleSafe } from "@/hooks/use-locale-safe";
 import { useMemo } from "react";
 import { routing } from "./routing";
+import { stripLocalePrefix } from "@/lib/locale-utils";
 
 const {
   Link,
@@ -11,6 +12,16 @@ const {
   getPathname,
 } = createNavigation(routing);
 
+/**
+ * Strip any existing locale prefix from an href before passing it to
+ * next-intl's router. The custom useRouter always passes `locale: safeLocale`,
+ * which causes next-intl to set `forcePrefix: true`. Without stripping,
+ * a href like "/en/dashboard" would become "/en/en/dashboard".
+ */
+function normalizeHref(href: string): string {
+  return stripLocalePrefix(href);
+}
+
 export function useRouter() {
   const router = _useRouter();
   const safeLocale = useLocaleSafe();
@@ -18,9 +29,9 @@ export function useRouter() {
     () => ({
       ...router,
       push: (href: string, options?: Record<string, unknown>) =>
-        router.push(href, { locale: safeLocale, ...(options as object) }),
+        router.push(normalizeHref(href), { locale: safeLocale, ...(options as object) }),
       replace: (href: string, options?: Record<string, unknown>) =>
-        router.replace(href, { locale: safeLocale, ...(options as object) }),
+        router.replace(normalizeHref(href), { locale: safeLocale, ...(options as object) }),
     }),
     [router, safeLocale]
   );
