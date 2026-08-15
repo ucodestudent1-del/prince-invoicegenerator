@@ -288,6 +288,14 @@
     "taxRate": "Tasa de impuesto %",
     "discount": "Descuento",
     "retainagePercent": "Retención %",
+    "project": "Proyecto",
+    "quantity": "Cant",
+    "amount": "Importe",
+    "subtotal": "Subtotal",
+    "tax": "Impuesto",
+    "retainage": "Retención",
+    "paid": "Pagada",
+    "balanceDue": "Saldo pendiente",
     "cancel": "Cancelar",
     "createInvoice": "Crear factura",
     "saving": "Guardando…",
@@ -477,7 +485,24 @@
     "failedOutstanding": "Error al cargar el informe de pendientes.",
     "failedTaxes": "Error al cargar el informe de impuestos.",
     "failedCustomers": "Error al cargar el análisis de clientes.",
-    "failedGeneric": "Error al cargar los datos. Por favor, inténtalo de nuevo."
+    "failedGeneric": "Error al cargar los datos. Por favor, inténtalo de nuevo.",
+    "loading": "Cargando…",
+    "noRevenueData": "No hay datos de ingresos disponibles.",
+    "noOutstandingData": "No hay datos de pendientes disponibles.",
+    "noTaxesData": "No hay datos de impuestos disponibles.",
+    "noCustomersData": "No hay datos de clientes disponibles.",
+    "number": "Número",
+    "customer": "Cliente",
+    "dueDate": "Fecha de vencimiento",
+    "status": "Estado",
+    "total": "Total",
+    "paid": "Pagado",
+    "balance": "Saldo",
+    "invoices": "Facturas",
+    "totalInvoicedHeader": "Total facturado",
+    "totalPaid": "Total pagado",
+    "taxCollected": "Impuesto recaudado",
+    "outstandingHeader": "Pendiente"
   },
   "recurring": {
     "title": "Facturas recurrentes",
@@ -713,3 +738,5 @@
     "OTHER": "Otro"
   }
 }
+
+

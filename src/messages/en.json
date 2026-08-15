@@ -288,6 +288,14 @@
     "taxRate": "Tax rate %",
     "discount": "Discount",
     "retainagePercent": "Retainage %",
+    "project": "Project",
+    "quantity": "Qty",
+    "amount": "Amount",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "retainage": "Retainage",
+    "paid": "Paid",
+    "balanceDue": "Balance due",
     "cancel": "Cancel",
     "createInvoice": "Create invoice",
     "saving": "Savingâ€¦",
@@ -477,7 +485,24 @@
     "failedOutstanding": "Failed to load outstanding report.",
     "failedTaxes": "Failed to load taxes report.",
     "failedCustomers": "Failed to load customer analytics.",
-    "failedGeneric": "Failed to load report data. Please try again."
+    "failedGeneric": "Failed to load report data. Please try again.",
+    "loading": "Loading…",
+    "noRevenueData": "No revenue data available.",
+    "noOutstandingData": "No outstanding data available.",
+    "noTaxesData": "No taxes data available.",
+    "noCustomersData": "No customer data available.",
+    "number": "Number",
+    "customer": "Customer",
+    "dueDate": "Due date",
+    "status": "Status",
+    "total": "Total",
+    "paid": "Paid",
+    "balance": "Balance",
+    "invoices": "Invoices",
+    "totalInvoicedHeader": "Total invoiced",
+    "totalPaid": "Total paid",
+    "taxCollected": "Tax collected",
+    "outstandingHeader": "Outstanding"
   },
   "recurring": {
     "title": "Recurring invoices",
@@ -713,3 +738,5 @@
     "OTHER": "Other"
   }
 }
+
+

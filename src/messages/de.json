@@ -288,6 +288,14 @@
     "taxRate": "Steuersatz %",
     "discount": "Rabatt",
     "retainagePercent": "Einbehalt %",
+    "project": "Projekt",
+    "quantity": "Menge",
+    "amount": "Betrag",
+    "subtotal": "Zwischensumme",
+    "tax": "Steuer",
+    "retainage": "Einbehalt",
+    "paid": "Bezahlt",
+    "balanceDue": "Saldo",
     "cancel": "Abbrechen",
     "createInvoice": "Rechnung erstellen",
     "saving": "Speichern…",
@@ -477,7 +485,24 @@
     "failedOutstanding": "Fehler beim Laden des Offenstand-Berichts.",
     "failedTaxes": "Fehler beim Laden des Steuerberichts.",
     "failedCustomers": "Fehler beim Laden der Kundenanalysen.",
-    "failedGeneric": "Fehler beim Laden der Daten. Bitte versuche es erneut."
+    "failedGeneric": "Fehler beim Laden der Daten. Bitte versuche es erneut.",
+    "loading": "Laden…",
+    "noRevenueData": "Keine Umsatzdaten verfügbar.",
+    "noOutstandingData": "Keine ausstehenden Daten verfügbar.",
+    "noTaxesData": "Keine Steuerdaten verfügbar.",
+    "noCustomersData": "Keine Kundendaten verfügbar.",
+    "number": "Nummer",
+    "customer": "Kunde",
+    "dueDate": "Fälligkeitsdatum",
+    "status": "Status",
+    "total": "Gesamt",
+    "paid": "Bezahlt",
+    "balance": "Saldo",
+    "invoices": "Rechnungen",
+    "totalInvoicedHeader": "Gesamtrechnung",
+    "totalPaid": "Gesamt bezahlt",
+    "taxCollected": "Steuer erhoben",
+    "outstandingHeader": "Offen"
   },
   "recurring": {
     "title": "Wiederkehrende Rechnungen",
@@ -713,3 +738,5 @@
     "OTHER": "Sonstige"
   }
 }
+
+

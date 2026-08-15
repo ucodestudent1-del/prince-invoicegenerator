@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -11,15 +12,15 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const statuses = [
-  { value: "DRAFT", label: "Draft" },
-  { value: "SENT", label: "Sent" },
-  { value: "VIEWED", label: "Viewed" },
-  { value: "UNPAID", label: "Unpaid" },
-  { value: "PAID", label: "Paid" },
-  { value: "OVERDUE", label: "Overdue" },
-  { value: "VOID", label: "Void" },
-];
+const STATUS_KEYS: Record<string, string> = {
+  DRAFT: "draft",
+  SENT: "sent",
+  VIEWED: "viewed",
+  UNPAID: "unpaid",
+  PAID: "paid",
+  OVERDUE: "overdue",
+  VOID: "void",
+};
 
 export function InvoiceStatusManager({
   invoiceId,
@@ -28,6 +29,7 @@ export function InvoiceStatusManager({
   invoiceId: string;
   currentStatus: string;
 }) {
+  const t = useTranslations("status");
   const [status, setStatus] = React.useState(currentStatus);
   const [saving, setSaving] = React.useState(false);
 
@@ -42,11 +44,11 @@ export function InvoiceStatusManager({
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Failed to update status.");
+        alert(data.error || t("failedUpdate"));
         setStatus(currentStatus);
       }
     } catch (err) {
-      alert("Failed to update status.");
+      alert(t("failedUpdate"));
       setStatus(currentStatus);
     } finally {
       setSaving(false);
@@ -56,7 +58,7 @@ export function InvoiceStatusManager({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Invoice status</CardTitle>
+        <CardTitle className="text-base">{t("invoiceStatus")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-3">
@@ -65,14 +67,14 @@ export function InvoiceStatusManager({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {statuses.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
+              {Object.entries(STATUS_KEYS).map(([value, key]) => (
+                <SelectItem key={value} value={value}>
+                  {t(key)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {saving && <span className="text-xs text-muted-foreground">Saving…</span>}
+          {saving && <span className="text-xs text-muted-foreground">{t("saving")}</span>}
         </div>
       </CardContent>
     </Card>

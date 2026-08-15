@@ -288,6 +288,14 @@
     "taxRate": "Taux de taxe %",
     "discount": "Remise",
     "retainagePercent": "Retenue %",
+    "project": "Projet",
+    "quantity": "Qté",
+    "amount": "Montant",
+    "subtotal": "Sous-total",
+    "tax": "Taxe",
+    "retainage": "Retenue",
+    "paid": "Payée",
+    "balanceDue": "Solde dû",
     "cancel": "Annuler",
     "createInvoice": "Créer la facture",
     "saving": "Enregistrement…",
@@ -477,7 +485,24 @@
     "failedOutstanding": "Échec du chargement du rapport des en attente.",
     "failedTaxes": "Échec du chargement du rapport des taxes.",
     "failedCustomers": "Échec du chargement de l'analyse clients.",
-    "failedGeneric": "Échec du chargement des données. Veuillez réessayer."
+    "failedGeneric": "Échec du chargement des données. Veuillez réessayer.",
+    "loading": "Chargement…",
+    "noRevenueData": "Aucune donnée de revenus disponible.",
+    "noOutstandingData": "Aucune donnée de impayés disponible.",
+    "noTaxesData": "Aucune donnée de taxes disponible.",
+    "noCustomersData": "Aucune donnée de clients disponible.",
+    "number": "Numéro",
+    "customer": "Client",
+    "dueDate": "Date d'échéance",
+    "status": "Statut",
+    "total": "Total",
+    "paid": "Payé",
+    "balance": "Solde",
+    "invoices": "Factures",
+    "totalInvoicedHeader": "Total facturé",
+    "totalPaid": "Total payé",
+    "taxCollected": "Taxe collectée",
+    "outstandingHeader": "En attente"
   },
   "recurring": {
     "title": "Factures récurrentes",
@@ -713,3 +738,5 @@
     "OTHER": "Autre"
   }
 }
+
+

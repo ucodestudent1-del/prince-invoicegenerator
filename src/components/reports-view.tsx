@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/select";
 
 export function ReportsView() {
+  const t = useTranslations("reports");
   const [activeTab, setActiveTab] = React.useState("revenue");
   const [year, setYear] = React.useState(new Date().getFullYear());
   const [revenueData, setRevenueData] = React.useState<any>(null);
@@ -32,25 +34,25 @@ export function ReportsView() {
       if (activeTab === "revenue" && !revenueData) {
         const res = await fetch(`/api/reports/revenue?year=${year}`);
         if (res.ok) setRevenueData(await res.json());
-        else setError("Failed to load revenue report.");
+        else setError(t("failedRevenue"));
       }
       if (activeTab === "outstanding" && !outstandingData) {
         const res = await fetch("/api/reports/outstanding");
         if (res.ok) setOutstandingData(await res.json());
-        else setError("Failed to load outstanding report.");
+        else setError(t("failedOutstanding"));
       }
       if (activeTab === "taxes" && !taxesData) {
         const res = await fetch(`/api/reports/taxes?year=${year}`);
         if (res.ok) setTaxesData(await res.json());
-        else setError("Failed to load taxes report.");
+        else setError(t("failedTaxes"));
       }
       if (activeTab === "customers" && !customersData) {
         const res = await fetch("/api/reports/customers");
         if (res.ok) setCustomersData(await res.json());
-        else setError("Failed to load customer analytics.");
+        else setError(t("failedCustomers"));
       }
     } catch (err) {
-      setError("Failed to load report data. Please try again.");
+      setError(t("failedGeneric"));
       console.error("Failed to load report data", err);
     } finally {
       setLoading(false);
@@ -67,18 +69,18 @@ export function ReportsView() {
   }
 
   const tabs = [
-    { id: "revenue", label: "Revenue", icon: BarChart3 },
-    { id: "outstanding", label: "Outstanding", icon: FileText },
-    { id: "taxes", label: "Taxes collected", icon: Calendar },
-    { id: "customers", label: "Customer analytics", icon: Users },
+    { id: "revenue", label: t("revenue"), icon: BarChart3 },
+    { id: "outstanding", label: t("outstanding"), icon: FileText },
+    { id: "taxes", label: t("taxesCollected"), icon: Calendar },
+    { id: "customers", label: t("customerAnalytics"), icon: Users },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Reports</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <Button variant="outline" size="sm" onClick={exportData}>
-          <Download className="mr-2 h-4 w-4" /> Export invoices (CSV)
+          <Download className="mr-2 h-4 w-4" /> {t("exportCsv")}
         </Button>
       </div>
 
@@ -111,20 +113,20 @@ export function ReportsView() {
               </SelectContent>
             </Select>
             <Button size="sm" variant="outline" onClick={() => { setRevenueData(null); loadData(); }}>
-              Refresh
+              {t("refresh")}
             </Button>
           </div>
-          {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {loading && <p className="text-sm text-muted-foreground">{t("loading")}</p>}
           {error && <p className="text-sm text-destructive">{error}</p>}
           {!loading && !error && !revenueData && (
-            <p className="text-sm text-muted-foreground">No revenue data available.</p>
+            <p className="text-sm text-muted-foreground">{t("noRevenueData")}</p>
           )}
           {revenueData && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Monthly revenue — {revenueData.year}</CardTitle>
+                <CardTitle className="text-lg">{t("monthlyRevenue", { year: revenueData.year })}</CardTitle>
                 <CardDescription>
-                  Total invoiced: {formatCurrency(revenueData.annual.total)} · Paid: {formatCurrency(revenueData.annual.amountPaid)} · Tax: {formatCurrency(revenueData.annual.taxAmount)}
+                  {t("totalInvoiced", { total: formatCurrency(revenueData.annual.total), paid: formatCurrency(revenueData.annual.amountPaid), tax: formatCurrency(revenueData.annual.taxAmount) })}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -143,7 +145,7 @@ export function ReportsView() {
                       <div className="text-right">
                         <span className="font-medium">{formatCurrency(m.total)}</span>
                         <div className="text-xs text-muted-foreground">
-                          {m.count} invoice{m.count !== 1 ? "s" : ""}
+                          {t("invoiceCount", { count: m.count })}
                         </div>
                       </div>
                     </div>
@@ -157,17 +159,17 @@ export function ReportsView() {
 
       {activeTab === "outstanding" && (
         <>
-          {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {loading && <p className="text-sm text-muted-foreground">{t("loading")}</p>}
           {error && <p className="text-sm text-destructive">{error}</p>}
           {!loading && !error && !outstandingData && (
-            <p className="text-sm text-muted-foreground">No outstanding data available.</p>
+            <p className="text-sm text-muted-foreground">{t("noOutstandingData")}</p>
           )}
           {outstandingData && (
             <>
               <div className="grid gap-4 sm:grid-cols-3">
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Total outstanding</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalOutstanding")}</CardTitle>
                   </CardHeader>
                   <CardContent className="text-2xl font-bold">
                     {formatCurrency(outstandingData.totalOutstanding)}
@@ -175,7 +177,7 @@ export function ReportsView() {
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("overdue")}</CardTitle>
                   </CardHeader>
                   <CardContent className="text-2xl font-bold">
                     {formatCurrency(outstandingData.totalOverdue)}
@@ -183,7 +185,7 @@ export function ReportsView() {
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Overdue invoices</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("overdueInvoices")}</CardTitle>
                   </CardHeader>
                   <CardContent className="text-2xl font-bold">
                     {outstandingData.overdueCount}
@@ -192,20 +194,20 @@ export function ReportsView() {
               </div>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Outstanding invoices</CardTitle>
+                  <CardTitle className="text-lg">{t("outstandingInvoices")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b text-left text-muted-foreground">
-                          <th className="py-2">Number</th>
-                          <th className="py-2">Customer</th>
-                          <th className="py-2">Due date</th>
-                          <th className="py-2">Status</th>
-                          <th className="py-2 text-right">Total</th>
-                          <th className="py-2 text-right">Paid</th>
-                          <th className="py-2 text-right">Balance</th>
+                          <th className="py-2">{t("number")}</th>
+                          <th className="py-2">{t("customer")}</th>
+                          <th className="py-2">{t("dueDate")}</th>
+                          <th className="py-2">{t("status")}</th>
+                          <th className="py-2 text-right">{t("total")}</th>
+                          <th className="py-2 text-right">{t("paid")}</th>
+                          <th className="py-2 text-right">{t("balance")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -259,20 +261,20 @@ export function ReportsView() {
               </SelectContent>
             </Select>
             <Button size="sm" variant="outline" onClick={() => { setTaxesData(null); loadData(); }}>
-              Refresh
+              {t("refresh")}
             </Button>
           </div>
-          {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {loading && <p className="text-sm text-muted-foreground">{t("loading")}</p>}
           {error && <p className="text-sm text-destructive">{error}</p>}
           {!loading && !error && !taxesData && (
-            <p className="text-sm text-muted-foreground">No taxes data available.</p>
+            <p className="text-sm text-muted-foreground">{t("noTaxesData")}</p>
           )}
           {taxesData && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Taxes collected — {taxesData.year}</CardTitle>
+                <CardTitle className="text-lg">{t("taxesCollectedYear", { year: taxesData.year })}</CardTitle>
                 <CardDescription>
-                  Total tax collected: {formatCurrency(taxesData.totalTaxCollected)} · Avg tax rate: {taxesData.averageTaxRate.toFixed(2)}% · {taxesData.invoiceCount} invoices
+                  {t("totalTaxCollected", { amount: formatCurrency(taxesData.totalTaxCollected) })} · {t("invoiceCount", { count: taxesData.invoiceCount })}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -281,7 +283,7 @@ export function ReportsView() {
                     <div key={m.month} className="flex items-center justify-between border-b pb-2">
                       <span className="w-20 text-sm">{m.month}</span>
                       <span className="font-medium">{formatCurrency(m.taxAmount)}</span>
-                      <span className="text-xs text-muted-foreground">({m.count} invoices)</span>
+                      <span className="text-xs text-muted-foreground">{t("invoiceCount", { count: m.count })}</span>
                     </div>
                   ))}
                 </div>
@@ -293,17 +295,17 @@ export function ReportsView() {
 
       {activeTab === "customers" && (
         <>
-          {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {loading && <p className="text-sm text-muted-foreground">{t("loading")}</p>}
           {error && <p className="text-sm text-destructive">{error}</p>}
           {!loading && !error && !customersData && (
-            <p className="text-sm text-muted-foreground">No customer data available.</p>
+            <p className="text-sm text-muted-foreground">{t("noCustomersData")}</p>
           )}
           {customersData && (
             <>
               <div className="grid gap-4 sm:grid-cols-3">
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Total revenue</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalRevenue")}</CardTitle>
                   </CardHeader>
                   <CardContent className="text-2xl font-bold">
                     {formatCurrency(customersData.totalRevenue)}
@@ -311,7 +313,7 @@ export function ReportsView() {
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Customers</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("customers")}</CardTitle>
                   </CardHeader>
                   <CardContent className="text-2xl font-bold">
                     {customersData.customerCount}
@@ -319,7 +321,7 @@ export function ReportsView() {
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Active customers</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("activeCustomers")}</CardTitle>
                   </CardHeader>
                   <CardContent className="text-2xl font-bold">
                     {customersData.activeCustomerCount}
@@ -328,19 +330,19 @@ export function ReportsView() {
               </div>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Customer spending</CardTitle>
+                  <CardTitle className="text-lg">{t("customerSpending")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b text-left text-muted-foreground">
-                          <th className="py-2">Customer</th>
-                          <th className="py-2 text-right">Invoices</th>
-                          <th className="py-2 text-right">Total invoiced</th>
-                          <th className="py-2 text-right">Total paid</th>
-                          <th className="py-2 text-right">Tax collected</th>
-                          <th className="py-2 text-right">Outstanding</th>
+                          <th className="py-2">{t("customer")}</th>
+                          <th className="py-2 text-right">{t("invoices")}</th>
+                          <th className="py-2 text-right">{t("totalInvoicedHeader")}</th>
+                          <th className="py-2 text-right">{t("totalPaid")}</th>
+                          <th className="py-2 text-right">{t("taxCollected")}</th>
+                          <th className="py-2 text-right">{t("outstandingHeader")}</th>
                         </tr>
                       </thead>
                       <tbody>
