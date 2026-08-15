@@ -5,63 +5,69 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-async function getLocale() {
+async function getCookieLocale(): Promise<string | null> {
   const cookieStore = await cookies();
-  const headerStore = await headers();
-
-  let locale = cookieStore.get("locale")?.value;
-
-  if (!locale || !routing.locales.includes(locale as any)) {
-    const acceptLanguage = headerStore.get("accept-language");
-    if (acceptLanguage) {
-      const preferred = acceptLanguage.split(",")[0]?.split("-")[0];
-      if (routing.locales.includes(preferred as any)) {
-        locale = preferred as string;
-      }
-    }
+  const locale = cookieStore.get("locale")?.value;
+  if (locale && routing.locales.includes(locale as any)) {
+    return locale as string;
   }
-
-  if (!locale || !routing.locales.includes(locale as any)) {
-    locale = routing.defaultLocale;
-  }
-
-  return locale;
+  return null;
 }
 
-async function getOrgDefaultLocale(orgId: string | null): Promise<string | null> {
-  if (!orgId) return null;
+async function getAcceptLanguageLocale(): Promise<string | null> {
+  const headerStore = await headers();
+  const acceptLanguage = headerStore.get("accept-language");
+  if (acceptLanguage) {
+    const preferred = acceptLanguage.split(",")[0]?.split("-")[0];
+    if (preferred && routing.locales.includes(preferred as any)) {
+      return preferred as string;
+    }
+  }
+  return null;
+}
+
+async function getDbUserLocale(userId: string): Promise<string | null> {
   try {
-    const org = await db.organization.findUnique({
-      where: { id: orgId },
-      select: { defaultLocale: true },
+    const dbUser = await db.user.findUnique({
+      where: { id: userId },
+      select: { locale: true, organizationId: true },
     });
-    return org?.defaultLocale ?? null;
+    const userLocale = dbUser?.locale;
+    if (userLocale && routing.locales.includes(userLocale as any)) {
+      return userLocale as string;
+    }
+    if (dbUser?.organizationId) {
+      try {
+        const org = await db.organization.findUnique({
+          where: { id: dbUser.organizationId },
+          select: { defaultLocale: true },
+        });
+        const orgDefault = org?.defaultLocale;
+        if (orgDefault && routing.locales.includes(orgDefault as any)) {
+          return orgDefault as string;
+        }
+      } catch {
+        // Organization may not have defaultLocale column yet (schema drift)
+      }
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
 export default getRequestConfig(async () => {
-  const cookieLocale = await getLocale();
-  let locale = cookieLocale;
+  let locale = await getCookieLocale();
 
-  try {
+  if (!locale) {
     const session = await getServerSession(authOptions);
     if (session?.user?.id) {
-      const dbUser = await db.user.findUnique({
-        where: { id: session.user.id },
-        select: { locale: true, organizationId: true },
-      });
-      const userLocale = dbUser?.locale;
-      const orgDefault = await getOrgDefaultLocale(dbUser?.organizationId ?? null);
-      if (userLocale && routing.locales.includes(userLocale as any)) {
-        locale = userLocale;
-      } else if (orgDefault && routing.locales.includes(orgDefault as any)) {
-        locale = orgDefault;
-      }
+      locale = await getDbUserLocale(session.user.id);
     }
-  } catch {
-    // Fall back to cookie/Accept-Language locale
+  }
+
+  if (!locale) {
+    locale = await getAcceptLanguageLocale();
   }
 
   if (!locale || !routing.locales.includes(locale as any)) {

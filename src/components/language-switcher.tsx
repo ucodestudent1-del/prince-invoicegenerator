@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Globe } from "lucide-react";
+import { updateUserLocale } from "@/lib/actions/user";
 
 const LOCALE_NAMES: Record<string, string> = {
   en: "English",
@@ -27,10 +28,11 @@ export function LanguageSwitcher() {
 
   function onSelect(newLocale: string) {
     startTransition(() => {
-      // The custom useRouter from @/i18n/navigation normalizes the href
-      // (strips existing locale prefix) and passes the new locale, so
-      // next-intl adds the prefix exactly once: /login → /fr/login
       router.replace(window.location.pathname, { locale: newLocale });
+      updateUserLocale(newLocale).catch(() => {
+        // Non-blocking: the URL/cookie already changed, so the user sees
+        // the new language even if the DB update fails.
+      });
     });
   }
 
