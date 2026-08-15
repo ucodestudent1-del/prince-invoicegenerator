@@ -89,15 +89,36 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       const locales = ["en", "fr", "es", "de"] as const;
 
+      // Relative URLs (e.g. callbackUrl="/en/dashboard") are returned as-is.
       if (!url.startsWith("http")) {
         return url;
       }
 
       const target = new URL(url);
-      const origin = new URL(baseUrl);
+
+      // If NEXTAUTH_URL is missing or empty, fall back to the target origin.
+      // This prevents a 404 when the user ends up on localhost.
+      const effectiveBaseUrl = baseUrl || target.origin;
+
+      const origin = new URL(effectiveBaseUrl);
+
+      // If the target is on a different origin than baseUrl, return baseUrl
+      // to prevent open redirects. But if baseUrl is localhost and the target
+      // is the real production domain, prefer the target (proxy-aware).
+      if (target.origin === "http://localhost:3000" && origin.origin !== "http://localhost:3000") {
+        // baseUrl is likely misconfigured (localhost); use the target's origin instead
+        const pathname = target.pathname;
+        const hasLocale = locales.some(
+          (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
+        );
+        if (hasLocale) {
+          return target.origin + target.pathname + target.search + target.hash;
+        }
+        return `${target.origin}${origin.pathname || "/en"}${target.search}${target.hash}`;
+      }
 
       if (target.origin !== origin.origin) {
-        return baseUrl;
+        return effectiveBaseUrl;
       }
 
       const pathname = target.pathname;
@@ -109,7 +130,7 @@ export const authOptions: NextAuthOptions = {
         return url;
       }
 
-      return `${origin.origin}/en${pathname}${target.search}${target.hash}`;
+      return `${origin.origin}${origin.pathname || "/en"}${pathname}${target.search}${target.hash}`;
     },
   },
 };

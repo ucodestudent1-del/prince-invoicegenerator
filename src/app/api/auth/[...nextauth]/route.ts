@@ -4,8 +4,17 @@ import { rateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 
 // Ensure host header is trusted in production behind a proxy (Railway, Vercel, etc.)
-// This prevents NextAuth from generating callback URLs with internal hostnames.
+// In NextAuth v4, NEXTAUTH_URL controls proxy trust. AUTH_TRUST_HOST is used as
+// a secondary signal to suppress the warning and optionally set the URL dynamically.
 const trustProxy = process.env.AUTH_TRUST_HOST === "true";
+
+// Fallback: derive NEXTAUTH_URL from the request host if not explicitly set.
+function ensureAuthUrl(request: NextRequest) {
+  if (!process.env.NEXTAUTH_URL && trustProxy && request.headers.get("host")) {
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    process.env.NEXTAUTH_URL = `${proto}://${request.headers.get("host")}`;
+  }
+}
 
 let handler: ReturnType<typeof NextAuth> | null = null;
 
@@ -16,7 +25,9 @@ function getHandler() {
   return handler;
 }
 
-function preflightCheck(): NextResponse | null {
+function preflightCheck(request: NextRequest): NextResponse | null {
+  ensureAuthUrl(request);
+
   if (process.env.NODE_ENV === "production") {
     if (!process.env.NEXTAUTH_SECRET) {
       console.error(
@@ -39,7 +50,7 @@ function preflightCheck(): NextResponse | null {
         {
           error:
             "Server is misconfigured: NEXTAUTH_URL is required in production. " +
-            "Set it to the fully qualified public origin.",
+            "Set it to the fully qualified public origin (e.g. https://your-app.up.railway.app).",
         },
         { status: 500 }
       );
@@ -61,7 +72,7 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  const preflight = preflightCheck();
+  const preflight = preflightCheck(request);
   if (preflight) return preflight;
 
   try {
@@ -82,7 +93,7 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  const preflight = preflightCheck();
+  const preflight = preflightCheck(request);
   if (preflight) return preflight;
 
   try {
