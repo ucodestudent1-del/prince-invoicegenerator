@@ -111,7 +111,7 @@ export default async function SettingsPage({ params }: { params: { locale: strin
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline" size="sm">
-            <Link href={`/${params.locale}/dashboard/billing`}>{t("openBilling")}</Link>
+            <Link href="/dashboard/billing">{t("openBilling")}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -125,7 +125,7 @@ export default async function SettingsPage({ params }: { params: { locale: strin
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline" size="sm">
-            <Link href={`/${params.locale}/dashboard/settings/reminders`}>{t("openReminders")}</Link>
+            <Link href="/dashboard/settings/reminders">{t("openReminders")}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -139,7 +139,7 @@ export default async function SettingsPage({ params }: { params: { locale: strin
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline" size="sm">
-            <Link href={`/${params.locale}/dashboard/settings/late-fees`}>{t("openLateFees")}</Link>
+            <Link href="/dashboard/settings/late-fees">{t("openLateFees")}</Link>
           </Button>
         </CardContent>
       </Card>

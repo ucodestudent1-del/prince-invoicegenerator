@@ -13,7 +13,7 @@ const {
 } = createNavigation(routing);
 
 /**
- * Strip any existing locale prefix from an href before passing it to
+ * Strip any existing locale prefix from a string href before passing it to
  * next-intl's router. The custom useRouter always passes `locale: safeLocale`,
  * which causes next-intl to set `forcePrefix: true`. Without stripping,
  * a href like "/en/dashboard" would become "/en/en/dashboard".

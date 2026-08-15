@@ -96,7 +96,7 @@ export default async function InvoicesPage({ params }: { params: { locale: strin
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <div className="flex gap-2">
           <Button asChild>
-            <Link href={`/${params.locale}/dashboard/invoices/new`}>
+            <Link href="/dashboard/invoices/new">
               <Plus className="mr-2 h-4 w-4" /> {t("newInvoice")}
             </Link>
           </Button>
@@ -131,7 +131,7 @@ export default async function InvoicesPage({ params }: { params: { locale: strin
                     <TableRow key={inv.id}>
                       <TableCell>
                         <Link
-                          href={`/${params.locale}/dashboard/invoices/${inv.id}`}
+                          href={`/dashboard/invoices/${inv.id}`}
                           className="font-medium hover:underline"
                         >
                           {inv.number}

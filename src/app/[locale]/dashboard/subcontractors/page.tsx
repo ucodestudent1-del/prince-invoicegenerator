@@ -40,7 +40,7 @@ export default async function SubcontractorsPage({ params }: { params: { locale:
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <Button asChild>
-          <Link href={`/${params.locale}/dashboard/subcontractors/new`}>
+          <Link href="/dashboard/subcontractors/new">
             <Plus className="mr-2 h-4 w-4" /> {t("newSubcontractor")}
           </Link>
         </Button>

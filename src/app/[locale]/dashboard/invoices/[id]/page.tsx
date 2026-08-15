@@ -102,13 +102,13 @@ export default async function InvoiceDetailPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" size="sm">
-          <Link href={`/${params.locale}/dashboard/invoices`}>
+          <Link href="/dashboard/invoices">
             <ArrowLeft className="mr-2 h-4 w-4" /> {t("back")}
           </Link>
         </Button>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href={`/${params.locale}/dashboard/invoices/${invoice.id}/print`} target="_blank">
+            <Link href={`/dashboard/invoices/${invoice.id}/print`} target="_blank">
               <Printer className="mr-2 h-4 w-4" /> {t("exportPdf")}
             </Link>
           </Button>

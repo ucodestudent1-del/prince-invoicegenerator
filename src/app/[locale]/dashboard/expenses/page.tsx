@@ -45,7 +45,7 @@ export default async function ExpensesPage({ params }: { params: { locale: strin
           </p>
         </div>
         <Button asChild>
-          <Link href={`/${params.locale}/dashboard/expenses/new`}>
+          <Link href="/dashboard/expenses/new">
             <Plus className="mr-2 h-4 w-4" /> {t("newExpense")}
           </Link>
         </Button>

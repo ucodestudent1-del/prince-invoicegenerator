@@ -97,7 +97,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
           </p>
         </div>
         <Button asChild>
-          <Link href={`/${params.locale}/dashboard/invoices/new`}>
+          <Link href="/dashboard/invoices/new">
             <Plus className="mr-2 h-4 w-4" /> {t("newInvoice")}
           </Link>
         </Button>
@@ -125,7 +125,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
           {recentInvoices.length === 0 && (
             <p className="text-sm text-muted-foreground">
               {t("noInvoicesYet")}{" "}
-              <Link href={`/${params.locale}/dashboard/invoices/new`} className="text-primary hover:underline">
+              <Link href="/dashboard/invoices/new" className="text-primary hover:underline">
                 {t("create")}
               </Link>
               .
@@ -138,7 +138,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
             >
               <div>
                 <Link
-                  href={`/${params.locale}/dashboard/invoices/${inv.id}`}
+                  href={`/dashboard/invoices/${inv.id}`}
                   className="font-medium hover:underline"
                 >
                   {inv.number}

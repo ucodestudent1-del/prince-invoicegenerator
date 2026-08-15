@@ -25,7 +25,7 @@ export default async function ScheduledPage({ params }: { params: { locale: stri
           </p>
         </div>
         <Button asChild>
-          <Link href={`/${params.locale}/dashboard/invoices/new`}>
+          <Link href="/dashboard/invoices/new">
             <Plus className="mr-2 h-4 w-4" />
             {t("scheduleInvoice")}
           </Link>

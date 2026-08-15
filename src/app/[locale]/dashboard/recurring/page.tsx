@@ -48,7 +48,7 @@ export default async function RecurringPage({ params }: { params: { locale: stri
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <Button asChild>
-          <Link href={`/${params.locale}/dashboard/recurring/new`}>
+            <Link href="/dashboard/recurring/new">
             <Plus className="mr-2 h-4 w-4" /> {t("newConfig")}
           </Link>
         </Button>
@@ -89,7 +89,7 @@ export default async function RecurringPage({ params }: { params: { locale: stri
                     <TableCell>
                       {config.lastInvoice ? (
                         <Link
-                          href={`/${params.locale}/dashboard/invoices/${config.lastInvoice.id}`}
+                          href={`/dashboard/invoices/${config.lastInvoice.id}`}
                           className="text-primary hover:underline"
                         >
                           {config.lastInvoice.number}
