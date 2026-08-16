@@ -97,11 +97,7 @@ export default async function InvoicePrintPage({
 
   return (
     <div className={`mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: org.fontFamily } : undefined}>
-      {!canPdfExport && (
-        <div className="mb-6 rounded-md border border-yellow-400 bg-yellow-50 p-3 text-sm text-yellow-800">
-          {t("watermark")}
-        </div>
-      )}
+
       <div className="mb-8 flex items-start justify-between border-b pb-6">
         <div className="flex items-start gap-4">
           {invoice.logoUrl && (
@@ -113,9 +109,7 @@ export default async function InvoicePrintPage({
               {t("brandName")}
             </p>
             <p className="text-xs text-gray-500">{t("brandTagline")}</p>
-            {!canPdfExport && (
-              <p className="text-xs text-gray-400 mt-1">{t("poweredBy")}</p>
-            )}
+
           </div>
         </div>
         <div className="text-right">
@@ -243,4 +237,7 @@ export default async function InvoicePrintPage({
     </div>
   );
 }
+
+
+
 
