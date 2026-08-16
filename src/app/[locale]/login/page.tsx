@@ -40,9 +40,6 @@ export default function LoginPage() {
               {APP_NAME}
           </Link>
           <CardTitle>{t("signInTitle")}</CardTitle>
-          <CardDescription>
-            {t("signInSubtitle")}
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
