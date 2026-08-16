@@ -111,15 +111,8 @@
     "goHome": "Zur Startseite"
   },
   "auth": {
-    "signInTitle": "Anmelden",
-    "signInSubtitle": "Nutze deine E-Mail, um die Plattform zu erkunden (Entwicklungsmodus).",
-    "emailLabel": "E-Mail",
-    "emailPlaceholder": "du@bauunternehmer.com",
-    "nameLabel": "Name",
-    "namePlaceholder": "Jan Bauer",
-    "continueButton": "Weiter",
-    "googleButton": "Mit Google fortfahren",
-    "devModeNote": "Entwicklungsmodus: Jede E-Mail/Passwort-Kombination funktioniert."
+    "signInTitle": "Sign in",
+    "googleButton": "Continue with Google"
   },
   "navigation": {
     "appName": "Prince",

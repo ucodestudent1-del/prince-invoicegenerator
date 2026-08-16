@@ -111,15 +111,8 @@
     "goHome": "Ir a inicio"
   },
   "auth": {
-    "signInTitle": "Iniciar sesión",
-    "signInSubtitle": "Usa tu correo electrónico para explorar la plataforma (modo dev).",
-    "emailLabel": "Correo electrónico",
-    "emailPlaceholder": "tu@contratista.com",
-    "nameLabel": "Nombre",
-    "namePlaceholder": "Juan Prince",
-    "continueButton": "Continuar",
-    "googleButton": "Continuar con Google",
-    "devModeNote": "Modo desarrollo: cualquier correo y contraseña funciona."
+    "signInTitle": "Sign in",
+    "googleButton": "Continue with Google"
   },
   "navigation": {
     "appName": "Prince",

@@ -1,7 +1,6 @@
 import type { NextAuthOptions, DefaultSession } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 import { APP_NAME } from "@/lib/app-name";
 import { isMissingColumnError } from "@/lib/org";
@@ -44,27 +43,6 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    })
-  );
-}
-
-// Development-only email login so the app is usable without OAuth secrets.
-if (process.env.NODE_ENV !== "production") {
-  providers.push(
-    CredentialsProvider({
-      name: "Email (dev)",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        name: { label: "Name", type: "text" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email) return null;
-        return {
-          id: credentials.email,
-          email: credentials.email,
-          name: credentials.name || credentials.email.split("@")[0],
-        };
-      },
     })
   );
 }

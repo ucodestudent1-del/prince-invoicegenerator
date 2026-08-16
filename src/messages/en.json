@@ -112,14 +112,7 @@
   },
   "auth": {
     "signInTitle": "Sign in",
-    "signInSubtitle": "Use your email to explore the platform (dev mode).",
-    "emailLabel": "Email",
-    "emailPlaceholder": "you@contractor.com",
-    "nameLabel": "Name",
-    "namePlaceholder": "John Prince",
-    "continueButton": "Continue",
-    "googleButton": "Continue with Google",
-    "devModeNote": "Development mode: any email/password works."
+    "googleButton": "Continue with Google"
   },
   "navigation": {
     "appName": "Prince",
@@ -486,7 +479,7 @@
     "failedTaxes": "Failed to load taxes report.",
     "failedCustomers": "Failed to load customer analytics.",
     "failedGeneric": "Failed to load report data. Please try again.",
-    "loading": "Loading…",
+    "loading": "Loadingï¿½",
     "noRevenueData": "No revenue data available.",
     "noOutstandingData": "No outstanding data available.",
     "noTaxesData": "No taxes data available.",

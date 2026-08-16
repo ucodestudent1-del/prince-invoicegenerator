@@ -111,15 +111,8 @@
     "goHome": "Aller à l'accueil"
   },
   "auth": {
-    "signInTitle": "Se connecter",
-    "signInSubtitle": "Utilisez votre e-mail pour explorer la plateforme (mode dev).",
-    "emailLabel": "E-mail",
-    "emailPlaceholder": "vous@contracteur.com",
-    "nameLabel": "Nom",
-    "namePlaceholder": "Jean Prince",
-    "continueButton": "Continuer",
-    "googleButton": "Continuer avec Google",
-    "devModeNote": "Mode développement : tout e-mail/mot de passe fonctionne."
+    "signInTitle": "Sign in",
+    "googleButton": "Continue with Google"
   },
   "navigation": {
     "appName": "Prince",
