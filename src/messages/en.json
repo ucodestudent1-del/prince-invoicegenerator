@@ -352,7 +352,8 @@
     "quantity": "Quantity",
     "unitPrice": "Unit price",
     "subtotal": "Subtotal",
-    "tax": "Tax"
+    "tax": "Tax",
+    "discount": "Discount"
   },
   "changeOrders": {
     "title": "Title",
@@ -369,7 +370,8 @@
     "cancel": "Cancel",
     "create": "Create",
     "saving": "Saving…",
-    "failed": "Failed."
+    "failed": "Failed.",
+    "none": "None"
   },
   "projects": {
     "title": "Projects",
@@ -388,7 +390,9 @@
     "cancel": "Cancel",
     "create": "Create",
     "saving": "Saving…",
-    "failed": "Failed."
+    "failed": "Failed.",
+    "noCustomersFound": "No customers found. Please create a customer first.",
+    "none": "None"
   },
   "expenses": {
     "title": "Expenses",
@@ -407,7 +411,10 @@
     "cancel": "Cancel",
     "create": "Create",
     "saving": "Saving…",
-    "failed": "Failed."
+    "failed": "Failed.",
+    "amount": "Amount",
+    "enterProjectName": "Enter project name",
+    "notes": "Notes"
   },
   "customers": {
     "title": "Customers",

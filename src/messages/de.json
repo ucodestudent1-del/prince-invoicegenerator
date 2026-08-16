@@ -352,7 +352,8 @@
     "quantity": "Menge",
     "unitPrice": "Einzelpreis",
     "subtotal": "Zwischensumme",
-    "tax": "Steuer"
+    "tax": "Steuer",
+    "discount": "Rabatt"
   },
   "changeOrders": {
     "title": "Titel",
@@ -369,7 +370,8 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "saving": "Speichern…",
-    "failed": "Fehlgeschlagen."
+    "failed": "Fehlgeschlagen.",
+    "none": "Keine"
   },
   "projects": {
     "title": "Projekte",
@@ -388,7 +390,9 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "saving": "Speichern…",
-    "failed": "Fehlgeschlagen."
+    "failed": "Fehlgeschlagen.",
+    "noCustomersFound": "Keine Kunden gefunden. Bitte zuerst einen Kunden erstellen.",
+    "none": "Keine"
   },
   "expenses": {
     "title": "Ausgaben",
@@ -407,7 +411,10 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "saving": "Speichern…",
-    "failed": "Fehlgeschlagen."
+    "failed": "Fehlgeschlagen.",
+    "amount": "Betrag",
+    "enterProjectName": "Projektnamen eingeben",
+    "notes": "Notizen"
   },
   "customers": {
     "title": "Kunden",

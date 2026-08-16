@@ -352,7 +352,8 @@
     "quantity": "Cantidad",
     "unitPrice": "Precio unitario",
     "subtotal": "Subtotal",
-    "tax": "Impuesto"
+    "tax": "Impuesto",
+    "discount": "Descuento"
   },
   "changeOrders": {
     "title": "Título",
@@ -369,7 +370,8 @@
     "cancel": "Cancelar",
     "create": "Crear",
     "saving": "Guardando…",
-    "failed": "Fallido."
+    "failed": "Fallido.",
+    "none": "Ninguno"
   },
   "projects": {
     "title": "Proyectos",
@@ -388,7 +390,9 @@
     "cancel": "Cancelar",
     "create": "Crear",
     "saving": "Guardando…",
-    "failed": "Fallido."
+    "failed": "Fallido.",
+    "noCustomersFound": "No se encontraron clientes. Por favor crea un cliente primero.",
+    "none": "Ninguno"
   },
   "expenses": {
     "title": "Gastos",
@@ -407,7 +411,10 @@
     "cancel": "Cancelar",
     "create": "Crear",
     "saving": "Guardando…",
-    "failed": "Fallido."
+    "failed": "Fallido.",
+    "amount": "Importe",
+    "enterProjectName": "Ingrese el nombre del proyecto",
+    "notes": "Notas"
   },
   "customers": {
     "title": "Clientes",
