@@ -343,7 +343,16 @@
     "createEstimate": "Crear presupuesto",
     "saving": "Guardando…",
     "selectCustomer": "Seleccionar un cliente…",
-    "failed": "Fallido."
+    "failed": "Fallido.",
+    "create": "Crear",
+    "noCustomersFound": "No se encontraron clientes. Por favor crea un cliente primero.",
+    "customerRequired": "Por favor selecciona un cliente.",
+    "addItem": "Agregar artículo",
+    "description": "Descripción",
+    "quantity": "Cantidad",
+    "unitPrice": "Precio unitario",
+    "subtotal": "Subtotal",
+    "tax": "Impuesto"
   },
   "changeOrders": {
     "title": "Título",

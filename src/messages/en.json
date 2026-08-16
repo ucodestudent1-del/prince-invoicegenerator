@@ -343,7 +343,16 @@
     "createEstimate": "Create estimate",
     "saving": "Saving…",
     "selectCustomer": "Select a customer…",
-    "failed": "Failed."
+    "failed": "Failed.",
+    "create": "Create",
+    "noCustomersFound": "No customers found. Please create a customer first.",
+    "customerRequired": "Please select a customer.",
+    "addItem": "Add item",
+    "description": "Description",
+    "quantity": "Quantity",
+    "unitPrice": "Unit price",
+    "subtotal": "Subtotal",
+    "tax": "Tax"
   },
   "changeOrders": {
     "title": "Title",

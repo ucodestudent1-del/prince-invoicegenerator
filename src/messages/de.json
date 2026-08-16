@@ -343,7 +343,16 @@
     "createEstimate": "Angebot erstellen",
     "saving": "Speichern…",
     "selectCustomer": "Kunde auswählen…",
-    "failed": "Fehlgeschlagen."
+    "failed": "Fehlgeschlagen.",
+    "create": "Erstellen",
+    "noCustomersFound": "Keine Kunden gefunden. Bitte zuerst einen Kunden erstellen.",
+    "customerRequired": "Bitte wählen Sie einen Kunden aus.",
+    "addItem": "Artikel hinzufügen",
+    "description": "Beschreibung",
+    "quantity": "Menge",
+    "unitPrice": "Einzelpreis",
+    "subtotal": "Zwischensumme",
+    "tax": "Steuer"
   },
   "changeOrders": {
     "title": "Titel",

@@ -343,7 +343,16 @@
     "createEstimate": "Créer le devis",
     "saving": "Enregistrement…",
     "selectCustomer": "Sélectionner un client…",
-    "failed": "Échec."
+    "failed": "Échec.",
+    "create": "Créer",
+    "noCustomersFound": "Aucun client trouvé. Veuillez d'abord créer un client.",
+    "customerRequired": "Veuillez sélectionner un client.",
+    "addItem": "Ajouter un article",
+    "description": "Description",
+    "quantity": "Quantité",
+    "unitPrice": "Prix unitaire",
+    "subtotal": "Sous-total",
+    "tax": "Taxe"
   },
   "changeOrders": {
     "title": "Titre",
