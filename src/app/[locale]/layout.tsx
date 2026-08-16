@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import { LocaleRedirectGuard } from "@/components/locale-redirect-guard";
 import { setRequestLocale } from "next-intl/server";
 import { cookies } from "next/headers";
@@ -104,14 +105,14 @@ export default async function RootLayout({
   children: React.ReactNode;
   params: { locale: string };
 }) {
-  setRequestLocale(params.locale);
+  const messages = await getMessages();
   ensureEnv();
   const { theme, brandColor, fontFamily } = await getInitialTheme();
 
   return (
     <html lang={params.locale}>
       <body className="min-h-screen antialiased">
-        <NextIntlClientProvider locale={params.locale}>
+        <NextIntlClientProvider locale={params.locale} messages={messages}>
           <LocaleRedirectGuard />
           <ThemeClient
             initialTheme={theme}
