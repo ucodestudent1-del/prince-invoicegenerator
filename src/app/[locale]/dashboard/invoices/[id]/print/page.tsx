@@ -235,11 +235,9 @@ export default async function InvoicePrintPage({
 
       <div className="mt-10 flex items-center gap-3">
         <PrintButton />
-        {canPdfExport && (
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Download className="mr-2 h-4 w-4" /> {t("downloadPdf")}
-          </Button>
-        )}
+        <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <Download className="mr-2 h-4 w-4" /> {t("downloadPdf")}
+        </Button>
       </div>
     </div>
   );

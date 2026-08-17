@@ -149,6 +149,7 @@ export function InvoiceForm({
         if (!invoice?.id) {
           throw new Error("Failed to create invoice. Please try again.");
         }
+        window.open(`/dashboard/invoices/${invoice.id}/print?auto`, "_blank");
         router.push(`/dashboard/invoices/${invoice.id}`);
     } catch (err: any) {
       setError(err?.message ?? "Failed to create invoice.");
