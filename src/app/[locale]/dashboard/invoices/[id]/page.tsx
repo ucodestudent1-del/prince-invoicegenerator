@@ -191,7 +191,7 @@ export default async function InvoiceDetailPage({
                   )}
                   <div>
                     <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("type")}</p>
-                    <Badge className={getTypeBadgeClass(invoice.type)}>
+                    <Badge variant="outline" className={getTypeBadgeClass(invoice.type)}>
                       {getTypeLabel(invoice.type, t)}
                     </Badge>
                   </div>

@@ -140,7 +140,7 @@ export default async function InvoicesPage({ params }: { params: { locale: strin
                       </TableCell>
                       <TableCell>{inv.customer?.name ?? "Unknown"}</TableCell>
                       <TableCell>
-                        <Badge className={getTypeBadgeClass(inv.type)}>
+                        <Badge variant="outline" className={getTypeBadgeClass(inv.type)}>
                           {getTypeLabel(inv.type, t)}
                         </Badge>
                       </TableCell>

@@ -163,7 +163,7 @@ export default async function InvoicePrintPage({
           )}
           <div>
             <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("type")}</p>
-            <span className={getTypeBadgeClass(invoice.type)}>
+            <span className={`${getTypeBadgeClass(invoice.type)} inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider`}>
               {getTypeLabel(invoice.type, t)}
             </span>
           </div>
