@@ -21,6 +21,7 @@ export function InvoiceForm({
   canProjectManagement,
   canSchedule,
   hasSavedAddresses,
+  t,
 }: {
   customers: { id: string; name: string }[];
   projects: { id: string; name: string }[];
@@ -31,13 +32,14 @@ export function InvoiceForm({
   canProjectManagement: boolean;
   canSchedule: boolean;
   hasSavedAddresses: boolean;
+  t: (key: string) => string;
 }) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [customerId, setCustomerId] = React.useState("");
   const [projectId, setProjectId] = React.useState("");
-  const [type, setType] = React.useState("STANDARD");
+  const [type, setType] = React.useState<"STANDARD" | "PROGRESS" | "RECURRING">("STANDARD");
   const [issueDate, setIssueDate] = React.useState(
     new Date().toISOString().slice(0, 10)
   );
@@ -124,7 +126,7 @@ export function InvoiceForm({
         const invoice = await createInvoice({
           customerId,
           projectId: projectId || null,
-          type: canProgress ? (type as any) : "STANDARD",
+          type,
           issueDate,
           dueDate: dueDate || null,
           taxRate: Number(taxRate) || 0,
@@ -226,21 +228,19 @@ export function InvoiceForm({
               </select>
             )}
           </div>
-          {canProgress && (
-            <div className="space-y-1">
-              <Label htmlFor="type">Type</Label>
-              <select
-                id="type"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-              >
-                <option value="STANDARD">Standard</option>
-                <option value="PROGRESS">Progress (AIA-style)</option>
-                {canRecurring && <option value="RECURRING">Recurring</option>}
-              </select>
-            </div>
-          )}
+          <div className="space-y-1">
+            <Label htmlFor="type">Type</Label>
+            <select
+              id="type"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+              value={type}
+              onChange={(e) => setType(e.target.value as "STANDARD" | "PROGRESS" | "RECURRING")}
+            >
+              <option value="STANDARD">{t("standard")}</option>
+              {canProgress && <option value="PROGRESS">{t("progress")}</option>}
+              {canRecurring && <option value="RECURRING">{t("recurring")}</option>}
+            </select>
+          </div>
           {canCustomizeInvoiceNumber && (
             <div className="space-y-1">
               <Label htmlFor="invoiceNumber">Invoice name / number</Label>

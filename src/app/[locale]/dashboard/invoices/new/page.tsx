@@ -50,6 +50,7 @@ export default async function NewInvoicePage({ params }: { params: { locale: str
         canProjectManagement={hasFeature(plan, "projectManagement")}
         canSchedule={hasFeature(plan, "scheduledInvoices")}
         hasSavedAddresses={hasFeature(plan, "savedAddresses")}
+        t={t}
       />
     </div>
   );

@@ -17,6 +17,7 @@ import { Plus } from "lucide-react";
 import { logServerError } from "@/lib/errors";
 import { ExportCsvButton } from "@/components/export-csv-button";
 import { getTranslations } from "next-intl/server";
+import { getTypeLabel, getTypeBadgeClass } from "@/lib/invoice-types";
 
 const statusVariant: Record<string, any> = {
   DRAFT: "secondary",
@@ -138,7 +139,11 @@ export default async function InvoicesPage({ params }: { params: { locale: strin
                         </Link>
                       </TableCell>
                       <TableCell>{inv.customer?.name ?? "Unknown"}</TableCell>
-                      <TableCell className="text-muted-foreground">{inv.type}</TableCell>
+                      <TableCell>
+                        <Badge className={getTypeBadgeClass(inv.type)}>
+                          {getTypeLabel(inv.type, t)}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{formatDate(inv.issueDate)}</TableCell>
                       <TableCell>{formatDate(inv.dueDate)}</TableCell>
                       <TableCell>

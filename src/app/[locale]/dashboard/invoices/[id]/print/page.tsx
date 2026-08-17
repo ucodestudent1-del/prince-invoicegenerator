@@ -8,6 +8,7 @@ import { logServerError } from "@/lib/errors";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "next-intl/server";
+import { getTypeLabel, getTypeBadgeClass } from "@/lib/invoice-types";
 
 export const dynamic = "force-dynamic";
 
@@ -94,8 +95,6 @@ export default async function InvoicePrintPage({
   const layoutClass = `layout-${org?.layout ?? "default"}`;
   const showWatermark = !canPdfExport;
 
-  const typeLabel = invoice.type === "PROGRESS" ? t("progress") : invoice.type === "RECURRING" ? t("recurring") : t("standard");
-
   return (
     <div className={`invoice-print-container mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: org.fontFamily } : undefined}>
       {showWatermark && (
@@ -164,7 +163,9 @@ export default async function InvoicePrintPage({
           )}
           <div>
             <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("type")}</p>
-            <p>{typeLabel}</p>
+            <span className={getTypeBadgeClass(invoice.type)}>
+              {getTypeLabel(invoice.type, t)}
+            </span>
           </div>
         </div>
       </div>

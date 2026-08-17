@@ -19,6 +19,7 @@ import { PaymentHistory } from "@/components/payment-history";
 import { AuditLog } from "@/components/audit-log";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
+import { getTypeLabel, getTypeBadgeClass } from "@/lib/invoice-types";
 
 export default async function InvoiceDetailPage({
   params,
@@ -190,7 +191,9 @@ export default async function InvoiceDetailPage({
                   )}
                   <div>
                     <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("type")}</p>
-                    <p>{invoice.type}</p>
+                    <Badge className={getTypeBadgeClass(invoice.type)}>
+                      {getTypeLabel(invoice.type, t)}
+                    </Badge>
                   </div>
                 </div>
               </div>
