@@ -58,3 +58,117 @@
     font-size: 130%;
   }
 }
+
+@layer components {
+  .template-standard {
+    --invoice-header-bg: transparent;
+    --invoice-header-border: #e5e7eb;
+    --invoice-accent: #374151;
+  }
+
+  .template-modern {
+    --invoice-header-bg: #f8fafc;
+    --invoice-header-border: #cbd5e1;
+    --invoice-accent: #0f172a;
+  }
+
+  .template-minimal {
+    --invoice-header-bg: transparent;
+    --invoice-header-border: transparent;
+    --invoice-accent: #6b7280;
+  }
+
+  .template-classic {
+    --invoice-header-bg: #fefce8;
+    --invoice-header-border: #d4d4d8;
+    --invoice-accent: #3f3f46;
+  }
+
+  .template-standard .invoice-header,
+  .template-modern .invoice-header,
+  .template-minimal .invoice-header,
+  .template-classic .invoice-header {
+    background-color: var(--invoice-header-bg);
+    border-bottom: 2px solid var(--invoice-header-border);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .template-standard .invoice-totals,
+  .template-modern .invoice-totals,
+  .template-minimal .invoice-totals,
+  .template-classic .invoice-totals {
+    border-top: 2px solid var(--invoice-header-border);
+  }
+
+  .layout-compact {
+    padding: 1rem !important;
+  }
+
+  .layout-compact .invoice-header {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .layout-compact table {
+    font-size: 0.875rem;
+  }
+
+  .layout-sidebar .invoice-header {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .layout-sidebar .invoice-header > div:first-child {
+    flex: 1;
+  }
+
+  .layout-sidebar .invoice-meta {
+    text-align: right;
+    min-width: 12rem;
+  }
+}
+
+@media print {
+  body {
+    font-size: 12pt;
+  }
+
+  .no-print,
+  nav,
+  header,
+  footer,
+  aside {
+    display: none !important;
+  }
+
+  .invoice-print-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  table {
+    page-break-inside: avoid;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  .invoice-section {
+    page-break-inside: avoid;
+  }
+
+  .invoice-header,
+  .invoice-totals {
+    page-break-inside: avoid;
+  }
+
+  @page {
+    margin: 1.5cm;
+  }
+}

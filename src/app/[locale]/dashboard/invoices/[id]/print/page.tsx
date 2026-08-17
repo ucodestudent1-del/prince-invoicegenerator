@@ -92,13 +92,19 @@ export default async function InvoicePrintPage({
 
   const templateClass = `template-${org?.template?.toLowerCase?.() ?? "standard"}`;
   const layoutClass = `layout-${org?.layout ?? "default"}`;
+  const showWatermark = !canPdfExport;
 
   const typeLabel = invoice.type === "PROGRESS" ? t("progress") : invoice.type === "RECURRING" ? t("recurring") : t("standard");
 
   return (
-    <div className={`mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: org.fontFamily } : undefined}>
+    <div className={`invoice-print-container mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: org.fontFamily } : undefined}>
+      {showWatermark && (
+        <div className="fixed inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 50 }}>
+          <span className="text-6xl font-bold text-gray-200 opacity-40 transform -rotate-12 select-none">{t("poweredBy")}</span>
+        </div>
+      )}
 
-      <div className="mb-8 flex items-start justify-between border-b pb-6">
+      <div className="invoice-header mb-8 flex items-start justify-between pb-6">
         <div className="flex items-start gap-4">
           {invoice.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -120,8 +126,8 @@ export default async function InvoicePrintPage({
               ? "bg-gray-800 text-white"
               : org?.template === "MINIMAL"
               ? "border border-gray-400 text-gray-700"
-              : "bg-gray-100 text-gray-600"
-          }`}>
+              : "text-gray-600"
+          }`} style={org?.brandColor && org?.template !== "MODERN" && org?.template !== "CLASSIC" ? { backgroundColor: org.brandColor, color: "#fff" } : undefined}>
             {t("invoice")}</span>
           <h2 className="text-2xl font-bold mt-2">{invoice.number}</h2>
           <p className="text-sm text-gray-500 mt-1">{t("issued", { date: formatDate(invoice.issueDate) })}</p>
@@ -190,7 +196,7 @@ export default async function InvoicePrintPage({
         </tbody>
       </table>
 
-      <div className="mt-6 flex justify-end">
+      <div className="invoice-totals mt-6 flex justify-end">
         <div className="w-72 space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-500">{t("subtotal")}</span>
@@ -212,7 +218,7 @@ export default async function InvoicePrintPage({
               <span>{formatCurrency(invoice.retainageAmount, invoice.currency)}</span>
             </div>
           )}
-          <div className="border-t-2 border-gray-300 pt-1 mt-1 flex justify-between text-base font-bold">
+          <div className="border-t-2 pt-1 mt-1 flex justify-between text-base font-bold" style={org?.accentColor ? { borderColor: org.accentColor, color: org.accentColor } : undefined}>
             <span>{t("total")}</span>
             <span>{formatCurrency(invoice.total, invoice.currency)}</span>
           </div>
