@@ -1,3 +1,6 @@
+-- Drop default constraint first
+ALTER TABLE "Organization" ALTER COLUMN "template" DROP DEFAULT;
+
 -- Create new enum type
 CREATE TYPE "TemplateStyle_new" AS ENUM ('REGULAR_INVOICE', 'TAX_INVOICE', 'PROFORMA_INVOICE', 'RECEIPT');
 
@@ -13,6 +16,9 @@ ALTER TABLE "Organization"
       ELSE 'REGULAR_INVOICE'::"TemplateStyle_new"
     END
   );
+
+-- Set new default
+ALTER TABLE "Organization" ALTER COLUMN "template" SET DEFAULT 'REGULAR_INVOICE';
 
 -- Drop old enum type
 DROP TYPE "TemplateStyle";
