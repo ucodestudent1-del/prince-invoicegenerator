@@ -5,7 +5,7 @@
     "description":  "Construction invoice generator for contractors with a subscription model",
     "scripts":  {
                     "dev":  "next dev",
-                    "build":  "prisma generate \u0026\u0026 next build",
+                    "build":  "npx prisma migrate resolve --rolled-back 20260816223700_replace_template_styles || echo \u0027already resolved\u0027; npx prisma migrate deploy; prisma generate \u0026\u0026 next build",
                     "start":  "next start",
                     "lint":  "next lint",
                     "typecheck":  "tsc --noEmit",
