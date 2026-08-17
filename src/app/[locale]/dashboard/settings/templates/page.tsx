@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { TemplateSelectorForm } from "@/components/template-selector";
-import { getTemplateSettings } from "@/lib/actions/customization";
+import { TemplateEditor } from "@/components/template-editor";
+import { getTemplateSettings, getBrandColors, getFontSettings, getLayoutSettings } from "@/lib/actions/customization";
 import { getCurrentUser, getActivePlan } from "@/lib/org";
 import { hasFeature } from "@/lib/plans";
 import { PricingFeature } from "@/components/pricing-feature";
@@ -33,15 +33,26 @@ async function TemplatesContent({ locale, t }: { locale: string; t: any }) {
     return <PricingFeature feature="invoiceTemplates" plan={plan} />;
   }
 
-  const current = await getTemplateSettings();
+  const [current, colors, fonts, layout] = await Promise.all([
+    getTemplateSettings(),
+    getBrandColors(),
+    getFontSettings(),
+    getLayoutSettings(),
+  ]);
 
   return (
     <div className="space-y-6">
-      <TemplateSelectorForm current={current} />
+      <TemplateEditor
+        current={current}
+        brandColor={colors.brandColor}
+        accentColor={colors.accentColor}
+        fontFamily={fonts}
+        layout={layout}
+      />
       <div className="rounded-md bg-muted/50 p-4">
         <h3 className="font-medium mb-2">{t("previews")}</h3>
         <p className="text-sm text-muted-foreground">
-          {t("previewDesc")}
+          {t("previewHint")}
         </p>
       </div>
     </div>

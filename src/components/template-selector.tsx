@@ -48,17 +48,20 @@ export function TemplateSelector({
   );
 }
 
-export function TemplateSelectorForm({ current, onSaved }: {
+export function TemplateSelectorForm({ current, onSaved, onTemplateChange }: {
   current: string;
   onSaved?: () => void;
+  onTemplateChange?: (value: string) => void;
 }) {
   const [selected, setSelected] = React.useState(current);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState(false);
 
   async function save() {
     setSaving(true);
     setError(null);
+    setSuccess(false);
     try {
       const res = await fetch("/api/customization", {
         method: "POST",
@@ -69,12 +72,19 @@ export function TemplateSelectorForm({ current, onSaved }: {
         const data = await res.json();
         throw new Error(data.error || "Failed to save template.");
       }
+      setSuccess(true);
       onSaved?.();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleChange(value: string) {
+    setSelected(value);
+    setSuccess(false);
+    onTemplateChange?.(value);
   }
 
   return (
@@ -84,7 +94,12 @@ export function TemplateSelectorForm({ current, onSaved }: {
           {error}
         </div>
       )}
-      <TemplateSelector selected={selected} onChange={setSelected} />
+      {success && (
+        <div className="rounded-md border border-green-500/50 bg-green-500/10 p-3 text-sm text-green-700">
+          Template saved successfully.
+        </div>
+      )}
+      <TemplateSelector selected={selected} onChange={handleChange} />
       <Button onClick={save} disabled={saving}>
         {saving ? "Saving…" : "Save template"}
       </Button>
