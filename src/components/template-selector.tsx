@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 
 const templates = [
-  { value: "STANDARD", label: "Standard", description: "A clean, professional look." },
-  { value: "MODERN", label: "Modern", description: "Bold colors and contemporary design." },
-  { value: "MINIMAL", label: "Minimal", description: "Clean with lots of white space." },
-  { value: "CLASSIC", label: "Classic", description: "Timeless layout with serif fonts." },
+  { value: "REGULAR_INVOICE", label: "Regular Invoice", description: "Standard business invoice with full details." },
+  { value: "TAX_INVOICE", label: "Tax Invoice", description: "Includes tax IDs and emphasized tax breakdown." },
+  { value: "PROFORMA_INVOICE", label: "Proforma Invoice", description: "Preliminary/quotation-style with estimated totals." },
+  { value: "RECEIPT", label: "Receipt", description: "Compact payment confirmation with PAID indicator." },
 ];
 
 export function TemplateSelector({

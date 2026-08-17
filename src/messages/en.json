@@ -322,7 +322,15 @@
       "standard": "Standard",
       "progress": "Progress (AIA-style)",
       "recurring": "Recurring",
-      "invoice": "Invoice"
+      "invoice": "Invoice",
+      "taxInvoice": "Tax Invoice",
+      "proformaInvoice": "Proforma Invoice",
+      "receipt": "Receipt",
+      "proformaNote": "This is a proforma invoice and does not represent a final bill.",
+      "taxId": "Tax ID / VAT",
+      "taxIdPlaceholder": "XX-XXXXXXX",
+      "taxableAmount": "Taxable Amount",
+      "amountPaid": "Amount Paid"
     }
   },
   "estimates": {

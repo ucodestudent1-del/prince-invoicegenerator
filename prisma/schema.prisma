@@ -110,10 +110,10 @@ enum AddressType {
 }
 
 enum TemplateStyle {
-  STANDARD
-  MODERN
-  MINIMAL
-  CLASSIC
+  REGULAR_INVOICE
+  TAX_INVOICE
+  PROFORMA_INVOICE
+  RECEIPT
 }
 
 // ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ model Organization {
   accentColor    String?
   fontFamily     String? 
   layout         String @default("default")
-  template       TemplateStyle @default(STANDARD)
+  template       TemplateStyle @default(REGULAR_INVOICE)
 
   localizedStrings LocalizedString[]
 

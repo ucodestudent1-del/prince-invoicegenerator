@@ -91,15 +91,35 @@ export default async function InvoicePrintPage({
     throw new Error("Unreachable: redirect should have exited");
   }
 
-  const templateClass = `template-${org?.template?.toLowerCase?.() ?? "standard"}`;
+  const templateValue = org?.template ?? "REGULAR_INVOICE";
+  const templateClass = `template-${templateValue.toLowerCase()}`;
   const layoutClass = `layout-${org?.layout ?? "default"}`;
   const showWatermark = !canPdfExport;
+
+  const documentTitle =
+    templateValue === "TAX_INVOICE"
+      ? t("taxInvoice")
+      : templateValue === "PROFORMA_INVOICE"
+        ? t("proformaInvoice")
+        : templateValue === "RECEIPT"
+          ? t("receipt")
+          : t("invoice");
+
+  const showProformaOverlay = templateValue === "PROFORMA_INVOICE";
+  const showTaxDetails = templateValue === "TAX_INVOICE";
+  const isReceipt = templateValue === "RECEIPT";
 
   return (
     <div className={`invoice-print-container mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: org.fontFamily } : undefined}>
       {showWatermark && (
         <div className="fixed inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 50 }}>
           <span className="text-6xl font-bold text-gray-200 opacity-40 transform -rotate-12 select-none">{t("poweredBy")}</span>
+        </div>
+      )}
+
+      {showProformaOverlay && (
+        <div className="fixed inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 40 }}>
+          <span className="text-5xl font-bold text-amber-200 opacity-30 transform -rotate-12 select-none">{t("proforma")}</span>
         </div>
       )}
 
@@ -118,19 +138,21 @@ export default async function InvoicePrintPage({
           </div>
         </div>
         <div className="text-right">
-          <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider type-badge ${
-            org?.template === "MODERN"
-              ? "bg-orange-600 text-white"
-              : org?.template === "CLASSIC"
-              ? "bg-gray-800 text-white"
-              : org?.template === "MINIMAL"
-              ? "border border-gray-400 text-gray-700"
-              : "text-gray-600"
-          }`} style={org?.brandColor && org?.template !== "MODERN" && org?.template !== "CLASSIC" ? { backgroundColor: org.brandColor, color: "#fff" } : undefined}>
-            {t("invoice")}</span>
+          <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
+            templateValue === "TAX_INVOICE"
+              ? "bg-blue-100 text-blue-700 border border-blue-200"
+              : templateValue === "PROFORMA_INVOICE"
+                ? "bg-amber-100 text-amber-700 border border-amber-200"
+                : templateValue === "RECEIPT"
+                  ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                  : "text-gray-600"
+          }`} style={org?.brandColor && templateValue === "REGULAR_INVOICE" ? { backgroundColor: org.brandColor, color: "#fff" } : undefined}>
+            {documentTitle}</span>
           <h2 className="text-2xl font-bold mt-2">{invoice.number}</h2>
           <p className="text-sm text-gray-500 mt-1">{t("issued", { date: formatDate(invoice.issueDate) })}</p>
-          <p className="text-sm text-gray-500">{t("due", { date: formatDate(invoice.dueDate) })}</p>
+          {!isReceipt && (
+            <p className="text-sm text-gray-500">{t("due", { date: formatDate(invoice.dueDate) })}</p>
+          )}
         </div>
       </div>
 
@@ -161,6 +183,12 @@ export default async function InvoicePrintPage({
               <p>{invoice.project.name}</p>
             </div>
           )}
+          {showTaxDetails && (
+            <div className="mb-4">
+              <p className="font-semibold text-xs uppercase tracking-wider text-blue-600 mb-1">{t("taxId")}</p>
+              <p className="font-mono text-sm">{t("taxIdPlaceholder")}</p>
+            </div>
+          )}
           <div>
             <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("type")}</p>
             <span className={`${getTypeBadgeClass(invoice.type)} inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider`}>
@@ -169,6 +197,12 @@ export default async function InvoicePrintPage({
           </div>
         </div>
       </div>
+
+      {showProformaOverlay && (
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+          {t("proformaNote")}
+        </div>
+      )}
 
       <table className="w-full text-sm">
         <thead>
@@ -197,13 +231,19 @@ export default async function InvoicePrintPage({
         </tbody>
       </table>
 
-      <div className="invoice-totals mt-6 flex justify-end">
+      <div className={`invoice-totals mt-6 flex justify-end ${isReceipt ? "border-2 border-emerald-200 bg-emerald-50 p-4 rounded-lg" : ""}`}>
         <div className="w-72 space-y-1 text-sm">
+          {isReceipt && (
+            <div className="mb-3 flex items-center justify-between rounded-full bg-emerald-600 px-3 py-1 text-white">
+              <span className="text-xs font-semibold uppercase tracking-wider">{t("paid")}</span>
+              <span className="text-sm font-bold">{formatCurrency(invoice.amountPaid, invoice.currency)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-500">{t("subtotal")}</span>
             <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
           </div>
-          <div className="flex justify-between">
+          <div className={`flex justify-between ${showTaxDetails ? "font-semibold text-blue-700" : ""}`}>
             <span className="text-gray-500">{t("tax")}</span>
             <span>{formatCurrency(invoice.taxAmount, invoice.currency)}</span>
           </div>
@@ -219,10 +259,28 @@ export default async function InvoicePrintPage({
               <span>{formatCurrency(invoice.retainageAmount, invoice.currency)}</span>
             </div>
           )}
-          <div className="border-t-2 pt-1 mt-1 flex justify-between text-base font-bold" style={org?.accentColor ? { borderColor: org.accentColor, color: org.accentColor } : undefined}>
-            <span>{t("total")}</span>
-            <span>{formatCurrency(invoice.total, invoice.currency)}</span>
+          {showTaxDetails && (
+            <div className="flex justify-between border-t border-blue-200 pt-1 mt-1">
+              <span className="text-gray-500">{t("taxableAmount")}</span>
+              <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
+            </div>
+          )}
+          <div className={`border-t-2 pt-1 mt-1 flex justify-between text-base font-bold ${isReceipt ? "border-emerald-300 text-emerald-700" : ""}`} style={!isReceipt && org?.accentColor ? { borderColor: org.accentColor, color: org.accentColor } : undefined}>
+            <span>{isReceipt ? t("amountPaid") : t("total")}</span>
+            <span>{formatCurrency(isReceipt ? invoice.amountPaid : invoice.total, invoice.currency)}</span>
           </div>
+          {!isReceipt && invoice.amountPaid > 0 && (
+            <div className="flex justify-between text-sm text-gray-500">
+              <span>{t("paid")}</span>
+              <span>{formatCurrency(invoice.amountPaid, invoice.currency)}</span>
+            </div>
+          )}
+          {!isReceipt && (
+            <div className="flex justify-between border-t pt-1 text-base font-bold text-orange-600">
+              <span>{t("balanceDue")}</span>
+              <span>{formatCurrency(invoice.total - invoice.amountPaid, invoice.currency)}</span>
+            </div>
+          )}
         </div>
       </div>
 

@@ -60,44 +60,44 @@
 }
 
 @layer components {
-  .template-standard {
+  .template-regular-invoice {
     --invoice-header-bg: transparent;
     --invoice-header-border: #e5e7eb;
     --invoice-accent: #374151;
   }
 
-  .template-modern {
-    --invoice-header-bg: #f8fafc;
-    --invoice-header-border: #cbd5e1;
-    --invoice-accent: #0f172a;
+  .template-tax-invoice {
+    --invoice-header-bg: #eff6ff;
+    --invoice-header-border: #bfdbfe;
+    --invoice-accent: #1e40af;
   }
 
-  .template-minimal {
-    --invoice-header-bg: transparent;
-    --invoice-header-border: transparent;
-    --invoice-accent: #6b7280;
+  .template-proforma-invoice {
+    --invoice-header-bg: #fffbeb;
+    --invoice-header-border: #fde68a;
+    --invoice-accent: #92400e;
   }
 
-  .template-classic {
-    --invoice-header-bg: #fefce8;
-    --invoice-header-border: #d4d4d8;
-    --invoice-accent: #3f3f46;
+  .template-receipt {
+    --invoice-header-bg: #ecfdf5;
+    --invoice-header-border: #a7f3d0;
+    --invoice-accent: #065f46;
   }
 
-  .template-standard .invoice-header,
-  .template-modern .invoice-header,
-  .template-minimal .invoice-header,
-  .template-classic .invoice-header {
+  .template-regular-invoice .invoice-header,
+  .template-tax-invoice .invoice-header,
+  .template-proforma-invoice .invoice-header,
+  .template-receipt .invoice-header {
     background-color: var(--invoice-header-bg);
     border-bottom: 2px solid var(--invoice-header-border);
     padding-bottom: 1.5rem;
     margin-bottom: 1.5rem;
   }
 
-  .template-standard .invoice-totals,
-  .template-modern .invoice-totals,
-  .template-minimal .invoice-totals,
-  .template-classic .invoice-totals {
+  .template-regular-invoice .invoice-totals,
+  .template-tax-invoice .invoice-totals,
+  .template-proforma-invoice .invoice-totals,
+  .template-receipt .invoice-totals {
     border-top: 2px solid var(--invoice-header-border);
   }
 

@@ -322,7 +322,15 @@
       "standard": "Standard",
       "progress": "Progression (AIA)",
       "recurring": "Récurrent",
-      "invoice": "Facture"
+      "invoice": "Facture",
+      "taxInvoice": "Facture fiscale",
+      "proformaInvoice": "Facture proforma",
+      "receipt": "Reçu",
+      "proformaNote": "Ceci est une facture proforma et ne constitue pas une facture finale.",
+      "taxId": "Numéro fiscal / TVA",
+      "taxIdPlaceholder": "XX-XXXXXXX",
+      "taxableAmount": "Montant taxable",
+      "amountPaid": "Montant payé"
     }
   },
   "estimates": {
