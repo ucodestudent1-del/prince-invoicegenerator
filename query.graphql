@@ -1,0 +1,17 @@
+query {
+  project(id: "d29c8c85-7ea2-4543-aead-ce2efc0db141") {
+    id
+    services {
+      edges {
+        node {
+          id
+          name
+          serviceType
+          ... on DatabaseInstance {
+            connectionString
+          }
+        }
+      }
+    }
+  }
+}
