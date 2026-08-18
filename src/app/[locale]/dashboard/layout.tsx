@@ -78,7 +78,7 @@ export default async function DashboardLayout({
   const t = await getTranslations("navigation");
 
   return (
-    <div className="flex min-h-screen">
+    <div className={`flex min-h-screen ${org.theme === "dark" ? "dark" : ""}`}>
       <aside className="hidden w-60 flex-col border-r bg-muted/30 p-4 md:flex">
         <Link href="/" className="mb-6 flex items-center gap-2 font-bold">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs">

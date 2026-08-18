@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { quoteFontFamily } from "@/lib/utils";
 
 const sampleItems = [
   { description: "General contractor services", quantity: 1, unitPrice: 2500, amount: 2500 },
@@ -29,7 +30,7 @@ export function TemplatePreview({
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
         <div
           className={`mx-auto max-w-2xl p-6 text-black ${templateClass} ${layoutClass}`}
-          style={fontFamily ? { fontFamily } : undefined}
+          style={fontFamily ? { fontFamily: quoteFontFamily(fontFamily) } : undefined}
         >
           <div className="invoice-header flex items-start justify-between pb-4 mb-4 border-b border-gray-200">
             <div>
@@ -40,20 +41,11 @@ export function TemplatePreview({
             </div>
             <div className="text-right">
               <span
-                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-                  template === "MODERN"
-                    ? "bg-orange-600 text-white"
-                    : template === "CLASSIC"
-                    ? "bg-gray-800 text-white"
-                    : template === "MINIMAL"
-                    ? "border border-gray-400 text-gray-700"
-                    : "text-gray-600"
-                }`}
-                style={
-                  brandColor && template !== "MODERN" && template !== "CLASSIC"
-                    ? { backgroundColor: brandColor, color: "#fff" }
-                    : undefined
-                }
+                className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                style={{
+                  backgroundColor: "var(--invoice-accent)",
+                  color: "#fff",
+                }}
               >
                 Invoice
               </span>

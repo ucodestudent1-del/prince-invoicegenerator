@@ -69,21 +69,21 @@
   }
 
   .template-modern {
-    --invoice-header-bg: #eff6ff;
-    --invoice-header-border: #bfdbfe;
-    --invoice-accent: #1e40af;
+    --invoice-header-bg: #f8fafc;
+    --invoice-header-border: #cbd5e1;
+    --invoice-accent: #0f172a;
   }
 
   .template-minimal {
-    --invoice-header-bg: #fffbeb;
-    --invoice-header-border: #fde68a;
-    --invoice-accent: #92400e;
+    --invoice-header-bg: transparent;
+    --invoice-header-border: transparent;
+    --invoice-accent: #6b7280;
   }
 
   .template-classic {
-    --invoice-header-bg: #ecfdf5;
-    --invoice-header-border: #a7f3d0;
-    --invoice-accent: #065f46;
+    --invoice-header-bg: #fefce8;
+    --invoice-header-border: #d4d4d8;
+    --invoice-accent: #3f3f46;
   }
 
   .template-standard .invoice-header,

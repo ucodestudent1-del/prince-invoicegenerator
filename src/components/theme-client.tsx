@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { quoteFontFamily } from "@/lib/utils";
 
 export function ThemeClient({
   initialTheme = "light",
@@ -23,7 +24,7 @@ export function ThemeClient({
     }
     if (fontFamily) {
       root.style.setProperty("--font-family", fontFamily);
-      root.style.fontFamily = fontFamily;
+      root.style.fontFamily = quoteFontFamily(fontFamily);
     }
   }, [initialTheme, brandColor, fontFamily]);
 

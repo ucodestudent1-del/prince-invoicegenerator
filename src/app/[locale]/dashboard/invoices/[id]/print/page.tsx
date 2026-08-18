@@ -2,7 +2,7 @@ import { redirect } from "@/i18n/navigation";
 import { requireUser, getActivePlan, isMissingColumnError } from "@/lib/org";
 import { hasFeature } from "@/lib/plans";
 import { db } from "@/lib/db";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, quoteFontFamily } from "@/lib/utils";
 import { PrintButton } from "@/components/print-button";
 import { logServerError } from "@/lib/errors";
 import { Download } from "lucide-react";
@@ -96,7 +96,7 @@ export default async function InvoicePrintPage({
   const showWatermark = !canPdfExport;
 
   return (
-    <div className={`invoice-print-container mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: org.fontFamily } : undefined}>
+    <div className={`invoice-print-container mx-auto max-w-3xl bg-white p-10 text-black ${templateClass} ${layoutClass}`} style={org?.fontFamily ? { fontFamily: quoteFontFamily(org.fontFamily) } : undefined}>
       {showWatermark && (
         <div className="fixed inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 50 }}>
           <span className="text-6xl font-bold text-gray-200 opacity-40 transform -rotate-12 select-none">{t("poweredBy")}</span>
@@ -118,15 +118,7 @@ export default async function InvoicePrintPage({
           </div>
         </div>
         <div className="text-right">
-          <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider type-badge ${
-            org?.template === "MODERN"
-              ? "bg-orange-600 text-white"
-              : org?.template === "CLASSIC"
-              ? "bg-gray-800 text-white"
-              : org?.template === "MINIMAL"
-              ? "border border-gray-400 text-gray-700"
-              : "text-gray-600"
-          }`} style={org?.brandColor && org?.template !== "MODERN" && org?.template !== "CLASSIC" ? { backgroundColor: org.brandColor, color: "#fff" } : undefined}>
+          <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider type-badge" style={{ backgroundColor: "var(--invoice-accent)", color: "#fff" }}>
             {t("invoice")}</span>
           <h2 className="text-2xl font-bold mt-2">{invoice.number}</h2>
           <p className="text-sm text-gray-500 mt-1">{t("issued", { date: formatDate(invoice.issueDate) })}</p>

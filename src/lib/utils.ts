@@ -21,3 +21,7 @@ export function formatDate(date: Date | string | null | undefined) {
     day: "numeric",
   });
 }
+
+export function quoteFontFamily(font: string) {
+  return font.includes(" ") ? `"${font}"` : font;
+}
