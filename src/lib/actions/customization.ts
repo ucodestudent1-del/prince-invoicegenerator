@@ -31,7 +31,7 @@ export async function getTemplateSettings() {
       select: { template: true },
     });
 
-    return org?.template ?? "REGULAR_INVOICE";
+    return org?.template ?? "STANDARD";
   });
 }
 

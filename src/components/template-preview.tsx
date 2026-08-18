@@ -20,26 +20,8 @@ export function TemplatePreview({
   fontFamily?: string;
   layout?: string;
 }) {
-  const templateClass = `template-${template?.toLowerCase?.() ?? "regular_invoice"}`;
+  const templateClass = `template-${template?.toLowerCase?.() ?? "standard"}`;
   const layoutClass = `layout-${layout ?? "default"}`;
-
-  const documentTitle =
-    template === "TAX_INVOICE"
-      ? "TAX INVOICE"
-      : template === "PROFORMA_INVOICE"
-        ? "PROFORMA INVOICE"
-        : template === "RECEIPT"
-          ? "RECEIPT"
-          : "INVOICE";
-
-  const badgeColor =
-    template === "TAX_INVOICE"
-      ? "bg-blue-100 text-blue-700 border border-blue-200"
-      : template === "PROFORMA_INVOICE"
-        ? "bg-amber-100 text-amber-700 border border-amber-200"
-        : template === "RECEIPT"
-          ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-          : "text-gray-600";
 
   return (
     <div className="mt-8">
@@ -58,14 +40,22 @@ export function TemplatePreview({
             </div>
             <div className="text-right">
               <span
-                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${badgeColor}`}
+                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                  template === "MODERN"
+                    ? "bg-orange-600 text-white"
+                    : template === "CLASSIC"
+                    ? "bg-gray-800 text-white"
+                    : template === "MINIMAL"
+                    ? "border border-gray-400 text-gray-700"
+                    : "text-gray-600"
+                }`}
                 style={
-                  brandColor && template === "REGULAR_INVOICE"
+                  brandColor && template !== "MODERN" && template !== "CLASSIC"
                     ? { backgroundColor: brandColor, color: "#fff" }
                     : undefined
                 }
               >
-                {documentTitle}
+                Invoice
               </span>
               <p className="text-sm font-bold mt-1">INV-001</p>
               <p className="text-xs text-gray-500">Issued Aug 1, 2026</p>

@@ -146,7 +146,7 @@ export async function getCurrentOrg(user?: AppUser) {
         if (!org) return null;
         return {
           ...org,
-          template: "REGULAR_INVOICE" as const,
+          template: "STANDARD" as const,
           theme: cookieTheme === "dark" || cookieTheme === "light" ? cookieTheme : "light",
           brandColor: null,
           accentColor: null,
