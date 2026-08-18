@@ -611,7 +611,7 @@
   },
   "templates": {
     "title": "Plantillas de factura",
-    "description": "Elige el aspecto de tus facturas.",
+    "description": "Elige el aspecto de tus facturas y aplica la imagen de tu marca.",
     "loading": "Cargando…",
     "previews": "Vistas previas de plantillas",
     "previewHint": "Las plantillas se previsualizan en la vista de impresión de facturas."

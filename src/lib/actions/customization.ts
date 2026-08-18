@@ -107,7 +107,7 @@ export async function saveBrandColors(input: {
       },
     });
 
-    await revalidateWithLocale("/dashboard/settings/customization");
+    await revalidateWithLocale("/dashboard/settings/templates");
     await revalidateWithLocale("/dashboard/invoices");
   });
 }
@@ -139,7 +139,7 @@ export async function saveFontSettings(fontFamily: string) {
       data: { fontFamily: fontFamily || null },
     });
 
-    await revalidateWithLocale("/dashboard/settings/customization");
+    await revalidateWithLocale("/dashboard/settings/templates");
   });
 }
 

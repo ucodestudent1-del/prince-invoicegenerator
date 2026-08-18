@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { TemplateEditor } from "@/components/template-editor";
+import { TemplateCustomizationSettings } from "@/components/template-customization-settings";
 import { getTemplateSettings, getBrandColors, getFontSettings, getLayoutSettings } from "@/lib/actions/customization";
 import { getCurrentUser, getActivePlan } from "@/lib/org";
 import { hasFeature } from "@/lib/plans";
@@ -29,8 +29,8 @@ async function TemplatesContent({ locale, t }: { locale: string; t: any }) {
   const user = await getCurrentUser();
   if (!user) return null;
   const plan = await getActivePlan(user);
-  if (!hasFeature(plan, "invoiceTemplates")) {
-    return <PricingFeature feature="invoiceTemplates" plan={plan} />;
+  if (!hasFeature(plan, "invoiceTemplates") && !hasFeature(plan, "customBranding")) {
+    return <PricingFeature feature="customBranding" plan={plan} />;
   }
 
   const [current, colors, fonts, layout] = await Promise.all([
@@ -42,7 +42,7 @@ async function TemplatesContent({ locale, t }: { locale: string; t: any }) {
 
   return (
     <div className="space-y-6">
-      <TemplateEditor
+      <TemplateCustomizationSettings
         current={current}
         brandColor={colors.brandColor}
         accentColor={colors.accentColor}

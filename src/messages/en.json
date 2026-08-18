@@ -619,7 +619,7 @@
   },
   "templates": {
     "title": "Invoice Templates",
-    "description": "Choose how your invoices look.",
+    "description": "Choose how your invoices look and apply your brand styling.",
     "loading": "Loading…",
     "previews": "Template previews",
     "previewHint": "Templates are previewed in the invoice print view."

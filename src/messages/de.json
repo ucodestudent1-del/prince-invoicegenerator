@@ -611,7 +611,7 @@
   },
   "templates": {
     "title": "Rechnungsvorlagen",
-    "description": "Wähle das Erscheinungsbild deiner Rechnungen.",
+    "description": "Wähle das Erscheinungsbild deiner Rechnungen und wende dein Markendesign an.",
     "loading": "Laden…",
     "previews": "Vorlagenvorschauen",
     "previewHint": "Vorlagen werden in der Rechnungsdruckansicht angezeigt."

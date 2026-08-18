@@ -17,7 +17,6 @@ import {
   Bell,
   BarChart3,
   Calendar,
-  Palette,
 } from "lucide-react";
 import { logServerError } from "@/lib/errors";
 import { UserMenu } from "@/components/user-menu";
@@ -45,7 +44,6 @@ const nav = [
   { href: "/dashboard/settings/late-fees", label: "navigation.lateFees", icon: Receipt, feature: "lateFees" as FeatureKey },
   { href: "/dashboard/settings/scheduled", label: "navigation.scheduled", icon: Calendar, feature: "scheduledInvoices" as FeatureKey },
   { href: "/dashboard/settings/templates", label: "navigation.templates", icon: FileText, feature: "invoiceTemplates" as FeatureKey },
-  { href: "/dashboard/settings/customization", label: "navigation.customization", icon: Palette, feature: "customBranding" as FeatureKey },
   { href: "/dashboard/settings", label: "navigation.settings", icon: Settings },
 ];
 

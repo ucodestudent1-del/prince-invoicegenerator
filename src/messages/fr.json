@@ -619,7 +619,7 @@
   },
   "templates": {
     "title": "Modèles de facture",
-    "description": "Choisissez l'apparence de vos factures.",
+    "description": "Choisissez l'apparence de vos factures et appliquez votre style de marque.",
     "loading": "Chargement…",
     "previews": "Aperçus des modèles",
     "previewHint": "Les modèles sont prévisualisés dans la vue d'impression des factures."
