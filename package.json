@@ -12,9 +12,13 @@
                     "db:generate":  "prisma generate",
                     "db:migrate":  "prisma migrate dev",
                     "db:push":  "prisma db push",
-                    "db:studio":  "prisma studio",
-                    "test:smoke":  "node tests/auth-smoke.js"
-                },
+                    "db:studio": "prisma studio",
+                    "test:smoke": "node tests/auth-smoke.js",
+                    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
     "dependencies":  {
                          "@aws-sdk/client-s3":  "3.658.0",
                          "@aws-sdk/s3-request-presigner":  "3.658.0",
