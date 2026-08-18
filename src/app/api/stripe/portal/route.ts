@@ -18,9 +18,17 @@ export async function POST() {
     return NextResponse.json({ error: "No customer" }, { status: 400 });
   }
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) {
+    return NextResponse.json(
+      { error: "Server misconfigured: NEXT_PUBLIC_APP_URL is missing" },
+      { status: 500 }
+    );
+  }
+
   const portal = await stripe.billingPortal.sessions.create({
     customer: org.stripeCustomerId,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
+    return_url: `${appUrl}/dashboard/billing`,
   });
 
   return NextResponse.json({ url: portal.url });

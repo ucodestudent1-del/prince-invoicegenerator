@@ -33,6 +33,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!appUrl) {
+      return NextResponse.json(
+        { error: "Server misconfigured: NEXT_PUBLIC_APP_URL is missing" },
+        { status: 500 }
+      );
+    }
+
     const org = await db.organization.findUnique({
       where: { id: user.organizationId },
     });
@@ -59,8 +67,8 @@ export async function POST(req: NextRequest) {
       customer: customerId,
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=1`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+      success_url: `${appUrl}/dashboard/billing?success=1`,
+      cancel_url: `${appUrl}/pricing`,
       subscription_data: { metadata: { orgId: org.id } },
       metadata: { orgId: org.id },
     });
