@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&family=Lato:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Merriweather:wght@400;500;600;700&family=Source+Sans+Pro:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -60,44 +62,44 @@
 }
 
 @layer components {
-  .template-regular-invoice {
+  .template-standard {
     --invoice-header-bg: transparent;
     --invoice-header-border: #e5e7eb;
     --invoice-accent: #374151;
   }
 
-  .template-tax-invoice {
+  .template-modern {
     --invoice-header-bg: #eff6ff;
     --invoice-header-border: #bfdbfe;
     --invoice-accent: #1e40af;
   }
 
-  .template-proforma-invoice {
+  .template-minimal {
     --invoice-header-bg: #fffbeb;
     --invoice-header-border: #fde68a;
     --invoice-accent: #92400e;
   }
 
-  .template-receipt {
+  .template-classic {
     --invoice-header-bg: #ecfdf5;
     --invoice-header-border: #a7f3d0;
     --invoice-accent: #065f46;
   }
 
-  .template-regular-invoice .invoice-header,
-  .template-tax-invoice .invoice-header,
-  .template-proforma-invoice .invoice-header,
-  .template-receipt .invoice-header {
+  .template-standard .invoice-header,
+  .template-modern .invoice-header,
+  .template-minimal .invoice-header,
+  .template-classic .invoice-header {
     background-color: var(--invoice-header-bg);
     border-bottom: 2px solid var(--invoice-header-border);
     padding-bottom: 1.5rem;
     margin-bottom: 1.5rem;
   }
 
-  .template-regular-invoice .invoice-totals,
-  .template-tax-invoice .invoice-totals,
-  .template-proforma-invoice .invoice-totals,
-  .template-receipt .invoice-totals {
+  .template-standard .invoice-totals,
+  .template-modern .invoice-totals,
+  .template-minimal .invoice-totals,
+  .template-classic .invoice-totals {
     border-top: 2px solid var(--invoice-header-border);
   }
 
