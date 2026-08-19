@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export function InvoiceForm({
   customers,
@@ -21,7 +22,6 @@ export function InvoiceForm({
   canProjectManagement,
   canSchedule,
   hasSavedAddresses,
-  t,
 }: {
   customers: { id: string; name: string }[];
   projects: { id: string; name: string }[];
@@ -32,8 +32,8 @@ export function InvoiceForm({
   canProjectManagement: boolean;
   canSchedule: boolean;
   hasSavedAddresses: boolean;
-  t: (key: string) => string;
 }) {
+  const t = useTranslations("invoices");
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
