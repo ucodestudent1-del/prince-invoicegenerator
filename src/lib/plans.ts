@@ -9,6 +9,7 @@ export type FeatureKey =
   | "changeOrders"
   | "retainage"
   | "recurring"
+  | "autoCharge"
   | "expenseTracking"
   | "photoAttachments"
   | "multipleUsers"
@@ -87,6 +88,7 @@ export const PLANS: PlanDefinition[] = [
       "changeOrders",
       "retainage",
       "recurring",
+      "autoCharge",
       "expenseTracking",
       "photoAttachments",
       "savedAddresses",
@@ -145,6 +147,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   changeOrders: "Change orders",
   retainage: "Retainage tracking",
   recurring: "Recurring invoices",
+  autoCharge: "Automatic payment charging",
   expenseTracking: "Expense tracking",
   photoAttachments: "Photo attachments",
   multipleUsers: "Multiple team users",

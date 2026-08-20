@@ -100,9 +100,11 @@ export default async function RecurringPage({ params }: { params: { locale: stri
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex flex-col gap-2 items-end">
-                        {config.lastInvoice ? (
-                          <GenerateInvoiceButton configId={config.id} />
-                        ) : (
+                      {config.lastInvoice ||
+                      (Array.isArray((config as any).defaultItems) &&
+                        (config as any).defaultItems.length > 0) ? (
+                        <GenerateInvoiceButton configId={config.id} />
+                      ) : (
                           <LinkInvoiceForm
                             configId={config.id}
                             invoices={availableInvoices}

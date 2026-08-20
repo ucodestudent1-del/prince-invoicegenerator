@@ -617,10 +617,20 @@ model RecurringInvoiceConfig {
   customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   projectId   String?
   project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  frequency   String   @default("MONTHLY") // MONTHLY, QUARTERLY, etc.
-  nextRunDate DateTime
-  active      Boolean  @default(true)
-  lastInvoiceId String?
+  frequency       String   @default("MONTHLY") // MONTHLY, QUARTERLY, etc.
+  startDate       DateTime?              // don't generate before this date
+  endDate         DateTime?              // stop generating after this date
+  occurrences     Int?                   // stop after N generated invoices
+  generatedCount  Int        @default(0) // invoices generated so far
+  paymentTerms    String     @default("NET_30") // NET_7|NET_15|NET_30|NET_60|DUE_ON_RECEIPT
+  nextRunDate     DateTime
+  autoSend        Boolean    @default(true)
+  autoCharge      Boolean    @default(false)
+  defaultTaxRate   Float?                 // overrides the template's taxRate when set
+  defaultDiscount  Float?                 // overrides the template's discount when set
+  defaultItems     Json?                  // [{ description, quantity, unitPrice, amount }]
+  active          Boolean  @default(true)
+  lastInvoiceId   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,11 @@ export function RecurringConfigForm({
   const [taxRate, setTaxRate] = React.useState<string | number>(0);
   const [discount, setDiscount] = React.useState<string | number>(0);
   const [notes, setNotes] = React.useState("");
+  const [endDate, setEndDate] = React.useState<string>("");
+  const [occurrences, setOccurrences] = React.useState<string>("");
+  const [paymentTerms, setPaymentTerms] = React.useState("NET_30");
+  const [autoSend, setAutoSend] = React.useState(true);
+  const [autoCharge, setAutoCharge] = React.useState(false);
   const [items, setItems] = React.useState([
     { description: "", quantity: 1, unitPrice: 0 },
   ]);
@@ -69,6 +75,11 @@ export function RecurringConfigForm({
             quantity: Number(i.quantity) || 0,
             unitPrice: Number(i.unitPrice) || 0,
           })),
+        endDate: endDate || null,
+        occurrences: occurrences ? Number(occurrences) : null,
+        paymentTerms,
+        autoSend,
+        autoCharge,
       });
       router.push("/dashboard/recurring");
     } catch (err: any) {
@@ -195,6 +206,82 @@ export function RecurringConfigForm({
               step="0.01"
               onChange={(e) => setDiscount(e.target.value === "" ? "" : Number(e.target.value))}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Billing and automation</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="endDate">End date</Label>
+            <Input
+              id="endDate"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Stop generating after this date.
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="occurrences">Number of occurrences</Label>
+            <Input
+              id="occurrences"
+              type="number"
+              min={1}
+              value={occurrences}
+              onChange={(e) => setOccurrences(e.target.value)}
+              placeholder="Unlimited"
+            />
+            <p className="text-xs text-muted-foreground">
+              Stop after this many invoices. Leave both end date and occurrences
+              blank to run indefinitely.
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="paymentTerms">Payment terms</Label>
+            <Select value={paymentTerms} onValueChange={setPaymentTerms}>
+              <SelectTrigger id="paymentTerms">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DUE_ON_RECEIPT">Due on receipt</SelectItem>
+                <SelectItem value="NET_7">Net 7</SelectItem>
+                <SelectItem value="NET_15">Net 15</SelectItem>
+                <SelectItem value="NET_30">Net 30</SelectItem>
+                <SelectItem value="NET_60">Net 60</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col justify-end gap-1">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="autoSend"
+                checked={autoSend}
+                onCheckedChange={setAutoSend}
+              />
+              <Label htmlFor="autoSend" className="mb-0">
+                Auto-send
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="autoCharge"
+                checked={autoCharge}
+                onCheckedChange={setAutoCharge}
+              />
+              <Label htmlFor="autoCharge" className="mb-0 text-muted-foreground">
+                Auto-charge
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Requires Business plan with a Stripe customer that has a saved
+                payment method.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
