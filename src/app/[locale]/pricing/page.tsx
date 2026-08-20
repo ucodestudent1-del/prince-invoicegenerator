@@ -22,8 +22,8 @@ export default async function PricingPage() {
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1">
-        <section className="container py-16 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">
+        <section className="container py-16 text-center md:py-24">
+          <h1 className="font-serif text-4xl font-medium tracking-tight sm:text-5xl">
             {t("title")}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
@@ -32,13 +32,12 @@ export default async function PricingPage() {
         </section>
 
         <section className="container grid gap-6 pb-20 md:grid-cols-2 lg:grid-cols-4">
-          {display.map((plan, i) => {
+          {display.map((plan) => {
             const highlighted = plan.id === "PRO";
-            const isStarter = plan.id === "STARTER";
             return (
               <Card
                 key={plan.id}
-                className={i === 0 ? "" : highlighted ? "border-primary shadow-lg" : ""}
+                className={highlighted ? "border-primary" : ""}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between text-lg">
@@ -46,11 +45,6 @@ export default async function PricingPage() {
                     {highlighted && (
                       <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
                         {t("popular")}
-                      </span>
-                    )}
-                    {isStarter && (
-                      <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                        {t("mostPopular")}
                       </span>
                     )}
                   </CardTitle>
@@ -61,18 +55,13 @@ export default async function PricingPage() {
                   <ul className="space-y-2 text-sm">
                     {plan.features.map((f) => (
                       <li key={f} className="flex items-start gap-2">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                         <span>{f}</span>
                       </li>
                     ))}
                   </ul>
-                  {isStarter && (
-                    <p className="text-xs text-muted-foreground border-t pt-3">
-                      {t("upgradeToRemove")}
-                    </p>
-                  )}
                   {plan.id === "FREE" && (
-                    <p className="text-xs text-muted-foreground border-t pt-3">
+                    <p className="border-t pt-3 text-xs text-muted-foreground">
                       {t("upgradeToRemove")}
                     </p>
                   )}

@@ -38,9 +38,9 @@ export async function SiteHeader({ cta = true }: { cta?: boolean }) {
           {cta && (
             <Link
               href="/pricing"
-              className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
+              className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
-              {t("pricing")}
+              {t("tryFree")}
             </Link>
           )}
         </div>
