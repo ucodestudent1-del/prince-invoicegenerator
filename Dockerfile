@@ -7,7 +7,8 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache openssl
 COPY package*.json ./
-RUN npm ci
+# --ignore-scripts: skip postinstall (prisma generate) until the prisma/ schema is copied below
+RUN npm ci --ignore-scripts
 COPY . .
 RUN npx prisma generate
 RUN npm run build
