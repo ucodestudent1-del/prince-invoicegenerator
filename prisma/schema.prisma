@@ -2,7 +2,13 @@
 // Database: PostgreSQL
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Railway deploys on node:*-alpine (musl). Without explicit targets,
+  // `native` resolves at generate time (builder) to linux-musl-openssl-3.0.x
+  // but the runtime detects plain "linux-musl", so Prisma cannot locate the
+  // Query Engine. Listing both musl targets guarantees an engine for the
+  // runtime platform. See PrismaClientInitializationError in production logs.
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
