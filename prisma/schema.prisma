@@ -2,13 +2,14 @@
 // Database: PostgreSQL
 
 generator client {
+  // Railway runs on node:*-alpine (musl). On Alpine 3.18+ the only system
+  // OpenSSL is 3.x (libssl.so.3). The plain "linux-musl" engine is built
+  // against OpenSSL 1.1 (libssl.so.1.1), which is absent on modern Alpine, so
+  // it is excluded. "linux-musl-openssl-3.0.x" + "native" makes the builder
+  // stitch the OpenSSL-3 musl engine; the runner must provide libssl.so.3
+  // (apk add openssl). See PrismaClientInitializationError in production logs.
   provider      = "prisma-client-js"
-  // Railway deploys on node:*-alpine (musl). Without explicit targets,
-  // `native` resolves at generate time (builder) to linux-musl-openssl-3.0.x
-  // but the runtime detects plain "linux-musl", so Prisma cannot locate the
-  // Query Engine. Listing both musl targets guarantees an engine for the
-  // runtime platform. See PrismaClientInitializationError in production logs.
-  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
