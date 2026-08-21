@@ -4,7 +4,7 @@ import { logError } from "@/lib/logging";
 import { isInvalidEnumValueError, isMissingColumnError } from "@/lib/org";
 import { isBackgroundJobAuthorized } from "@/lib/background-job-auth";
 import { sendEmail, renderTemplate, buildHtmlBody } from "@/lib/email";
-import { buildDefaultStages } from "@/lib/actions/invoices";
+import { buildDefaultStages } from "@/lib/invoice-utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

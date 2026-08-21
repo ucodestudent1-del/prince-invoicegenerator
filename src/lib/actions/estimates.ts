@@ -9,10 +9,6 @@ import { getNextInvoiceNumber } from "@/lib/numbering";
 import type { EstimateStatus } from "@prisma/client";
 import { randomUUID } from "crypto";
 
-export function generateShareToken() {
-  return randomUUID();
-}
-
 interface SendEstimateInput {
   ccEmails?: string[];
   message?: string;

@@ -6,6 +6,7 @@ import { INVOICE_LIMITS } from "@/lib/plans";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextInvoiceNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
+import { buildDefaultStages } from "@/lib/invoice-utils";
 import type { InvoiceType, PaymentMethod, PaymentStatus, InvoiceStatus } from "@prisma/client";
 
 export interface InvoiceItemInput {
@@ -529,46 +530,6 @@ export async function saveReminderConfig(input: {
   });
 }
 
-export interface DefaultStageTemplate {
-  name: string;
-  type: "PRE_DUE" | "DUE_DATE" | "POST_DUE";
-  daysOffset: number;
-  subjectTemplate: string;
-  bodyTemplate: string;
-}
-
-export function buildDefaultStages(config: any): DefaultStageTemplate[] {
-  const before = config?.remindBeforeDue ?? 7;
-  const after = config?.remindAfterDue ?? 1;
-  const subject = config?.emailSubject ?? "Payment reminder for invoice {{invoiceNumber}}";
-  const template = config?.emailTemplate ??
-    "Dear {{customerName}},\n\nThis is a reminder that invoice {{invoiceNumber}} for {{amount}} is due on {{dueDate}}.\n\nPlease arrange payment at your earliest convenience.\n\nThank you.";
-
-  return [
-    {
-      name: "Friendly reminder",
-      type: "PRE_DUE",
-      daysOffset: -before,
-      subjectTemplate: subject,
-      bodyTemplate: template,
-    },
-    {
-      name: "Due date notification",
-      type: "DUE_DATE",
-      daysOffset: 0,
-      subjectTemplate: subject,
-      bodyTemplate: template,
-    },
-    {
-      name: "Overdue reminder",
-      type: "POST_DUE",
-      daysOffset: after,
-      subjectTemplate: subject,
-      bodyTemplate: template,
-    },
-  ];
-}
-
 export async function sendReminder(invoiceId: string) {
   return withActionError("sendReminder", async () => {
     const user = await requireUser();
@@ -782,13 +743,6 @@ export async function clearInvoiceReminderSuppression(invoiceId: string) {
 
     await revalidateWithLocale(`/dashboard/invoices/${invoiceId}`);
   });
-}
-
-export function formatCurrency(amount: number, currency = "USD") {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-  }).format(amount || 0);
 }
 
 export async function deleteInvoice(id: string) {
