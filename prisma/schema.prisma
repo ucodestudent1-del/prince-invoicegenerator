@@ -82,9 +82,11 @@ enum InvoiceStatus {
 enum EstimateStatus {
   DRAFT
   SENT
+  VIEWED
   ACCEPTED
-  DECLINED
+  REJECTED
   EXPIRED
+  INVOICED
 }
 
 enum ChangeOrderStatus {
@@ -143,6 +145,7 @@ model User {
 
   accounts Account[]
   sessions Session[]
+  timeEntries TimeEntry[]
 }
 
 model Account {
@@ -211,20 +214,24 @@ model Organization {
 
   users          User[]
   customers      Customer[]
-  addresses      CustomerAddress[]
-  projects       Project[]
-  invoices       Invoice[]
-  estimates      Estimate[]
-  changeOrders   ChangeOrder[]
-  expenses       Expense[]
-  subcontractors Subcontractor[]
-  photoAttachments PhotoAttachment[]
-  recurringConfigs RecurringInvoiceConfig[]
+   addresses      CustomerAddress[]
+   projects       Project[]
+   invoices       Invoice[]
+   estimates      Estimate[]
+   catalogItems   CatalogItem[]
+   estimateAuditLogs  EstimateAudit[]
+   changeOrders   ChangeOrder[]
+   expenses       Expense[]
+    subcontractors Subcontractor[]
+    photoAttachments PhotoAttachment[]
+    timeEntries  TimeEntry[]
+    recurringConfigs RecurringInvoiceConfig[]
   payments       Payment[]
   auditLogs      InvoiceAudit[]
    reminderConfigs ReminderConfig[]
-  reminders      Reminder[]
-  lateFeeConfig  LateFeeConfig?
+   reminders      Reminder[]
+   reminderSuppressions InvoiceReminderSuppression[]
+   lateFeeConfig  LateFeeConfig?
 }
 
 // ---------------------------------------------------------------------------
@@ -244,9 +251,9 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  invoices  Invoice[]
-  estimates Estimate[]
-  projects  Project[]
+    invoices       Invoice[]
+    estimates      Estimate[]
+   projects  Project[]
   recurringConfigs RecurringInvoiceConfig[]
   addresses CustomerAddress[]
 
@@ -303,6 +310,7 @@ model Project {
   expenses       Expense[]
   subcontractorAssignments SubcontractorProject[]
   recurringConfigs RecurringInvoiceConfig[]
+  timeEntries  TimeEntry[]
 
   @@index([orgId])
 }
@@ -348,15 +356,21 @@ model Invoice {
   billToAddress String?
   shipToAddress String?
 
+   // Link to source estimate (v2 enhancement)
+   estimateId    String? @unique
+   estimate      Estimate?  @relation("EstimateToInvoice", fields: [estimateId], references: [id], onDelete: SetNull)
+
   createdById   String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  items         InvoiceItem[]
-  changeOrders  ChangeOrder[]
-  payments      Payment[]
-  auditLogs     InvoiceAudit[]
-  reminders     Reminder[]
+   items         InvoiceItem[]
+   changeOrders  ChangeOrder[]
+   payments      Payment[]
+   auditLogs     InvoiceAudit[]
+   reminders     Reminder[]
+   reminderSuppressions InvoiceReminderSuppression[]
+   timeEntries   TimeEntry[]
 
   @@unique([orgId, number])
   @@index([orgId])
@@ -372,6 +386,7 @@ model InvoiceItem {
   unitPrice   Float   @default(0)
   amount      Float   @default(0)
   sortOrder   Int     @default(0)
+  sku         String?
 
   @@index([invoiceId])
 }
@@ -399,10 +414,25 @@ model Estimate {
   discount    Float         @default(0)
   total       Float         @default(0)
   notes       String?
+
+  // Engagement tracking (v2 enhancement)
+  shareToken      String?    // cryptographically random UUID for secure link
+  viewedAt        DateTime?  // when customer first viewed
+  acceptedAt      DateTime?  // when customer accepted
+  rejectedAt      DateTime?  // when customer rejected
+  rejectionReason String?    // free-text or predefined code
+  convertedAt     DateTime?  // when converted to invoice
+  sentAt          DateTime?  // when estimate was sent to customer
+
+   // Conversion to invoice
+   linkedInvoiceId String?
+   linkedInvoice   Invoice?   @relation("EstimateToInvoice")
+
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
   items       EstimateItem[]
+  auditLogs   EstimateAudit[]
 
   @@unique([orgId, number])
   @@index([orgId])
@@ -417,8 +447,30 @@ model EstimateItem {
   unitPrice   Float     @default(0)
   amount      Float     @default(0)
   sortOrder   Int       @default(0)
+  sku         String?
 
   @@index([estimateId])
+}
+
+// ---------------------------------------------------------------------------
+// Estimate Audit Trail (engagement tracking, status changes)
+// ---------------------------------------------------------------------------
+
+model EstimateAudit {
+  id          String   @id @default(cuid())
+  estimateId  String
+  estimate    Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  action      String   // VIEWED, SENT, ACCEPTED, REJECTED, EXPIRED, CONVERTED_TO_INVOICE, COMMENT_ADDED
+  fromStatus  String?
+  toStatus    String?
+  note        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([estimateId])
+  @@index([orgId])
 }
 
 // ---------------------------------------------------------------------------
@@ -442,6 +494,40 @@ model ChangeOrder {
   updatedAt   DateTime          @updatedAt
 
   @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Catalog Items (Starter tier+) — saved product/service library
+// ---------------------------------------------------------------------------
+
+enum CatalogUnit {
+  HOURS
+  UNITS
+  FLAT_FEE
+  DAYS
+  PROJECTS
+}
+
+model CatalogItem {
+  id        String        @id @default(cuid())
+  orgId     String
+  org       Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name      String
+  description String?
+  price     Float
+  unit      CatalogUnit   @default(UNITS)
+  taxRate   Float         @default(0)
+  taxCategory String?
+  sku       String?
+  discount  Float         @default(0)
+  sortOrder Int           @default(0)
+  isFavorite Boolean      @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([orgId])
+  @@index([orgId, name])
+  @@unique([orgId, sku])
 }
 
 // ---------------------------------------------------------------------------
@@ -499,6 +585,50 @@ model SubcontractorProject {
   assignedAt      DateTime      @default(now())
 
   @@unique([subcontractorId, projectId])
+}
+
+// ---------------------------------------------------------------------------
+// Time Tracking (Starter tier+)
+// ---------------------------------------------------------------------------
+
+enum TimeEntryStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  INVOICED
+  REJECTED
+}
+
+model TimeEntry {
+  id          String    @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invoiceId   String?
+  invoice     Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  startTime   DateTime
+  endTime     DateTime?
+  duration    Float     @default(0) // Duration in seconds
+  description String?
+  billable    Boolean   @default(true)
+  hourlyRate  Float     @default(0)
+  amount      Float     @default(0) // (duration/3600) * hourlyRate
+  isManual    Boolean   @default(false)
+  status      TimeEntryStatus @default(APPROVED)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([orgId])
+  @@index([orgId, userId])
+  @@index([orgId, projectId])
+  @@index([orgId, invoiceId])
+  @@index([orgId, billable])
+  @@index([orgId, status])
+  @@index([orgId, startTime])
 }
 
 // ---------------------------------------------------------------------------
@@ -573,13 +703,19 @@ model InvoiceAudit {
 // Reminders (automated payment reminders)
 // ---------------------------------------------------------------------------
 
+enum ReminderStageType {
+  PRE_DUE    // daysOffset < 0 — fires before the due date
+  DUE_DATE   // daysOffset == 0 — fires on the due date
+  POST_DUE   // daysOffset > 0 — fires after the due date (escalation ladder)
+}
+
 model ReminderConfig {
   id               String   @id @default(cuid())
   orgId            String
   org              Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   enabled          Boolean  @default(true)
-  remindBeforeDue  Int      @default(3) // days before due date
-  remindAfterDue   Int      @default(1) // days after due date
+  remindBeforeDue  Int      @default(3) // legacy: days before due date
+  remindAfterDue   Int      @default(1) // legacy: days after due date
   frequencyHours   Int      @default(24) // minimum hours between reminders
   maxReminders     Int      @default(3) // max reminders per invoice
   emailSubject     String?  @default("Payment reminder for invoice {{invoiceNumber}}")
@@ -587,25 +723,77 @@ model ReminderConfig {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  stages          ReminderStage[]
+
   @@unique([orgId])
   @@index([orgId])
 }
 
+model ReminderStage {
+  id              String      @id @default(cuid())
+  configId        String
+  config          ReminderConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  name            String      // e.g. "Friendly reminder", "1 day overdue"
+  type            ReminderStageType
+  enabled         Boolean     @default(true)
+  daysOffset      Int         // negative = before due, 0 = on, positive = after due
+  timeOfDay       String?     // optional "HH:mm" in org timezone
+  subjectTemplate String?     // rendered with template variables
+  bodyTemplate    String?     // rendered with template variables
+  channel         String      @default("EMAIL")
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  reminders       Reminder[]
+
+  @@index([configId])
+  @@index([type])
+}
+
 model Reminder {
-  id          String    @id @default(cuid())
+  id            String    @id @default(cuid())
+  orgId         String
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invoiceId     String?
+  invoice       Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  stageId       String?
+  stage         ReminderStage? @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  type          String    // PRE_DUE | DUE_DATE | POST_DUE_1 | POST_DUE_7 | POST_DUE_14 | POST_DUE_30
+  scheduledAt   DateTime
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  status        String    @default("PENDING") // PENDING, SENT, QUEUED, DELIVERED, FAILED, BOUNCED, SKIPPED
+  channel       String    @default("EMAIL")   // EMAIL, SMS (future)
+  recipient     String?   // email address the reminder was sent to
+  subject       String?   // rendered subject at time of send (for audit)
+  note          String?
+  errorMessage  String?
+  metadata      Json?     // delivery provider response, message ID, etc.
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([orgId])
+  @@index([invoiceId])
+  @@index([invoiceId, type])
+  @@index([stageId])
+}
+
+model InvoiceReminderSuppression {
+  id          String   @id @default(cuid())
   orgId       String
   org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  invoiceId   String?
-  invoice     Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  type        String    // DUE_DATE, OVERDUE
-  scheduledAt DateTime
-  sentAt      DateTime?
-  status      String    @default("PENDING") // PENDING, SENT, FAILED
-  channel     String    @default("EMAIL")
-  note        String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
+  suppressedAll Boolean  @default(false) // skip all automated reminders for this invoice
+  snoozedUntil  DateTime? // skip reminders until this date
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([orgId, invoiceId])
   @@index([orgId])
   @@index([invoiceId])
 }

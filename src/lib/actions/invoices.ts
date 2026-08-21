@@ -12,6 +12,7 @@ export interface InvoiceItemInput {
   description: string;
   quantity: number;
   unitPrice: number;
+  sku?: string | null;
 }
 
 export interface CreateInvoiceInput {
@@ -31,6 +32,7 @@ export interface CreateInvoiceInput {
   shipToAddress?: string | null;
   items: InvoiceItemInput[];
   scheduledFor?: string | null;
+  estimateId?: string | null;
 }
 
 export async function createInvoice(input: CreateInvoiceInput) {
@@ -127,6 +129,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
             billToAddress: input.billToAddress ?? null,
             shipToAddress: input.shipToAddress ?? null,
             scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
+            estimateId: input.estimateId ?? null,
             createdById: user.id,
             items: {
               create: validItems.map((it, i) => ({
@@ -135,6 +138,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
                 unitPrice: it.unitPrice,
                 amount: it.quantity * it.unitPrice,
                 sortOrder: i,
+                sku: it.sku || null,
               })),
             },
           },
@@ -401,20 +405,49 @@ export async function getReminderConfig() {
 
     const config = await db.reminderConfig.findUnique({
       where: { orgId: user.organizationId },
+      include: { stages: { orderBy: { daysOffset: "asc" } } },
     });
+
+    if (!config) {
+      return null;
+    }
+
+    // If stages are empty (legacy DB without the new table), build them
+    // from the legacy remindBeforeDue / remindAfterDue fields so the UI
+    // always has a consistent shape to render.
+    if (config.stages.length === 0) {
+      const stages = buildDefaultStages(config);
+      return {
+        ...config,
+        stages,
+      };
+    }
 
     return config;
   });
 }
 
+export interface ReminderStageInput {
+  id?: string;
+  name: string;
+  type: "PRE_DUE" | "DUE_DATE" | "POST_DUE";
+  enabled: boolean;
+  daysOffset: number;
+  timeOfDay?: string | null;
+  subjectTemplate?: string | null;
+  bodyTemplate?: string | null;
+  channel?: string;
+}
+
 export async function saveReminderConfig(input: {
   enabled: boolean;
-  remindBeforeDue: number;
-  remindAfterDue: number;
   frequencyHours: number;
   maxReminders: number;
-  emailSubject?: string;
-  emailTemplate?: string;
+  remindBeforeDue?: number;
+  remindAfterDue?: number;
+  emailSubject?: string | null;
+  emailTemplate?: string | null;
+  stages?: ReminderStageInput[];
 }) {
   return withActionError("saveReminderConfig", async () => {
     const user = await requireUser();
@@ -425,8 +458,8 @@ export async function saveReminderConfig(input: {
       where: { orgId },
       update: {
         enabled: input.enabled,
-        remindBeforeDue: input.remindBeforeDue,
-        remindAfterDue: input.remindAfterDue,
+        remindBeforeDue: input.remindBeforeDue ?? 7,
+        remindAfterDue: input.remindAfterDue ?? 1,
         frequencyHours: input.frequencyHours,
         maxReminders: input.maxReminders,
         emailSubject: input.emailSubject,
@@ -435,8 +468,8 @@ export async function saveReminderConfig(input: {
       create: {
         orgId,
         enabled: input.enabled,
-        remindBeforeDue: input.remindBeforeDue,
-        remindAfterDue: input.remindAfterDue,
+        remindBeforeDue: input.remindBeforeDue ?? 7,
+        remindAfterDue: input.remindAfterDue ?? 1,
         frequencyHours: input.frequencyHours,
         maxReminders: input.maxReminders,
         emailSubject: input.emailSubject,
@@ -444,9 +477,96 @@ export async function saveReminderConfig(input: {
       },
     });
 
+    // Sync stages — only if the stages table/columns exist.
+    if (input.stages && input.stages.length > 0) {
+      const stageIdsToKeep = new Set<string>();
+      for (const stage of input.stages) {
+        stageIdsToKeep.add(stage.name);
+
+        if (stage.id) {
+          await db.reminderStage.update({
+            where: { id: stage.id },
+            data: {
+              configId: config.id,
+              name: stage.name,
+              type: stage.type,
+              enabled: stage.enabled,
+              daysOffset: stage.daysOffset,
+              timeOfDay: stage.timeOfDay ?? null,
+              subjectTemplate: stage.subjectTemplate ?? null,
+              bodyTemplate: stage.bodyTemplate ?? null,
+              channel: stage.channel ?? "EMAIL",
+            },
+          }).catch(() => {});
+        } else {
+          await db.reminderStage.create({
+            data: {
+              configId: config.id,
+              name: stage.name,
+              type: stage.type,
+              enabled: stage.enabled,
+              daysOffset: stage.daysOffset,
+              timeOfDay: stage.timeOfDay ?? null,
+              subjectTemplate: stage.subjectTemplate ?? null,
+              bodyTemplate: stage.bodyTemplate ?? null,
+              channel: stage.channel ?? "EMAIL",
+            },
+          }).catch(() => {});
+        }
+      }
+
+      // Remove stages that were not in the payload
+      await db.reminderStage.deleteMany({
+        where: {
+          configId: config.id,
+          name: { notIn: Array.from(stageIdsToKeep) },
+        },
+      }).catch(() => {});
+    }
+
     await revalidateWithLocale("/dashboard/settings/reminders");
     return config;
   });
+}
+
+export interface DefaultStageTemplate {
+  name: string;
+  type: "PRE_DUE" | "DUE_DATE" | "POST_DUE";
+  daysOffset: number;
+  subjectTemplate: string;
+  bodyTemplate: string;
+}
+
+export function buildDefaultStages(config: any): DefaultStageTemplate[] {
+  const before = config?.remindBeforeDue ?? 7;
+  const after = config?.remindAfterDue ?? 1;
+  const subject = config?.emailSubject ?? "Payment reminder for invoice {{invoiceNumber}}";
+  const template = config?.emailTemplate ??
+    "Dear {{customerName}},\n\nThis is a reminder that invoice {{invoiceNumber}} for {{amount}} is due on {{dueDate}}.\n\nPlease arrange payment at your earliest convenience.\n\nThank you.";
+
+  return [
+    {
+      name: "Friendly reminder",
+      type: "PRE_DUE",
+      daysOffset: -before,
+      subjectTemplate: subject,
+      bodyTemplate: template,
+    },
+    {
+      name: "Due date notification",
+      type: "DUE_DATE",
+      daysOffset: 0,
+      subjectTemplate: subject,
+      bodyTemplate: template,
+    },
+    {
+      name: "Overdue reminder",
+      type: "POST_DUE",
+      daysOffset: after,
+      subjectTemplate: subject,
+      bodyTemplate: template,
+    },
+  ];
 }
 
 export async function sendReminder(invoiceId: string) {
@@ -494,14 +614,48 @@ export async function sendReminder(invoiceId: string) {
 
     const now = new Date();
     let type = "DUE_DATE";
-    if (invoice.dueDate && now > invoice.dueDate) {
-      type = "OVERDUE";
+    let stageId: string | null = null;
+
+    try {
+      const stages = await db.reminderStage.findMany({
+        where: { configId: config.id, enabled: true },
+        orderBy: { daysOffset: "asc" },
+      });
+      if (stages.length > 0) {
+        if (invoice.dueDate && now > invoice.dueDate) {
+          // Find the most appropriate post-due stage (smallest positive offset <= days overdue)
+          const daysOverdue = Math.floor((now.getTime() - invoice.dueDate.getTime()) / 86400000);
+          const postDueStage = stages
+            .filter((s) => s.type === "POST_DUE" && s.daysOffset <= daysOverdue)
+            .sort((a, b) => b.daysOffset - a.daysOffset)[0];
+          if (postDueStage) {
+            type = `POST_DUE_${postDueStage.daysOffset}`;
+            stageId = postDueStage.id;
+          } else {
+            const dueDateStage = stages.find((s) => s.type === "DUE_DATE");
+            if (dueDateStage) {
+              stageId = dueDateStage.id;
+            }
+          }
+        } else {
+          const dueDateStage = stages.find((s) => s.type === "DUE_DATE");
+          if (dueDateStage) {
+            stageId = dueDateStage.id;
+          } else {
+            const earlyStage = stages.find((s) => s.type === "PRE_DUE");
+            if (earlyStage) stageId = earlyStage.id;
+          }
+        }
+      }
+    } catch (err: any) {
+      // Schema drift: stages table may not exist yet. Fall back to legacy behavior.
+      if (!isMissingColumnError(err)) throw err;
     }
 
     const recentReminders = await db.reminder.count({
       where: {
         invoiceId,
-        status: "SENT",
+        status: { in: ["SENT", "DELIVERED", "QUEUED"] },
         createdAt: { gte: new Date(now.getTime() - config.frequencyHours * 60 * 60 * 1000) },
       },
     });
@@ -514,8 +668,10 @@ export async function sendReminder(invoiceId: string) {
       data: {
         orgId,
         invoiceId,
+        stageId: stageId ?? undefined,
         type,
         scheduledAt: now,
+        sentAt: now,
         status: "SENT",
         channel: "EMAIL",
         note: `Reminder sent for invoice ${invoice.number}`,
@@ -554,6 +710,9 @@ export async function getReminders(input: { invoiceId?: string; status?: string 
         invoice: {
           select: { number: true, status: true },
         },
+        stage: {
+          select: { name: true, type: true, daysOffset: true },
+        },
       },
     });
 
@@ -561,7 +720,71 @@ export async function getReminders(input: { invoiceId?: string; status?: string 
   });
 }
 
-function formatCurrency(amount: number, currency = "USD") {
+export async function getInvoiceReminderSuppression(invoiceId: string) {
+  return withActionError("getInvoiceReminderSuppression", async () => {
+    const user = await requireUser();
+    if (!user.organizationId) actionError("No organization");
+
+    try {
+      const suppression = await db.invoiceReminderSuppression.findUnique({
+        where: { orgId_invoiceId: { orgId: user.organizationId, invoiceId } },
+      });
+      return suppression;
+    } catch (err) {
+      if (isMissingColumnError(err)) return null;
+      throw err;
+    }
+  });
+}
+
+export async function setInvoiceReminderSuppression(
+  invoiceId: string,
+  input: { suppressedAll?: boolean; snoozedUntil?: string | null }
+) {
+  return withActionError("setInvoiceReminderSuppression", async () => {
+    const user = await requireUser();
+    if (!user.organizationId) actionError("No organization");
+    const orgId = user.organizationId;
+
+    await db.$transaction(async (tx) => {
+      await tx.invoiceReminderSuppression.upsert({
+        where: { orgId_invoiceId: { orgId, invoiceId } },
+        update: {
+          suppressedAll: input.suppressedAll ?? false,
+          snoozedUntil: input.snoozedUntil ? new Date(input.snoozedUntil) : null,
+        },
+        create: {
+          orgId,
+          invoiceId,
+          suppressedAll: input.suppressedAll ?? false,
+          snoozedUntil: input.snoozedUntil ? new Date(input.snoozedUntil) : null,
+        },
+      });
+    });
+
+    await revalidateWithLocale(`/dashboard/invoices/${invoiceId}`);
+  });
+}
+
+export async function clearInvoiceReminderSuppression(invoiceId: string) {
+  return withActionError("clearInvoiceReminderSuppression", async () => {
+    const user = await requireUser();
+    if (!user.organizationId) actionError("No organization");
+
+    try {
+      await db.invoiceReminderSuppression.deleteMany({
+        where: { orgId: user.organizationId, invoiceId },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) return null;
+      throw err;
+    }
+
+    await revalidateWithLocale(`/dashboard/invoices/${invoiceId}`);
+  });
+}
+
+export function formatCurrency(amount: number, currency = "USD") {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,

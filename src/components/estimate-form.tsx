@@ -17,8 +17,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import { CatalogItemSelector } from "@/components/catalog-item-selector";
 
-export function EstimateForm({ customers }: { customers: { id: string; name: string }[] }) {
+export function EstimateForm({ customers, canUseCatalog }: { customers: { id: string; name: string }[]; canUseCatalog: boolean }) {
   const t = useTranslations("estimates");
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
@@ -28,7 +29,7 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
   const [taxRate, setTaxRate] = React.useState<string | number>(0);
   const [discount, setDiscount] = React.useState<string | number>(0);
   const [notes, setNotes] = React.useState("");
-  const [items, setItems] = React.useState([{ description: "", quantity: 1, unitPrice: 0 }]);
+  const [items, setItems] = React.useState([{ description: "", quantity: 1, unitPrice: 0, sku: "" }]);
 
   const subtotal = items.reduce((a, i) => a + i.quantity * (Number(i.unitPrice) || 0), 0);
   const taxAmount = ((subtotal * (Number(taxRate) || 0)) / 100);
@@ -52,11 +53,12 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
         notes,
         items: items
           .filter((i) => i.description)
-          .map((i) => ({
-            description: i.description,
-            quantity: Number(i.quantity) || 0,
-            unitPrice: Number(i.unitPrice) || 0,
-          })),
+            .map((i) => ({
+              description: i.description,
+              quantity: Number(i.quantity) || 0,
+              unitPrice: Number(i.unitPrice) || 0,
+              sku: i.sku || null,
+            })),
       });
       router.push("/dashboard/estimates");
       router.refresh();
@@ -119,20 +121,31 @@ export function EstimateForm({ customers }: { customers: { id: string; name: str
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setItems((p) => [...p, { description: "", quantity: 1, unitPrice: 0 }])}
+            onClick={() => setItems((p) => [...p, { description: "", quantity: 1, unitPrice: 0, sku: "" }])}
           >
             {t("addItem")}
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
           {items.map((it, idx) => (
-            <div key={idx} className="flex gap-2">
-              <Input
-                placeholder={t("description")}
-                className="flex-1"
-                value={it.description}
-                onChange={(e) => updateItem(idx, "description", e.target.value)}
-              />
+             <div key={idx} className="flex gap-2 items-end">
+               {canUseCatalog && (
+                 <CatalogItemSelector
+                   onSelect={(item) => {
+                     updateItem(idx, "description", item.name);
+                     updateItem(idx, "unitPrice", item.price);
+                     updateItem(idx, "sku", item.sku || "");
+                     if (item.taxRate > 0) setTaxRate(item.taxRate);
+                   }}
+                   trigger={<Button type="button" variant="outline" size="sm">Browse</Button>}
+                 />
+               )}
+               <Input
+                 placeholder={t("description")}
+                 className="flex-1"
+                 value={it.description}
+                 onChange={(e) => updateItem(idx, "description", e.target.value)}
+               />
               <Input
                 type="number"
                 className="w-20"

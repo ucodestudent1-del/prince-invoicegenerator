@@ -378,6 +378,221 @@ export async function getCustomerAnalytics() {
   });
 }
 
+export interface FinancialDashboardData {
+  kpis: {
+    totalRevenue: number;
+    outstandingBalance: number;
+    overdueAmount: number;
+    paidThisMonth: number;
+  };
+  revenueOverTime: Array<{ date: string; total: number; amountPaid: number }>;
+  paidVsOutstanding: { paid: number; outstanding: number };
+  overdueBreakdown: Array<{ customerName: string; amount: number; daysOverdue: number; invoiceNumber: string }>;
+  revenueByCustomer: Array<{ name: string; amount: number; color: string }>;
+  invoices: Array<{
+    id: string;
+    number: string;
+    customerName: string;
+    customerCompany?: string | null;
+    amount: number;
+    dueDate: Date;
+    status: string;
+    currency: string;
+    daysOverdue: number;
+  }>;
+}
+
+export async function getFinancialDashboardData(): Promise<FinancialDashboardData> {
+  return withActionError("getFinancialDashboardData", async () => {
+    const user = await requireUser();
+    if (!user.organizationId) actionError("No organization");
+    const orgId = user.organizationId;
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - 30);
+
+    // Fetch all invoices with customer data
+    let invoices;
+    try {
+      invoices = await db.invoice.findMany({
+        where: { orgId },
+        include: { customer: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        invoices = await db.invoice.findMany({
+          where: { orgId },
+          select: {
+            id: true,
+            number: true,
+            customerId: true,
+            status: true,
+            issueDate: true,
+            dueDate: true,
+            currency: true,
+            subtotal: true,
+            taxRate: true,
+            taxAmount: true,
+            discount: true,
+            total: true,
+            amountPaid: true,
+            customer: true,
+          },
+        }) as any;
+      } else {
+        throw err;
+      }
+    }
+
+    // KPIs
+    const totalRevenue = invoices.reduce((sum: number, inv: any) => sum + (inv.total || 0), 0);
+    const outstandingBalance = invoices
+      .filter((inv: any) => (inv.total || 0) - (inv.amountPaid || 0) > 0)
+      .reduce((sum: number, inv: any) => sum + (inv.total || 0) - (inv.amountPaid || 0), 0);
+
+    const overdueInvoices = invoices.filter((inv: any) => {
+      if (!inv.dueDate) return false;
+      const due = new Date(inv.dueDate);
+      return due < now && (inv.total - inv.amountPaid) > 0;
+    });
+    const overdueAmount = overdueInvoices.reduce(
+      (sum: number, inv: any) => sum + (inv.total || 0) - (inv.amountPaid || 0),
+      0
+    );
+
+    const currentMonthInvoices = invoices.filter((inv: any) => {
+      const issue = new Date(inv.issueDate);
+      return issue >= startOfMonth;
+    });
+    const paidThisMonth = currentMonthInvoices.reduce(
+      (sum: number, inv: any) => sum + (inv.amountPaid || 0),
+      0
+    );
+
+    // Revenue over time (last 30 days, grouped by day)
+    const recentInvoices = invoices.filter((inv: any) => {
+      const issue = new Date(inv.issueDate);
+      return issue >= startOfWeek;
+    });
+
+    const dailyMap: Record<string, { total: number; amountPaid: number }> = {};
+    for (const inv of recentInvoices) {
+      const day = new Date(inv.issueDate).toISOString().split("T")[0];
+      if (!dailyMap[day]) dailyMap[day] = { total: 0, amountPaid: 0 };
+      dailyMap[day].total += inv.total || 0;
+      dailyMap[day].amountPaid += inv.amountPaid || 0;
+    }
+
+    const revenueOverTime: Array<{ date: string; total: number; amountPaid: number }> = [];
+    for (let d = 0; d < 30; d++) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - d);
+      const day = date.toISOString().split("T")[0];
+      const entry = dailyMap[day] || { total: 0, amountPaid: 0 };
+      revenueOverTime.unshift({
+        date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        total: entry.total,
+        amountPaid: entry.amountPaid,
+      });
+    }
+
+    // Paid vs Outstanding
+    const paidVsOutstanding = {
+      paid: invoices.reduce((sum: number, inv: any) => sum + (inv.amountPaid || 0), 0),
+      outstanding: outstandingBalance,
+    };
+
+    // Overdue breakdown (by invoice, with customer name)
+    const overdueBreakdown = overdueInvoices
+      .map((inv: any) => {
+        const daysOverdue = Math.floor(
+          (now.getTime() - new Date(inv.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return {
+          customerName: inv.customer?.name || inv.customer?.company || "Unknown",
+          amount: (inv.total || 0) - (inv.amountPaid || 0),
+          daysOverdue,
+          invoiceNumber: inv.number,
+        };
+      })
+      .sort((a: any, b: any) => b.daysOverdue - a.daysOverdue);
+
+    // Revenue by customer (top 5 + Others)
+    const customerRevenue = invoices.reduce((acc: Record<string, number>, inv: any) => {
+      const name = inv.customer?.name || inv.customer?.company || "Unknown";
+      acc[name] = (acc[name] || 0) + (inv.total || 0);
+      return acc;
+    }, {});
+
+    const sortedCustomers = Object.entries(customerRevenue)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 5)
+      .map(([name, amount]) => ({ name, amount: amount as number }));
+
+    const totalRevenueByTop5 = sortedCustomers.reduce(
+      (sum, c) => sum + c.amount,
+      0
+    );
+    const othersAmount = totalRevenue - totalRevenueByTop5;
+
+    const colors = ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444"];
+    const revenueByCustomer = sortedCustomers.map((c, i) => ({
+      name: c.name,
+      amount: c.amount,
+      color: colors[i % colors.length],
+    }));
+
+    if (othersAmount > 0) {
+      revenueByCustomer.push({
+        name: "Others",
+        amount: othersAmount,
+        color: "#9ca3af",
+      });
+    }
+
+    // Invoice list (all invoices, most recent first)
+    const invoiceList = invoices
+      .map((inv: any) => {
+        const daysOverdue =
+          inv.dueDate && new Date(inv.dueDate) < now
+            ? Math.floor((now.getTime() - new Date(inv.dueDate).getTime()) / (1000 * 60 * 60 * 24))
+            : 0;
+        return {
+          id: inv.id,
+          number: inv.number,
+          customerName: inv.customer?.name || inv.customer?.company || "Unknown",
+          customerCompany: inv.customer?.company || null,
+          amount: (inv.total || 0) - (inv.amountPaid || 0),
+          dueDate: inv.dueDate,
+          status: inv.status,
+          currency: inv.currency || "USD",
+          daysOverdue,
+        };
+      })
+      .sort((a: any, b: any) => {
+        if (a.daysOverdue > 0 && b.daysOverdue === 0) return -1;
+        if (b.daysOverdue > 0 && a.daysOverdue === 0) return 1;
+        return new Date(b.dueDate ?? 0).getTime() - new Date(a.dueDate ?? 0).getTime();
+      });
+
+    return {
+      kpis: {
+        totalRevenue,
+        outstandingBalance,
+        overdueAmount,
+        paidThisMonth,
+      },
+      revenueOverTime,
+      paidVsOutstanding,
+      overdueBreakdown,
+      revenueByCustomer,
+      invoices: invoiceList,
+    };
+  });
+}
+
 export async function exportInvoices(format: "csv" | "xlsx") {
   return withActionError("exportInvoices", async () => {
     const user = await requireUser();

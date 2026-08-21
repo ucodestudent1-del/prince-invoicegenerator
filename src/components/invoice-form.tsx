@@ -11,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import { CatalogItemSelector } from "@/components/catalog-item-selector";
+import { UnbilledTimeSelector } from "@/components/unbilled-time-selector";
+import { Clock } from "lucide-react";
 
 export function InvoiceForm({
   customers,
@@ -22,6 +25,8 @@ export function InvoiceForm({
   canProjectManagement,
   canSchedule,
   hasSavedAddresses,
+  canUseCatalog,
+  canUseTimeTracking,
 }: {
   customers: { id: string; name: string }[];
   projects: { id: string; name: string }[];
@@ -32,6 +37,8 @@ export function InvoiceForm({
   canProjectManagement: boolean;
   canSchedule: boolean;
   hasSavedAddresses: boolean;
+  canUseCatalog: boolean;
+  canUseTimeTracking: boolean;
 }) {
   const t = useTranslations("invoices");
   const router = useRouter();
@@ -56,8 +63,42 @@ export function InvoiceForm({
   const [billToAddress, setBillToAddress] = React.useState("");
   const [shipToAddress, setShipToAddress] = React.useState("");
   const [items, setItems] = React.useState([
-    { description: "", quantity: 1, unitPrice: 0 },
+    { description: "", quantity: 1, unitPrice: 0, sku: "" },
   ]);
+  const [trackedTime, setTrackedTime] = React.useState<any[] | null>(null);
+
+  const handleAddTrackedTime = (entries: any[]) => {
+    entries.forEach((entry) => {
+      const hours = entry.duration / 3600;
+      setItems((prev) => [
+        ...prev,
+        {
+          description: entry.description || `${entry.project?.name || "Project"} - ${formatDuration(entry.duration)}`,
+          quantity: hours,
+          unitPrice: entry.hourlyRate,
+          sku: "",
+        },
+      ]);
+    });
+  };
+
+  function formatDuration(seconds: number) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h}h ${m}m`;
+  }
+
+  async function loadTrackedTime() {
+    try {
+      const res = await fetch("/api/time-tracking/entries?action=for-invoice");
+      if (res.ok) {
+        const data = await res.json();
+        setTrackedTime(data);
+      }
+    } catch (err) {
+      console.error("Failed to load tracked time:", err);
+    }
+  }
 
   const subtotal = items.reduce((a, i) => a + i.quantity * (Number(i.unitPrice) || 0), 0);
   const taxAmount = ((subtotal * (Number(taxRate) || 0)) / 100);
@@ -144,6 +185,7 @@ export function InvoiceForm({
               description: i.description,
               quantity: Number(i.quantity) || 0,
               unitPrice: Number(i.unitPrice) || 0,
+              sku: i.sku || null,
             })),
         });
         if (!invoice?.id) {
@@ -330,22 +372,49 @@ export function InvoiceForm({
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Line items</CardTitle>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              setItems((p) => [...p, { description: "", quantity: 1, unitPrice: 0 }])
-            }
-          >
-            Add item
-          </Button>
+          <div className="flex gap-2">
+            {canUseTimeTracking && (
+              <UnbilledTimeSelector
+                entries={trackedTime || []}
+                onSelect={handleAddTrackedTime}
+                trigger={
+                  <Button type="button" variant="outline" size="sm" onClick={loadTrackedTime}>
+                    <Clock className="h-4 w-4 mr-1" />
+                    Add Tracked Time
+                  </Button>
+                }
+              />
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setItems((p) => [...p, { description: "", quantity: 1, unitPrice: 0, sku: "" }])
+              }
+            >
+              Add item
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {items.map((it, idx) => (
-            <div key={idx} className="flex gap-2">
+            <div key={idx} className="flex gap-2 items-end">
+              {canUseCatalog && (
+                <CatalogItemSelector
+                  onSelect={(item) => {
+                    updateItem(idx, "description", item.name);
+                    updateItem(idx, "unitPrice", item.price);
+                    updateItem(idx, "sku", item.sku || "");
+                    if (item.taxRate > 0) {
+                      setTaxRate(item.taxRate);
+                    }
+                  }}
+                  trigger={<Button type="button" variant="outline" size="sm">Browse</Button>}
+                />
+              )}
               <Input
                 placeholder="Description"
                 value={it.description}

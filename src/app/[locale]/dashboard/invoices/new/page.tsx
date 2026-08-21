@@ -41,16 +41,18 @@ export default async function NewInvoicePage({ params }: { params: { locale: str
         </p>
       </div>
         <InvoiceForm
-        customers={customers}
-        projects={projects}
-        canRetainage={hasFeature(plan, "retainage")}
-        canProgress={hasFeature(plan, "progressInvoices")}
-        canRecurring={hasFeature(plan, "recurring")}
-        canCustomizeInvoiceNumber={true}
-        canProjectManagement={hasFeature(plan, "projectManagement")}
-        canSchedule={hasFeature(plan, "scheduledInvoices")}
-        hasSavedAddresses={hasFeature(plan, "savedAddresses")}
-      />
+          customers={customers}
+          projects={projects}
+          canRetainage={hasFeature(plan, "retainage")}
+          canProgress={hasFeature(plan, "progressInvoices")}
+          canRecurring={hasFeature(plan, "recurring")}
+          canCustomizeInvoiceNumber={true}
+          canProjectManagement={hasFeature(plan, "projectManagement")}
+          canSchedule={hasFeature(plan, "scheduledInvoices")}
+          hasSavedAddresses={hasFeature(plan, "savedAddresses")}
+          canUseCatalog={hasFeature(plan, "catalogItems")}
+          canUseTimeTracking={hasFeature(plan, "timeTracking")}
+        />
     </div>
   );
 }

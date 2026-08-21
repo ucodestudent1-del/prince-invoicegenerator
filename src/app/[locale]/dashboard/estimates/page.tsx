@@ -20,9 +20,12 @@ import { getTranslations } from "next-intl/server";
 const variant: Record<string, any> = {
   DRAFT: "secondary",
   SENT: "default",
+  VIEWED: "outline",
   ACCEPTED: "success",
+  REJECTED: "destructive",
   DECLINED: "destructive",
   EXPIRED: "outline",
+  INVOICED: "default",
 };
 
 export default async function EstimatesPage({ params }: { params: { locale: string } }) {
@@ -70,21 +73,28 @@ export default async function EstimatesPage({ params }: { params: { locale: stri
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {estimates.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell className="font-medium">{e.number}</TableCell>
-                    <TableCell>{e.customer?.name ?? "Unknown"}</TableCell>
-                    <TableCell>{formatDate(e.validUntil)}</TableCell>
-                    <TableCell>
-                      <Badge variant={variant[e.status] ?? "secondary"}>
-                        {e.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(e.total)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                 {estimates.map((e) => (
+                   <TableRow key={e.id}>
+                     <TableCell className="font-medium">
+                       <Link
+                         href={`/dashboard/estimates/${e.id}`}
+                         className="text-blue-600 hover:underline"
+                       >
+                         {e.number}
+                       </Link>
+                     </TableCell>
+                     <TableCell>{e.customer?.name ?? "Unknown"}</TableCell>
+                     <TableCell>{formatDate(e.validUntil)}</TableCell>
+                     <TableCell>
+                       <Badge variant={variant[e.status] ?? "secondary"}>
+                         {e.status}
+                       </Badge>
+                     </TableCell>
+                     <TableCell className="text-right">
+                       {formatCurrency(e.total)}
+                     </TableCell>
+                   </TableRow>
+                 ))}
               </TableBody>
             </Table>
           )}

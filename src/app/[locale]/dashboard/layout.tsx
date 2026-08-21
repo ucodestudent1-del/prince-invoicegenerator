@@ -17,6 +17,8 @@ import {
   Bell,
   BarChart3,
   Calendar,
+  Package,
+  Clock,
 } from "lucide-react";
 import { logServerError } from "@/lib/errors";
 import { UserMenu } from "@/components/user-menu";
@@ -31,6 +33,8 @@ const nav = [
   { href: "/dashboard", label: "navigation.overview", icon: LayoutDashboard },
   { href: "/dashboard/invoices", label: "navigation.invoices", icon: FileText, feature: "invoicesPerMonth" as FeatureKey },
   { href: "/dashboard/estimates", label: "navigation.estimates", icon: Calculator, feature: "estimates" as FeatureKey },
+  { href: "/dashboard/settings/catalog", label: "navigation.catalog", icon: Package, feature: "catalogItems" as FeatureKey },
+  { href: "/dashboard/time-tracking", label: "navigation.timeTracking", icon: Clock, feature: "timeTracking" as FeatureKey },
   { href: "/dashboard/change-orders", label: "navigation.changeOrders", icon: Repeat, feature: "changeOrders" as FeatureKey },
   { href: "/dashboard/projects", label: "navigation.projects", icon: FolderKanban, feature: "projectManagement" as FeatureKey },
   { href: "/dashboard/expenses", label: "navigation.expenses", icon: Receipt, feature: "expenseTracking" as FeatureKey },
@@ -39,6 +43,7 @@ const nav = [
   { href: "/dashboard/team", label: "navigation.team", icon: Users, feature: "multipleUsers" as FeatureKey },
   { href: "/dashboard/billing", label: "navigation.billing", icon: CreditCard },
   { href: "/dashboard/reports", label: "navigation.reports", icon: BarChart3 },
+  { href: "/dashboard/reports/financial", label: "navigation.financialDashboard", icon: LayoutDashboard },
   { href: "/dashboard/recurring", label: "navigation.recurring", icon: Calendar },
    { href: "/dashboard/settings/reminders", label: "navigation.reminders", icon: Bell, feature: "automaticReminders" as FeatureKey },
   { href: "/dashboard/settings/late-fees", label: "navigation.lateFees", icon: Receipt, feature: "lateFees" as FeatureKey },

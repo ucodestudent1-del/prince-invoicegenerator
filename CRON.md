@@ -25,10 +25,11 @@ openssl rand -hex 32
 |----------|---------|-----------|
 | `/api/automation?steps=recurring` | Generate recurring invoices from configurations | Daily at midnight |
 | `/api/automation?steps=scheduled,late-fees` | Send scheduled invoices, apply late fees | Hourly |
-| `/api/reminders/check` | Send automatic payment reminders | Every 15 minutes |
+| `/api/reminders/check` | Send automatic payment reminders (tiered escalation: pre-due, due-date, post-due at 1/7/14/30 days) | Every 15 minutes |
 | `/api/invoices/scheduled` | Process scheduled invoices (alternative, per-step) | Hourly |
 | `/api/invoices/recurring/generate` | Generate recurring invoices (alternative, per-step) | Daily at midnight |
 | `/api/late-fees/apply` | Apply late fees (alternative, per-step) | Hourly |
+| `/api/estimates/check-expiration` | Transition expired estimates (past `validUntil`) to `EXPIRED` status | Daily at midnight |
 
 ## Cron Configuration Examples
 
@@ -43,6 +44,9 @@ openssl rand -hex 32
 
 # Check for payment reminders every 15 minutes
 */15 * * * * curl -X GET "https://your-app.com/api/reminders/check" -H "x-api-key: $BACKGROUND_JOB_API_KEY"
+
+# Check for expired estimates daily at midnight
+0 0 * * * curl -X POST "https://your-app.com/api/estimates/check-expiration" -H "x-api-key: $BACKGROUND_JOB_API_KEY"
 ```
 
 ### Option 2: Individual endpoints (more granular control)
@@ -59,6 +63,9 @@ openssl rand -hex 32
 
 # Check reminders every 15 minutes
 */15 * * * * curl -X GET "https://your-app.com/api/reminders/check" -H "x-api-key: $BACKGROUND_JOB_API_KEY"
+
+# Check for expired estimates daily at midnight
+0 0 * * * curl -X POST "https://your-app.com/api/estimates/check-expiration" -H "x-api-key: $BACKGROUND_JOB_API_KEY"
 ```
 
 ## Using with Popular Cron Providers

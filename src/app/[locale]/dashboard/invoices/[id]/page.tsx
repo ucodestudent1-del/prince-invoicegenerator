@@ -2,10 +2,18 @@ import { Link, redirect } from "@/i18n/navigation";
 import Image from "next/image";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
-import { markInvoicePaid, deleteInvoice, sendReminder } from "@/lib/actions/invoices";
+import {
+  markInvoicePaid,
+  deleteInvoice,
+  sendReminder,
+  getInvoiceReminderSuppression,
+  setInvoiceReminderSuppression,
+  clearInvoiceReminderSuppression,
+  getReminders,
+} from "@/lib/actions/invoices";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -13,6 +21,9 @@ import {
   Check,
   Trash2,
   Mail,
+  Bell,
+  BellOff,
+  Calendar,
 } from "lucide-react";
 import { InvoiceStatusManager } from "@/components/invoice-status-manager";
 import { PaymentHistory } from "@/components/payment-history";
@@ -98,6 +109,9 @@ export default async function InvoiceDetailPage({
   };
 
   const remainingBalance = invoice.total - invoice.amountPaid;
+
+  const reminders = await getReminders({ invoiceId: params.id }).catch(() => []);
+  const suppression = await getInvoiceReminderSuppression(params.id).catch(() => null);
 
   return (
     <div className="space-y-6">
@@ -289,8 +303,126 @@ export default async function InvoiceDetailPage({
               </Button>
             </form>
           )}
+
+          {reminders.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Reminders sent</CardTitle>
+                <CardDescription>
+                  {reminders.length} reminder(s) have been sent for this invoice.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {reminders.slice(0, 5).map((r: any) => {
+                  const statusVariant: Record<string, any> = {
+                    SENT: "secondary",
+                    DELIVERED: "success",
+                    QUEUED: "outline",
+                    FAILED: "destructive",
+                    BOUNCED: "destructive",
+                    SKIPPED: "secondary",
+                    PENDING: "secondary",
+                  };
+                  return (
+                    <div key={r.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">
+                          {r.stage?.name || r.type}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(r.sentAt || r.scheduledAt)}
+                        </p>
+                      </div>
+                      <Badge variant={statusVariant[r.status] ?? "secondary"}>
+                        {r.status}
+                      </Badge>
+                    </div>
+                  );
+                })}
+                {reminders.length > 5 && (
+                  <p className="text-xs text-muted-foreground">
+                    +{reminders.length - 5} more
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
+
+      {invoice.status !== "PAID" && invoice.customer?.email && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Automated reminders</CardTitle>
+            <CardDescription>
+              Configure automated payment reminders for this invoice.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {suppression?.suppressedAll && (
+              <div className="rounded-md border border-amber-500/50 bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                All automated reminders are suppressed for this invoice.
+                {suppression.snoozedUntil &&
+                  ` Snoozed until ${formatDate(suppression.snoozedUntil)}.`}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Bell className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">Suppress all automated reminders</p>
+                  <p className="text-sm text-muted-foreground">
+                    No reminders will be sent for this invoice.
+                  </p>
+                </div>
+              </div>
+              <form
+                action={async () => {
+                  "use server";
+                  if (suppression?.suppressedAll) {
+                    await clearInvoiceReminderSuppression(invoice.id);
+                  } else {
+                    await setInvoiceReminderSuppression(invoice.id, { suppressedAll: true });
+                  }
+                }}
+              >
+                <Button type="submit" variant={suppression?.suppressedAll ? "outline" : "destructive"} size="sm">
+                  {suppression?.suppressedAll ? "Restore reminders" : "Suppress all"}
+                </Button>
+              </form>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">Snooze reminders</p>
+                  <p className="text-sm text-muted-foreground">
+                    Skip reminders until a specific date.
+                  </p>
+                </div>
+              </div>
+              <form
+                action={async () => {
+                  "use server";
+                  const snoozeDate = new Date();
+                  snoozeDate.setDate(snoozeDate.getDate() + 14);
+                  await setInvoiceReminderSuppression(invoice.id, {
+                    suppressedAll: false,
+                    snoozedUntil: snoozeDate.toISOString(),
+                  });
+                }}
+              >
+                <Button type="submit" variant="outline" size="sm">
+                  Snooze 14 days
+                </Button>
+              </form>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
 
       <div className="grid gap-6 lg:grid-cols-2">
         <PaymentHistory invoiceId={invoice.id} currency={invoice.currency} />

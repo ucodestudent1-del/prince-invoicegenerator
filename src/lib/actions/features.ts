@@ -16,7 +16,7 @@ export async function createEstimate(input: {
   taxRate: number;
   discount: number;
   notes?: string;
-  items: { description: string; quantity: number; unitPrice: number }[];
+  items: { description: string; quantity: number; unitPrice: number; sku?: string | null }[];
 }) {
   return withActionError("createEstimate", async () => {
     const user = await requireUser();
@@ -57,6 +57,7 @@ export async function createEstimate(input: {
             unitPrice: it.unitPrice,
             amount: it.quantity * it.unitPrice,
             sortOrder: i,
+            sku: it.sku || null,
           })),
         },
       },

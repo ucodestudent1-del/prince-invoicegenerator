@@ -1,4 +1,5 @@
-import { requireUser, requireFeature } from "@/lib/org";
+import { requireUser, requireFeature, getActivePlan } from "@/lib/org";
+import { hasFeature } from "@/lib/plans";
 import { db } from "@/lib/db";
 import { logServerError } from "@/lib/errors";
 import { EstimateForm } from "@/components/estimate-form";
@@ -9,6 +10,7 @@ export default async function NewEstimatePage({ params }: { params: { locale: st
   await requireFeature("estimates");
   const user = await requireUser();
   if (!user || !user.organizationId) return null;
+  const plan = await getActivePlan(user);
   let customers;
   try {
     customers = await db.customer.findMany({
@@ -22,7 +24,7 @@ export default async function NewEstimatePage({ params }: { params: { locale: st
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t("newEstimate")}</h1>
-      <EstimateForm customers={customers} />
+      <EstimateForm customers={customers} canUseCatalog={hasFeature(plan, "catalogItems")} />
     </div>
   );
 }

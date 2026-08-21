@@ -28,8 +28,10 @@ export type FeatureKey =
   | "automaticReminders"
   | "lateFees"
   | "scheduledInvoices"
-  | "pdfExport"
-  | "multilingual";
+   | "pdfExport"
+   | "multilingual"
+   | "catalogItems"
+   | "timeTracking";
 
 export interface PlanDefinition {
   id: SubscriptionPlan;
@@ -63,6 +65,8 @@ export const PLANS: PlanDefinition[] = [
       "invoicesPerMonth",
       "branding",
       "estimates",
+      "catalogItems",
+      "timeTracking",
       "customerDb",
       "progressInvoices",
       "recurring",
@@ -83,6 +87,8 @@ export const PLANS: PlanDefinition[] = [
       "invoicesPerMonth",
       "branding",
       "estimates",
+      "catalogItems",
+      "timeTracking",
       "customerDb",
       "progressInvoices",
       "changeOrders",
@@ -110,13 +116,15 @@ export const PLANS: PlanDefinition[] = [
     features: [
       "invoicesPerMonth",
       "branding",
-      "estimates",
-      "customerDb",
-      "progressInvoices",
-      "changeOrders",
-      "retainage",
-      "recurring",
-      "expenseTracking",
+  "estimates",
+  "catalogItems",
+  "timeTracking",
+  "customerDb",
+  "progressInvoices",
+  "changeOrders",
+  "retainage",
+  "recurring",
+  "expenseTracking",
       "photoAttachments",
       "savedAddresses",
       "darkMode",
@@ -168,6 +176,8 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   scheduledInvoices: "Scheduled invoices",
   pdfExport: "PDF export without watermark",
   multilingual: "Multilingual interface and localized content",
+  catalogItems: "Products & services catalog",
+  timeTracking: "Time tracking",
 };
 
 // Human-friendly allowance text per plan for the "invoicesPerMonth" feature.

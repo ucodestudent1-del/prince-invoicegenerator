@@ -146,6 +146,20 @@ export default async function SettingsPage({ params }: { params: { locale: strin
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-lg">Products &amp; Services</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Save frequently used items to speed up invoice creation.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/settings/catalog">Manage catalog</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-lg">{t("dataManagement")}</CardTitle>
           <p className="text-sm text-muted-foreground">
             {t("dataDesc")}
