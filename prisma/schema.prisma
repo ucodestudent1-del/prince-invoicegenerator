@@ -136,6 +136,7 @@ model User {
   emailVerified DateTime?
   image         String?
   locale        String?   @default("en")
+  password      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -146,6 +147,7 @@ model User {
   accounts Account[]
   sessions Session[]
   timeEntries TimeEntry[]
+  onboardingState OnboardingState?
 }
 
 model Account {
@@ -180,8 +182,20 @@ model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+  type       String   @default("EMAIL_VERIFY")
 
   @@unique([identifier, token])
+}
+
+model MagicLink {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([identifier])
+  @@index([token])
 }
 
 // ---------------------------------------------------------------------------
@@ -193,14 +207,14 @@ model Organization {
   name            String
   slug            String             @unique
   plan            SubscriptionPlan   @default(FREE)
-  ownerId         String
+  ownerId         String             @unique
   stripeCustomerId String?
   stripeSubscriptionId String?
   stripePriceId    String?
   subscriptionStatus SubscriptionStatus?
   currentPeriodEnd DateTime?
   defaultLocale   String?            @default("en")
-   createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   theme          String @default("light")
@@ -212,27 +226,144 @@ model Organization {
 
   localizedStrings LocalizedString[]
 
+  // Identity
+  logoUrl               String?
+  industry              String?
+  businessType          String?
+  registrationNumber    String?
+  website               String?
+
+  // Contact
+  addressLine1          String?
+  addressLine2          String?
+  city                  String?
+  state                 String?
+  postalCode            String?
+  country               String   @default("US")
+  phone                 String?
+  email                 String?
+
+  // Compliance
+  taxId                 String?
+  taxIdType             String?
+
+  // Localization
+  currency              String   @default("USD")
+  language              String   @default("en")
+  timezone              String   @default("America/New_York")
+  dateFormat            String   @default("MM/DD/YYYY")
+  numberFormat          String   @default("en-US")
+
+  // Billing Defaults
+  defaultTaxRate        Float    @default(0)
+  defaultPaymentTerms   String   @default("NET_30")
+
   users          User[]
   customers      Customer[]
-   addresses      CustomerAddress[]
-   projects       Project[]
-   invoices       Invoice[]
-   estimates      Estimate[]
-   catalogItems   CatalogItem[]
-   estimateAuditLogs  EstimateAudit[]
-   changeOrders   ChangeOrder[]
-   expenses       Expense[]
-    subcontractors Subcontractor[]
-    photoAttachments PhotoAttachment[]
-    timeEntries  TimeEntry[]
-    invoicePdfs  InvoicePdf[]
-    recurringConfigs RecurringInvoiceConfig[]
+  addresses      CustomerAddress[]
+  projects       Project[]
+  invoices       Invoice[]
+  estimates      Estimate[]
+  catalogItems   CatalogItem[]
+  estimateAuditLogs  EstimateAudit[]
+  changeOrders   ChangeOrder[]
+  expenses       Expense[]
+  subcontractors Subcontractor[]
+  photoAttachments PhotoAttachment[]
+  timeEntries  TimeEntry[]
+  invoicePdfs  InvoicePdf[]
+  recurringConfigs RecurringInvoiceConfig[]
   payments       Payment[]
   auditLogs      InvoiceAudit[]
-   reminderConfigs ReminderConfig[]
-   reminders      Reminder[]
-   reminderSuppressions InvoiceReminderSuppression[]
-   lateFeeConfig  LateFeeConfig?
+  reminderConfigs ReminderConfig[]
+  reminders      Reminder[]
+  reminderSuppressions InvoiceReminderSuppression[]
+  lateFeeConfig  LateFeeConfig?
+  templates      InvoiceTemplate[]
+  settings       OrganizationSettings?
+  paymentInfo    PaymentInfo?
+}
+
+// ---------------------------------------------------------------------------
+// Invoice Templates (Pro tier+)
+// ---------------------------------------------------------------------------
+
+model InvoiceTemplate {
+  id               String   @id @default(cuid())
+  orgId            String
+  org              Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name             String
+  baseTemplate     String   @default("professional")
+  isDefault        Boolean  @default(false)
+  logoUrl          String?
+  primaryColor     String?  @default("#1e40af")
+  showCompanyName  Boolean  @default(true)
+  showCompanyAddress Boolean @default(true)
+  showCompanyPhone Boolean  @default(false)
+  showCompanyEmail Boolean  @default(false)
+  showTaxId        Boolean  @default(false)
+  showPaymentInfo  Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([orgId])
+  @@unique([orgId, name])
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding State
+// ---------------------------------------------------------------------------
+
+model OnboardingState {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  currentStep    String   @default("identity")
+  completedSteps String[] // ["identity", "contact", ...]
+
+  identityData   Json?
+  contactData    Json?
+  complianceData Json?
+
+  isComplete     Boolean  @default(false)
+  completedAt    DateTime?
+
+  startedAt      DateTime @default(now())
+  lastActiveAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isComplete])
+}
+
+// ---------------------------------------------------------------------------
+// Organization Settings
+// ---------------------------------------------------------------------------
+
+model OrganizationSettings {
+  id                   String   @id @default(cuid())
+  orgId                String   @unique
+  org                  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  defaultTemplateId    String?
+  emailSubjectTemplate String?
+  emailBodyTemplate    String?
+  autoReminders        Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Payment Info
+// ---------------------------------------------------------------------------
+
+model PaymentInfo {
+  id                 String   @id @default(cuid())
+  orgId              String   @unique
+  org                Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  showOnInvoice      Boolean  @default(true)
+  paymentInstructions String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 // ---------------------------------------------------------------------------
