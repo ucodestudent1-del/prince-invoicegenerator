@@ -247,18 +247,63 @@ model Customer {
   company   String?
   email     String?
   phone     String?
-  address   String?
+  website   String?
+  taxId     String?
+  address   String?  // Legacy field - use addresses relation for structured address
   notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-    invoices       Invoice[]
-    estimates      Estimate[]
-   projects  Project[]
+  // Portal Access
+  portalAccess Boolean  @default(false)
+  portalPin    String?
+
+  // Financial Summary (denormalized for performance, recalculated on invoice/payment events)
+  outstandingBalance Float @default(0)
+  totalInvoiced      Float @default(0)
+  totalPaid          Float @default(0)
+
+  // Status
+  status     CustomerStatus @default(ACTIVE)
+  archivedAt DateTime?
+
+  // Relations
+  invoices       Invoice[]
+  estimates      Estimate[]
+  projects       Project[]
   recurringConfigs RecurringInvoiceConfig[]
-  addresses CustomerAddress[]
+  addresses      CustomerAddress[]
+  portalSessions PortalSession[]
 
   @@index([orgId])
+  @@index([orgId, status])
+  @@unique([orgId, email])
+}
+
+enum CustomerStatus {
+  ACTIVE
+  ARCHIVED
+  SUSPENDED
+}
+
+// ---------------------------------------------------------------------------
+// Customer Portal Sessions (client-facing authentication)
+// ---------------------------------------------------------------------------
+
+model PortalSession {
+  id             String   @id @default(cuid())
+  customerId     String
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  token          String   @unique
+  expiresAt      DateTime
+  lastAccessedAt DateTime @default(now())
+  ipAddress      String?
+  userAgent      String?
+  revokedAt      DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([customerId])
+  @@index([token])
 }
 
 // ---------------------------------------------------------------------------

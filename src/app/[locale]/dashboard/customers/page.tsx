@@ -1,9 +1,8 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser, getActivePlan } from "@/lib/org";
+import { requireUser } from "@/lib/org";
 import { db } from "@/lib/db";
-import { deleteCustomer } from "@/lib/actions/customers";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,62 +11,77 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, MapPin } from "lucide-react";
+import { Plus, Search, Filter, DollarSign, FileText, Archive } from "lucide-react";
 import { logServerError } from "@/lib/errors";
-import { hasFeature } from "@/lib/plans";
 import { getTranslations } from "next-intl/server";
+import { formatCurrency } from "@/lib/utils";
+import { CustomersSearch } from "@/components/customers-search";
 
-export default async function CustomersPage({ params }: { params: { locale: string } }) {
+export default async function CustomersPage({
+  params,
+  searchParams,
+}: {
+  params: { locale: string };
+  searchParams: { q?: string; status?: string };
+}) {
   const user = await requireUser();
   if (!user || !user.organizationId) return null;
   const orgId = user.organizationId;
   const t = await getTranslations("customers");
 
+  const searchQuery = searchParams.q || "";
+  const statusFilter = searchParams.status || "ACTIVE";
+
   let customers;
   try {
-    const plan = await getActivePlan(user);
-    const includeAddresses = hasFeature(plan, "savedAddresses");
-    if (includeAddresses) {
-      try {
-        customers = await db.customer.findMany({
-          where: { orgId },
-          orderBy: { name: "asc" },
-          include: {
-            _count: { select: { invoices: true } },
-            addresses: { where: { orgId } },
-          },
-        });
-      } catch (addrErr: any) {
-        if (addrErr?.message?.includes("CustomerAddress") || addrErr?.message?.includes("does not exist")) {
-          customers = await db.customer.findMany({
-            where: { orgId },
-            orderBy: { name: "asc" },
-            include: {
-              _count: { select: { invoices: true } },
-            },
-          });
-        } else {
-          throw addrErr;
-        }
-      }
-    } else {
-      customers = await db.customer.findMany({
-        where: { orgId },
-        orderBy: { name: "asc" },
-        include: {
-          _count: { select: { invoices: true } },
-        },
-      });
+    const where: Record<string, any> = { orgId };
+    if (searchQuery) {
+      where.OR = [
+        { name: { contains: searchQuery, mode: "insensitive" } },
+        { company: { contains: searchQuery, mode: "insensitive" } },
+        { email: { contains: searchQuery, mode: "insensitive" } },
+      ];
     }
+    if (statusFilter && statusFilter !== "ALL") {
+      where.status = statusFilter;
+    }
+
+    customers = await db.customer.findMany({
+      where,
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        company: true,
+        email: true,
+        phone: true,
+        status: true,
+        outstandingBalance: true,
+        totalInvoiced: true,
+        totalPaid: true,
+        createdAt: true,
+        _count: { select: { invoices: true } },
+      },
+    });
   } catch (err) {
     logServerError("CustomersPage", err);
     throw err;
   }
 
+  // Calculate summary stats
+  const totalOutstanding = customers.reduce((sum, c) => sum + (c.outstandingBalance || 0), 0);
+  const totalInvoiced = customers.reduce((sum, c) => sum + (c.totalInvoiced || 0), 0);
+  const activeCustomers = customers.filter((c) => c.status === "ACTIVE").length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
+        <div>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">
+            {activeCustomers} active clients • {formatCurrency(totalOutstanding)} outstanding
+          </p>
+        </div>
         <Button asChild>
           <Link href="/dashboard/customers/new">
             <Plus className="mr-2 h-4 w-4" /> {t("newCustomer")}
@@ -75,53 +89,91 @@ export default async function CustomersPage({ params }: { params: { locale: stri
         </Button>
       </div>
 
+      {/* Summary Cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoiced</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalInvoiced)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding Balance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalOutstanding)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Clients</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeCustomers}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filter */}
+      <CustomersSearch initialQuery={searchQuery} initialStatus={statusFilter} />
+
+      {/* Customers Table */}
       <Card>
         <CardContent className="pt-6">
           {customers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("noCustomers")}</p>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">{t("noCustomers")}</p>
+              <Button asChild variant="outline" size="sm" className="mt-4">
+                <Link href="/dashboard/customers/new">Add your first client</Link>
+              </Button>
+            </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("name")}</TableHead>
-                  <TableHead>{t("company")}</TableHead>
                   <TableHead>{t("email")}</TableHead>
-                  <TableHead>{t("phone")}</TableHead>
-                  <TableHead>{t("savedAddresses")}</TableHead>
+                  <TableHead className="text-right">Total Invoiced</TableHead>
+                  <TableHead className="text-right">Outstanding</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">{t("invoices")}</TableHead>
-                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {customers.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell>{c.company ?? "—"}</TableCell>
-                    <TableCell>{c.email ?? "—"}</TableCell>
-                    <TableCell>{c.phone ?? "—"}</TableCell>
-                    <TableCell>
-                      {(c as any).addresses?.length > 0 ? (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          {(c as any).addresses.length}
-                        </div>
-                      ) : (
-                        "—"
+                    <TableCell className="font-medium">
+                      <Link href={`/dashboard/customers/${c.id}`} className="hover:underline">
+                        {c.name}
+                      </Link>
+                      {c.company && (
+                        <p className="text-xs text-muted-foreground">{c.company}</p>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">{c._count.invoices}</TableCell>
+                    <TableCell>{c.email ?? "—"}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(c.totalInvoiced || 0)}</TableCell>
                     <TableCell className="text-right">
-                      <form
-                        action={async () => {
-                          "use server";
-                          await deleteCustomer(c.id);
-                        }}
-                      >
-                        <Button type="submit" size="icon" variant="ghost">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </form>
+                      <span className={c.outstandingBalance > 0 ? "text-orange-600 font-medium" : ""}>
+                        {formatCurrency(c.outstandingBalance || 0)}
+                      </span>
                     </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          c.status === "ACTIVE"
+                            ? "bg-green-100 text-green-700"
+                            : c.status === "ARCHIVED"
+                            ? "bg-gray-100 text-gray-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {c.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">{c._count.invoices}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
