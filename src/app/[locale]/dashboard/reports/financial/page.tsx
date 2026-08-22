@@ -1,10 +1,9 @@
 import { requireUser } from "@/lib/org";
-import { FinancialDashboard } from "@/components/financial-dashboard";
+import { redirect } from "@/i18n/navigation";
+import { getLocaleSafe } from "@/lib/locale";
 import { logServerError } from "@/lib/errors";
-import { getTranslations } from "next-intl/server";
 
 export default async function FinancialDashboardPage({ params }: { params: { locale: string } }) {
-  const t = await getTranslations("reports");
   try {
     await requireUser();
   } catch (err) {
@@ -12,15 +11,6 @@ export default async function FinancialDashboardPage({ params }: { params: { loc
     throw err;
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t("financialDashboard")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("financialDashboardDesc")}
-        </p>
-      </div>
-      <FinancialDashboard />
-    </div>
-  );
+  const locale = await getLocaleSafe();
+  redirect({ href: "/dashboard", locale });
 }
