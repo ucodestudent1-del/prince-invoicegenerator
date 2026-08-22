@@ -1,4 +1,15 @@
-import geoip from "geoip-lite";
+let geoip: typeof import("geoip-lite") | null = null;
+
+export function getGeoIp() {
+  if (!geoip) {
+    try {
+      geoip = require("geoip-lite");
+    } catch {
+      return null;
+    }
+  }
+  return geoip;
+}
 
 export interface GeoSettings {
   country: string;
@@ -35,9 +46,12 @@ export function getAutoDetectedSettings(ipAddress?: string | null, browserLocale
   let country = FALLBACK.country;
 
   if (ipAddress) {
-    const geo = geoip.lookup(ipAddress);
-    if (geo?.country) {
-      country = geo.country;
+    const geoipModule = getGeoIp();
+    if (geoipModule) {
+      const geo = geoipModule.lookup(ipAddress);
+      if (geo?.country) {
+        country = geo.country;
+      }
     }
   }
 

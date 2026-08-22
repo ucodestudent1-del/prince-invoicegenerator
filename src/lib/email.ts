@@ -114,7 +114,9 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
     }
 
     if (provider === "resend") {
-      const { Resend } = await dynamicImport("resend");
+      // @ts-ignore - optional dependency, loaded at runtime only
+      const mod = await import(/* webpackIgnore: true */ "resend") as any;
+      const Resend = mod.Resend;
       const resend = new Resend(process.env.RESEND_API_KEY);
       const result = await resend.emails.send({
         from,
@@ -146,7 +148,8 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
     }
 
     if (provider === "smtp") {
-      const nodemailer = await dynamicImport("nodemailer");
+      // @ts-ignore - optional dependency, loaded at runtime only
+      const nodemailer = await import(/* webpackIgnore: true */ "nodemailer") as any;
       const transporter = nodemailer.createTransporter({
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT || 587),
@@ -179,7 +182,8 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
     }
 
     if (provider === "sendgrid") {
-      const sgMail = await dynamicImport("@sendgrid/mail");
+      // @ts-ignore - optional dependency, loaded at runtime only
+      const sgMail = await import(/* webpackIgnore: true */ "@sendgrid/mail") as any;
       sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
       const [result] = await sgMail.send({
         from,
@@ -216,16 +220,6 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
       status: "FAILED",
       error: err?.message ?? "Email delivery failed",
     };
-  }
-}
-
-async function dynamicImport(moduleName: string): Promise<any> {
-  try {
-    return await import(moduleName);
-  } catch {
-    throw new Error(
-      `${moduleName} is not installed. Install it and set EMAIL_PROVIDER="${moduleName}" to enable email delivery.`
-    );
   }
 }
 

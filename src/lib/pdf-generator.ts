@@ -33,12 +33,8 @@ export async function generateInvoicePdf(
   // Dynamic import to avoid bundling issues - puppeteer is optional
   let puppeteer: any;
   try {
-    // Use require.resolve to check if puppeteer is available without bundling it
-    if (typeof require !== "undefined") {
-      require.resolve("puppeteer");
-      puppeteer = await import("puppeteer");
-    }
-  } catch (err) {
+    puppeteer = await import(/* webpackIgnore: true */ "puppeteer");
+  } catch {
     throw new Error(
       "Puppeteer is not installed. Run `npm install puppeteer` to enable PDF generation."
     );
