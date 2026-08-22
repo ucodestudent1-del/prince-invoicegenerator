@@ -108,7 +108,9 @@
   },
   "errors": {
     "notFound": "Die gesuchte Seite existiert nicht.",
-    "goHome": "Zur Startseite"
+    "goHome": "Zur Startseite",
+    "estimateLoadFailed": "Kostenvoranschlag konnte nicht geladen werden",
+    "estimateLoadFailedDescription": "Wir konnten diesen Kostenvoranschlag nicht laden. Er ist möglicherweise abgelaufen oder der Link ist ungültig."
   },
   "auth": {
     "signInTitle": "Sign in",

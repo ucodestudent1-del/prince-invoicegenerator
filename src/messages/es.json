@@ -108,7 +108,9 @@
   },
   "errors": {
     "notFound": "La página que buscas no existe.",
-    "goHome": "Ir a inicio"
+    "goHome": "Ir a inicio",
+    "estimateLoadFailed": "No se puede cargar el presupuesto",
+    "estimateLoadFailedDescription": "No pudimos cargar este presupuesto. Puede haber caducado o el enlace no es válido."
   },
   "auth": {
     "signInTitle": "Sign in",

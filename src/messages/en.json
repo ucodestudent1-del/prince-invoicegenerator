@@ -108,7 +108,9 @@
   },
   "errors": {
     "notFound": "The page you are looking for does not exist.",
-    "goHome": "Go Home"
+    "goHome": "Go Home",
+    "estimateLoadFailed": "Unable to load estimate",
+    "estimateLoadFailedDescription": "We couldn't load this estimate. It may have expired or the link may be invalid."
   },
   "auth": {
     "signInTitle": "Sign in",

@@ -108,7 +108,9 @@
   },
   "errors": {
     "notFound": "La page que vous recherchez n'existe pas.",
-    "goHome": "Aller à l'accueil"
+    "goHome": "Aller à l'accueil",
+    "estimateLoadFailed": "Impossible de charger le devis",
+    "estimateLoadFailedDescription": "Nous n'avons pas pu charger ce devis. Il a peut-être expiré ou le lien est invalide."
   },
   "auth": {
     "signInTitle": "Sign in",
