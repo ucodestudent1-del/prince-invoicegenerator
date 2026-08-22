@@ -1,10 +1,12 @@
 import type { NextAuthOptions, DefaultSession } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 import { APP_NAME } from "@/lib/app-name";
 import { isMissingColumnError } from "@/lib/org";
 import { logServerError } from "@/lib/errors";
+import bcrypt from "bcryptjs";
 
 export { APP_NAME };
 
@@ -46,6 +48,80 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     })
   );
 }
+
+providers.push(
+  CredentialsProvider({
+    name: "Email and password",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+      magicToken: { label: "Magic Token", type: "text" },
+    },
+    async authorize(credentials) {
+      if (!credentials?.email) {
+        return null;
+      }
+
+      const normalizedEmail = credentials.email.toLowerCase();
+
+      if (credentials.magicToken) {
+        const magicLink = await db.magicLink.findUnique({
+          where: { token: credentials.magicToken },
+        });
+
+        if (!magicLink || magicLink.identifier !== normalizedEmail) {
+          return null;
+        }
+
+        if (magicLink.expires < new Date()) {
+          await db.magicLink.delete({ where: { token: credentials.magicToken } });
+          return null;
+        }
+
+        await db.magicLink.delete({ where: { token: credentials.magicToken } });
+
+        const user = await db.user.findUnique({
+          where: { email: normalizedEmail },
+        });
+
+        if (!user) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email!,
+          name: user.name,
+          image: user.image,
+        };
+      }
+
+      if (!credentials?.password) {
+        return null;
+      }
+
+      const user = await db.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+
+      if (!user || !user.password) {
+        return null;
+      }
+
+      const isValid = await bcrypt.compare(credentials.password, user.password);
+      if (!isValid) {
+        return null;
+      }
+
+      return {
+        id: user.id,
+        email: user.email!,
+        name: user.name,
+        image: user.image,
+      };
+    },
+  })
+);
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),

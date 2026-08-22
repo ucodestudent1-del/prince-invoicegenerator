@@ -54,7 +54,15 @@ export async function ensureOrganization(userId: string) {
     if (!user) return null;
     if (user.organizationId && user.organization) return user.organization;
 
-    const slug = `org-${userId.slice(0, 8)}`;
+    const onboarding = await db.onboardingState.findUnique({
+      where: { userId },
+    });
+
+    if (!onboarding || !onboarding.isComplete) {
+      return null;
+    }
+
+    const slug = `org-${userId}`;
     try {
       const org = await db.organization.create({
         data: {
