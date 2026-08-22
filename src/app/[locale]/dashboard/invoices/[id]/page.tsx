@@ -24,6 +24,8 @@ import {
   Bell,
   BellOff,
   Calendar,
+  Download,
+  FileText,
 } from "lucide-react";
 import { InvoiceStatusManager } from "@/components/invoice-status-manager";
 import { PaymentHistory } from "@/components/payment-history";
@@ -126,6 +128,11 @@ export default async function InvoiceDetailPage({
             <Link href={`/dashboard/invoices/${invoice.id}/print`} target="_blank">
               <Printer className="mr-2 h-4 w-4" /> {t("exportPdf")}
             </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <a href={`/api/invoices/${invoice.id}/pdf`} target="_blank" download>
+              <Download className="mr-2 h-4 w-4" /> Download PDF
+            </a>
           </Button>
           {invoice.status !== "PAID" && (
             <form

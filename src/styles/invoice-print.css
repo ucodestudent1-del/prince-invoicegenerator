@@ -1,0 +1,248 @@
+/* Print-optimized styles for invoice PDF generation */
+
+/* Base invoice page styles */
+.invoice-page {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 10pt;
+  line-height: 1.4;
+  color: #111827;
+  background: white;
+}
+
+/* Print-specific overrides */
+@media print {
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 15mm 12mm;
+  }
+
+  @page :first {
+    margin-top: 10mm;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+
+  /* Hide UI elements */
+  .no-print,
+  .no-print *,
+  nav,
+  aside,
+  header,
+  footer,
+  button[aria-label="Toggle theme"],
+  button[aria-label="Toggle menu"],
+  [role="navigation"],
+  [role="banner"],
+  [role="contentinfo"] {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Invoice page adjustments */
+  .invoice-page {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    page-break-after: always;
+    page-break-inside: avoid;
+  }
+
+  /* Prevent page breaks inside critical elements */
+  .invoice-header,
+  .invoice-totals,
+  table,
+  tr,
+  td,
+  th {
+    page-break-inside: avoid;
+  }
+
+  /* Table styling for print */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tbody {
+    display: table-row-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Links */
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Ensure backgrounds print */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* Screen-only styles for preview */
+@media screen {
+  .invoice-print-container {
+    max-width: 210mm;
+    margin: 2rem auto;
+    background: white;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+
+  .print-only {
+    display: none !important;
+  }
+}
+
+/* Responsive preview for mobile */
+@media screen and (max-width: 768px) {
+  .invoice-preview-wrapper {
+    overflow-x: auto;
+    padding: 1rem;
+  }
+
+  .invoice-print-container {
+    transform: scale(0.6);
+    transform-origin: top left;
+    margin: 0;
+  }
+
+  .invoice-preview-wrapper-inner {
+    width: 166.67%; /* compensate for 0.6 scale */
+    height: 166.67%;
+  }
+}
+
+/* Template variations */
+.template-standard {
+  /* Default clean template */
+}
+
+.template-modern {
+  --invoice-accent: #3b82f6;
+}
+
+.template-minimal {
+  --invoice-accent: #111827;
+}
+
+.template-classic {
+  --invoice-accent: #1e40af;
+}
+
+/* Layout variations */
+.layout-default {
+  /* Full width layout */
+}
+
+.layout-compact {
+  font-size: 9pt;
+}
+
+.layout-compact .invoice-header {
+  margin-bottom: 1rem;
+}
+
+.layout-sidebar {
+  /* Sidebar layout for company info */
+}
+
+/* Type badges */
+.type-badge {
+  display: inline-block;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--invoice-accent, #3b82f6);
+  color: white;
+}
+
+.type-badge-standard {
+  background-color: var(--invoice-accent, #3b82f6);
+}
+
+.type-badge-progress {
+  background-color: #8b5cf6;
+}
+
+.type-badge-recurring {
+  background-color: #10b981;
+}
+
+/* Invoice totals styling */
+.invoice-totals {
+  margin-top: 1.5rem;
+}
+
+.invoice-totals .total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+}
+
+.invoice-totals .grand-total {
+  border-top: 2px solid var(--invoice-accent, #3b82f6);
+  padding-top: 0.25rem;
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--invoice-accent, #3b82f6);
+}
+
+/* Notes section */
+.invoice-notes {
+  margin-top: 2rem;
+  font-size: 0.875rem;
+}
+
+.invoice-notes p {
+  white-space: pre-line;
+  color: #4b5563;
+}
+
+/* Watermark */
+.invoice-watermark {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.invoice-watermark span {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #e5e7eb;
+  opacity: 0.4;
+  transform: rotate(-12deg);
+  user-select: none;
+}

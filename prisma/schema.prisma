@@ -225,6 +225,7 @@ model Organization {
     subcontractors Subcontractor[]
     photoAttachments PhotoAttachment[]
     timeEntries  TimeEntry[]
+    invoicePdfs  InvoicePdf[]
     recurringConfigs RecurringInvoiceConfig[]
   payments       Payment[]
   auditLogs      InvoiceAudit[]
@@ -371,6 +372,7 @@ model Invoice {
    reminders     Reminder[]
    reminderSuppressions InvoiceReminderSuppression[]
    timeEntries   TimeEntry[]
+   invoicePdfs   InvoicePdf[]
 
   @@unique([orgId, number])
   @@index([orgId])
@@ -694,6 +696,26 @@ model InvoiceAudit {
   note        String?
   createdById String?
   createdAt   DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Invoice PDFs (generated PDF documents)
+// ---------------------------------------------------------------------------
+
+model InvoicePdf {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  url       String   // R2 download URL
+  paperSize String   @default("A4")
+  fileSize  Int?     // bytes
+  createdAt DateTime @default(now())
 
   @@index([invoiceId])
   @@index([orgId])

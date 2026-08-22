@@ -8,6 +8,12 @@ export interface EmailResult {
   metadata?: Record<string, any>;
 }
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer | Uint8Array;
+  contentType?: string;
+}
+
 export interface EmailParams {
   to: string;
   cc?: string[];
@@ -17,6 +23,7 @@ export interface EmailParams {
   text?: string;
   from?: string;
   metadata?: Record<string, string>;
+  attachments?: EmailAttachment[];
 }
 
 export interface SendContext {
@@ -118,6 +125,10 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
         html: params.html || params.text,
         text: params.text,
         metadata: params.metadata,
+        attachments: params.attachments?.map((a) => ({
+          filename: a.filename,
+          content: a.content,
+        })),
       });
       if (result.error) {
         return {
@@ -153,6 +164,11 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
         subject: params.subject,
         html: params.html,
         text: params.text,
+        attachments: params.attachments?.map((a) => ({
+          filename: a.filename,
+          content: a.content,
+          contentType: a.contentType,
+        })),
       });
       return {
         success: true,
@@ -173,6 +189,12 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
         subject: params.subject,
         text: params.text,
         html: params.html,
+        attachments: params.attachments?.map((a) => ({
+          filename: a.filename,
+          content: typeof Buffer !== "undefined" ? Buffer.from(a.content).toString("base64") : "",
+          type: a.contentType || "application/pdf",
+          disposition: "attachment",
+        })),
       });
       return {
         success: true,
