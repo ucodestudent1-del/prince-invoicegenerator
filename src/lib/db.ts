@@ -33,7 +33,7 @@ export async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 50
         err instanceof Prisma.PrismaClientKnownRequestError ||
         err instanceof Prisma.PrismaClientInitializationError ||
         (err instanceof Error &&
-          /ECONNREFUSED|ETIMEDOUT|ECONNRESET|ENOTFOUND|too many connections/i.test(err.message));
+          /ECONNREFUSED|ETIMEDOUT|ECONNRESET|ENOTFOUND|too many connections|SSL error|unexpected eof|connection reset|P2027|P2010|P1012/i.test(err.message));
       if (attempt === retries || !isConnectionError) throw err;
       logError(`DB retry attempt ${attempt}/${retries}`, err);
       await new Promise((resolve) => setTimeout(resolve, delay * attempt));
