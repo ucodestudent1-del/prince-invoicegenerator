@@ -11,6 +11,8 @@ COPY package*.json ./
 RUN npm ci --ignore-scripts
 COPY . .
 RUN npx prisma generate
+# Apply pending migrations to the database before building
+RUN npx prisma migrate deploy
 RUN npm run build
 
 FROM node:24-alpine3.20 AS runner
