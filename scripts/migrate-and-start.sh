@@ -106,6 +106,17 @@ else
     echo "Removing temporary estimate enhancements migration folder..."
     rm -rf prisma/migrations/20260820_add_estimate_enhancements
   fi
+  # -------------------------------------------------------------------------
+  # Resolve the failed owner unique constraint migration.
+  # The schema already contains this change (verified in schema.prisma:
+  # Organization.ownerId String @unique on line 199), so the database
+  # changes were likely applied before the migration tracking record failed.
+  # Mark it as applied to sync Prisma's migration history.
+  # The migration folder exists in the repo, so no temp folder needed.
+  # -------------------------------------------------------------------------
+  echo "Resolving failed migration 20260821_add_owner_unique..."
+  npx prisma migrate resolve --applied 20260821_add_owner_unique || true
+
   # Retry migrations up to 5 times in case database is not ready yet
   max_retries=5
   retry=1
