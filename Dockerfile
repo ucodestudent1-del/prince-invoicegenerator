@@ -11,8 +11,6 @@ COPY package*.json ./
 RUN npm ci --ignore-scripts
 COPY . .
 RUN npx prisma generate
-# Apply pending migrations to the database before building
-RUN npx prisma migrate deploy
 RUN npm run build
 
 FROM node:24-alpine3.20 AS runner
@@ -27,6 +25,8 @@ COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/clie
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY package*.json ./
+COPY scripts/migrate-and-start.sh ./scripts/migrate-and-start.sh
+RUN chmod +x ./scripts/migrate-and-start.sh
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["./scripts/migrate-and-start.sh"]
 
