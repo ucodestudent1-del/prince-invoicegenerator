@@ -61,6 +61,28 @@ else
     rm -rf prisma/migrations/20260820083000_add_client_portal
   fi
 
+  # -------------------------------------------------------------------------
+  # Resolve the failed reminder stages migration.
+  # The schema already contains these changes (verified in schema.prisma),
+  # so the database changes were likely applied before the migration failed.
+  # Mark it as applied to sync Prisma's migration history.
+  # -------------------------------------------------------------------------
+  REMINDER_RESOLVE_CREATED=0
+  if [ ! -d "prisma/migrations/20260820190000_add_reminder_stages" ]; then
+    echo "Creating temporary migration folder for reminder stages resolve..."
+    mkdir -p prisma/migrations/20260820190000_add_reminder_stages
+    echo "-- placeholder" > prisma/migrations/20260820190000_add_reminder_stages/migration.sql
+    REMINDER_RESOLVE_CREATED=1
+  fi
+
+  echo "Resolving failed migration 20260820190000_add_reminder_stages..."
+  npx prisma migrate resolve --applied 20260820190000_add_reminder_stages || true
+
+  if [ "$REMINDER_RESOLVE_CREATED" = "1" ]; then
+    echo "Removing temporary reminder stages migration folder..."
+    rm -rf prisma/migrations/20260820190000_add_reminder_stages
+  fi
+
   # Retry migrations up to 5 times in case database is not ready yet
   max_retries=5
   retry=1
