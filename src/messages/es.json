@@ -154,12 +154,7 @@
     "invalidCredentials": "Correo o contraseña inválidos.",
     "rememberMe": "Recuérdame",
     "forgotPassword": "¿Olvidaste tu contraseña?",
-    "orContinueWith": "o continuar con",
-    "magicLinkSigningIn": "Iniciando sesión…",
-    "magicLinkDescription": "Verificando tu enlace mágico.",
-    "magicLinkSent": "Si existe una cuenta, se ha enviado un enlace mágico a tu correo.",
-    "sendingMagicLink": "Enviando enlace mágico…",
-    "sendMagicLink": "Enviar enlace mágico"
+    "orContinueWith": "o continuar con"
   },
   "navigation": {
     "appName": "Prince",

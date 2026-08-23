@@ -11,8 +11,6 @@ import { checkRateLimit } from "@/lib/action-rate-limit";
 
 const VERIFICATION_TOKEN_EXPIRY_MINUTES = 24 * 60;
 const VERIFICATION_RESEND_COOLDOWN_SECONDS = 60;
-const MAGIC_LINK_EXPIRY_MINUTES = 15;
-const MAGIC_LINK_RATE_LIMIT_PER_HOUR = 5;
 
 function isValidPassword(password: string): boolean {
   if (!password || password.length < 8) return false;
@@ -279,88 +277,5 @@ export async function resendVerificationEmail() {
     });
 
     return { success: true };
-  });
-}
-
-export async function requestMagicLink(email: string) {
-  return withActionError("requestMagicLink", async () => {
-    const normalizedEmail = email.toLowerCase().trim();
-
-    if (!checkRateLimit(`magic-link:${normalizedEmail}`, 5, 60 * 60 * 1000)) {
-      actionError("Too many magic link requests. Please try again later.");
-    }
-
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const recentLinks = await db.magicLink.count({
-      where: {
-        identifier: normalizedEmail,
-        createdAt: { gte: oneHourAgo },
-      },
-    });
-
-    if (recentLinks >= MAGIC_LINK_RATE_LIMIT_PER_HOUR) {
-      return { success: true };
-    }
-
-    const user = await db.user.findUnique({
-      where: { email: normalizedEmail },
-    });
-
-    if (!user) {
-      return { success: true };
-    }
-
-    const token = randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + MAGIC_LINK_EXPIRY_MINUTES * 60 * 1000);
-
-    await db.magicLink.create({
-      data: {
-        identifier: normalizedEmail,
-        token,
-        expires: expiresAt,
-      },
-    });
-
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const magicLinkUrl = `${baseUrl}/auth/magic-link?token=${token}`;
-
-    await sendEmail({
-      to: normalizedEmail,
-      subject: `Sign in to ${process.env.APP_NAME || "Prince"}`,
-      html: `
-        <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Sign in to your account</h2>
-          <p>Click the button below to sign in. This link expires in ${MAGIC_LINK_EXPIRY_MINUTES} minutes.</p>
-          <a href="${magicLinkUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">Sign In</a>
-          <p style="color: #6b7280; font-size: 14px;">If you didn&apos;t request this link, you can safely ignore this email.</p>
-        </div>
-      `,
-      text: `Sign in: ${magicLinkUrl}\n\nThis link expires in ${MAGIC_LINK_EXPIRY_MINUTES} minutes.`,
-    });
-
-    return { success: true };
-  });
-}
-
-export async function verifyMagicLink(token: string) {
-  return withActionError("verifyMagicLink", async () => {
-    if (!token) {
-      actionError("Invalid token");
-    }
-
-    const record = await db.magicLink.findUnique({
-      where: { token },
-    });
-
-    if (!record) {
-      actionError("Invalid or expired token");
-    }
-
-    if (record.expires < new Date()) {
-      await db.magicLink.delete({ where: { token } });
-      actionError("Token has expired. Please request a new one.");
-    }
-
-    return { success: true, email: record.identifier };
   });
 }

@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslations } from "next-intl";
 import { APP_NAME } from "@/lib/app-name";
-import { requestMagicLink } from "@/lib/actions/auth";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
@@ -22,8 +21,6 @@ export default function LoginPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [magicSent, setMagicSent] = React.useState(false);
-  const [magicLoading, setMagicLoading] = React.useState(false);
 
   async function googleLogin() {
     setLoading(true);
@@ -59,20 +56,6 @@ export default function LoginPage() {
     }
   }
 
-  async function handleMagicLink(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setMagicLoading(true);
-    setError(null);
-    try {
-      await requestMagicLink(email);
-      setMagicSent(true);
-    } catch (err: any) {
-      setError(err?.message || t("unexpectedError"));
-    } finally {
-      setMagicLoading(false);
-    }
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
@@ -92,66 +75,53 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-          {magicSent ? (
-            <div className="rounded-md border border-green-500/50 bg-green-500/10 p-3 text-sm text-green-700">
-              {t("magicLinkSent")}
+          <form onSubmit={emailLogin} className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="email">{t("email")}</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
-          ) : (
-            <>
-              <form onSubmit={emailLogin} className="space-y-3">
-                <div className="space-y-1">
-                  <Label htmlFor="email">{t("email")}</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="password">{t("password")}</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
-                    <span>{t("rememberMe")}</span>
-                  </label>
-                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                    {t("forgotPassword")}
-                  </Link>
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? t("signingIn") : t("signIn")}
-                </Button>
-              </form>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">{t("orContinueWith")}</span>
-                </div>
-              </div>
-              <form onSubmit={handleMagicLink}>
-                <Button type="submit" variant="outline" className="w-full" disabled={magicLoading}>
-                  {magicLoading ? t("sendingMagicLink") : t("sendMagicLink")}
-                </Button>
-              </form>
-              <Button variant="outline" className="w-full" onClick={googleLogin} disabled={loading}>
-                {t("googleButton")}
-              </Button>
-            </>
-          )}
+            <div className="space-y-1">
+              <Label htmlFor="password">{t("password")}</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
+                <span>{t("rememberMe")}</span>
+              </label>
+              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                {t("forgotPassword")}
+              </Link>
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? t("signingIn") : t("signIn")}
+            </Button>
+          </form>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">{t("orContinueWith")}</span>
+            </div>
+          </div>
+          <Button variant="outline" className="w-full" onClick={googleLogin} disabled={loading}>
+            {t("googleButton")}
+          </Button>
           <p className="text-center text-sm text-muted-foreground">
             {t("noAccount")}{" "}
             <Link href="/signup" className="text-primary hover:underline">

@@ -55,50 +55,13 @@ providers.push(
     credentials: {
       email: { label: "Email", type: "email" },
       password: { label: "Password", type: "password" },
-      magicToken: { label: "Magic Token", type: "text" },
     },
     async authorize(credentials) {
-      if (!credentials?.email) {
+      if (!credentials?.email || !credentials?.password) {
         return null;
       }
 
       const normalizedEmail = credentials.email.toLowerCase();
-
-      if (credentials.magicToken) {
-        const magicLink = await db.magicLink.findUnique({
-          where: { token: credentials.magicToken },
-        });
-
-        if (!magicLink || magicLink.identifier !== normalizedEmail) {
-          return null;
-        }
-
-        if (magicLink.expires < new Date()) {
-          await db.magicLink.delete({ where: { token: credentials.magicToken } });
-          return null;
-        }
-
-        await db.magicLink.delete({ where: { token: credentials.magicToken } });
-
-        const user = await db.user.findUnique({
-          where: { email: normalizedEmail },
-        });
-
-        if (!user) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email!,
-          name: user.name,
-          image: user.image,
-        };
-      }
-
-      if (!credentials?.password) {
-        return null;
-      }
 
       const user = await db.user.findUnique({
         where: { email: normalizedEmail },

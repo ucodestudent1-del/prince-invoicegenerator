@@ -8,7 +8,6 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
-    pathname.startsWith("/auth/magic-link") ||
     pathname.startsWith("/portal") ||
     pathname.includes(".")
   ) {
