@@ -17,7 +17,7 @@ export function TemplateEditor({
   fontFamily?: string;
   layout?: string;
 }) {
-  const [selected, setSelected] = React.useState(current);
+  const [selected, setSelected] = React["useState"](current);
 
   return (
     <div className="space-y-6">

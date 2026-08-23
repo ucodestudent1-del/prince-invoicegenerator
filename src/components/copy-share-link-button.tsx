@@ -11,7 +11,7 @@ export function CopyShareLinkButton({ url }: { url: string }) {
       variant="outline"
       size="sm"
       onClick={() => {
-        navigator.clipboard.writeText(url);
+        navigator["clipboard"]["writeText"](url);
       }}
     >
       <Copy className="mr-2 h-4 w-4" /> {t("copyLink")}

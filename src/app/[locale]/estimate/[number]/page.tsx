@@ -114,7 +114,7 @@ export default function EstimatePage({
   const [acceptComment, setAcceptComment] = useState("");
   const [notification, setNotification] = useState<NotificationState | null>(null);
 
-  const token = searchParams.token;
+  const token = searchParams["token"];
 
   useEffect(() => {
     if (!token) {
@@ -122,18 +122,18 @@ export default function EstimatePage({
       return;
     }
     fetch(`/api/estimates/view?token=${token}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          setNotification({ message: data.error, type: "error" });
+      ["then"]((res) => res["json"]())
+      ["then"]((data) => {
+        if (data["error"]) {
+          setNotification({ message: data["error"], type: "error" });
         } else {
           setEstimate(data);
         }
       })
-      .catch(() => {
+      ["catch"](() => {
         setNotification({ message: "Could not load estimate", type: "error" });
       })
-      .finally(() => setLoading(false));
+      ["finally"](() => setLoading(false));
   }, [token]);
 
   const handleAccept = async () => {
@@ -141,14 +141,14 @@ export default function EstimatePage({
     const res = await fetch(`/api/estimates/accept?token=${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comment: acceptComment }),
+      body: JSON["stringify"]({ comment: acceptComment }),
     });
-    const data = await res.json();
-    if (data.error) {
-      setNotification({ message: data.error, type: "error" });
+    const data = await res["json"]();
+    if (data["error"]) {
+      setNotification({ message: data["error"], type: "error" });
     } else {
       setEstimate((prev) =>
-        prev ? { ...prev, status: "ACCEPTED", acceptedAt: new Date().toISOString() } : prev
+        prev ? { ...prev, status: "ACCEPTED", acceptedAt: new Date()["toISOString"]() } : prev
       );
       setNotification({ message: "Estimate Accepted — Thank you!", type: "success" });
     }
@@ -162,14 +162,14 @@ export default function EstimatePage({
     const res = await fetch(`/api/estimates/reject?token=${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason: rejectReason, comment: rejectComment }),
+      body: JSON["stringify"]({ reason: rejectReason, comment: rejectComment }),
     });
-    const data = await res.json();
-    if (data.error) {
-      setNotification({ message: data.error, type: "error" });
+    const data = await res["json"]();
+    if (data["error"]) {
+      setNotification({ message: data["error"], type: "error" });
     } else {
       setEstimate((prev) =>
-        prev ? { ...prev, status: "REJECTED", rejectedAt: new Date().toISOString() } : prev
+        prev ? { ...prev, status: "REJECTED", rejectedAt: new Date()["toISOString"]() } : prev
       );
       setNotification({ message: "Feedback sent — your contractor has been notified.", type: "success" });
     }
@@ -180,14 +180,14 @@ export default function EstimatePage({
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      await navigator.share({
-        title: `Estimate ${estimate?.number}`,
-        text: `View estimate ${estimate?.number} for ${formatCurrency(estimate?.total ?? 0, estimate?.currency)}`,
-        url: window.location.href,
+    if (navigator["share"]) {
+      await navigator["share"]({
+        title: `Estimate ${estimate?.["number"]}`,
+        text: `View estimate ${estimate?.["number"]} for ${formatCurrency(estimate?.["total"] ?? 0, estimate?.["currency"])}`,
+        url: window["location"]["href"],
       });
     } else {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator["clipboard"]["writeText"](window["location"]["href"]);
       setNotification({ message: "Share link copied to clipboard", type: "success" });
     }
   };
@@ -218,13 +218,13 @@ export default function EstimatePage({
     );
   }
 
-  const statusInfo = statusConfig[estimate.status] || statusConfig.DRAFT;
+  const statusInfo = statusConfig[estimate["status"]] || statusConfig["DRAFT"];
   const isExpired =
-    estimate.validUntil && new Date(estimate.validUntil) < new Date() &&
-    ["SENT", "VIEWED"].includes(estimate.status);
+    estimate["validUntil"] && new Date(estimate["validUntil"]) < new Date() &&
+    ["SENT", "VIEWED"]["includes"](estimate["status"]);
 
   const canAcceptReject =
-    ["SENT", "VIEWED"].includes(estimate.status) && !isExpired;
+    ["SENT", "VIEWED"]["includes"](estimate["status"]) && !isExpired;
 
   const actionColorClass = "bg-emerald-600 hover:bg-emerald-700";
   const rejectColorClass = "border-red-200 text-red-700 hover:bg-red-50";
@@ -235,33 +235,33 @@ export default function EstimatePage({
         {notification && (
           <div
             className={`mb-4 p-4 rounded-md flex items-center gap-2 text-sm ${
-              notification.type === "success"
+              notification["type"] === "success"
                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                 : "bg-red-50 text-red-800 border border-red-200"
             }`}
           >
-            {notification.type === "success" ? (
+            {notification["type"] === "success" ? (
               <Check className="h-4 w-4" />
             ) : (
               <AlertCircle className="h-4 w-4" />
             )}
-            {notification.message}
+            {notification["message"]}
           </div>
         )}
 
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-3">
-            {estimate.org.logoUrl && (
+            {estimate["org"]["logoUrl"] && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={estimate.org.logoUrl}
-                alt={estimate.org.name || "Logo"}
+                src={estimate["org"]["logoUrl"]}
+                alt={estimate["org"]["name"] || "Logo"}
                 className="h-10 w-auto object-contain"
               />
             )}
             <span className="text-lg font-semibold text-gray-700">
-              {estimate.org.name || "Prince Invoice Generator"}
+              {estimate["org"]["name"] || "Prince Invoice Generator"}
             </span>
           </div>
           <Button variant="ghost" size="sm" onClick={handleShare}>
@@ -273,26 +273,26 @@ export default function EstimatePage({
         <Card className="mb-6">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">Estimate {estimate.number}</CardTitle>
+              <CardTitle className="text-2xl">Estimate {estimate["number"]}</CardTitle>
               <p className="text-sm text-gray-500 mt-1">
-                Issued on {formatDate(estimate.issueDate)}
+                Issued on {formatDate(estimate["issueDate"])}
               </p>
             </div>
-            <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
+            <Badge className={statusInfo["color"]}>{statusInfo["label"]}</Badge>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between text-sm text-gray-600">
               <div>
-                <span className="font-medium">Valid until:</span> {formatDate(estimate.validUntil)}
+                <span className="font-medium">Valid until:</span> {formatDate(estimate["validUntil"])}
               </div>
-              {estimate.viewedAt && (
+              {estimate["viewedAt"] && (
                 <div>
-                  <span className="font-medium">Viewed:</span> {formatDate(estimate.viewedAt)}
+                  <span className="font-medium">Viewed:</span> {formatDate(estimate["viewedAt"])}
                 </div>
               )}
-              {estimate.acceptedAt && (
+              {estimate["acceptedAt"] && (
                 <div>
-                  <span className="font-medium">Accepted:</span> {formatDate(estimate.acceptedAt)}
+                  <span className="font-medium">Accepted:</span> {formatDate(estimate["acceptedAt"])}
                 </div>
               )}
             </div>
@@ -308,7 +308,7 @@ export default function EstimatePage({
                 <p className="font-medium">This estimate has expired.</p>
               </div>
               <p className="text-sm text-red-700 mt-1">
-                Valid until {formatDate(estimate.validUntil)} has passed. Please request a new quote.
+                Valid until {formatDate(estimate["validUntil"])} has passed. Please request a new quote.
               </p>
             </CardContent>
           </Card>
@@ -323,12 +323,12 @@ export default function EstimatePage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-medium">{estimate.customer.name || estimate.customer.company || "—"}</p>
-              {estimate.customer.company && estimate.customer.name && (
-                <p className="text-gray-600">{estimate.customer.company}</p>
+              <p className="font-medium">{estimate["customer"]["name"] || estimate["customer"]["company"] || "—"}</p>
+              {estimate["customer"]["company"] && estimate["customer"]["name"] && (
+                <p className="text-gray-600">{estimate["customer"]["company"]}</p>
               )}
-              {estimate.customer.email && <p className="text-gray-500">{estimate.customer.email}</p>}
-              {estimate.customer.address && <p className="text-gray-500">{estimate.customer.address}</p>}
+              {estimate["customer"]["email"] && <p className="text-gray-500">{estimate["customer"]["email"]}</p>}
+              {estimate["customer"]["address"] && <p className="text-gray-500">{estimate["customer"]["address"]}</p>}
             </CardContent>
           </Card>
 
@@ -341,15 +341,15 @@ export default function EstimatePage({
             <CardContent className="text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Currency:</span>
-                <span>{estimate.currency}</span>
+                <span>{estimate["currency"]}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Tax Rate:</span>
-                <span>{estimate.taxRate}%</span>
+                <span>{estimate["taxRate"]}%</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Discount:</span>
-                <span>{formatCurrency(estimate.discount, estimate.currency)}</span>
+                <span>{formatCurrency(estimate["discount"], estimate["currency"])}</span>
               </div>
             </CardContent>
           </Card>
@@ -369,19 +369,19 @@ export default function EstimatePage({
                 </tr>
               </thead>
               <tbody>
-                {estimate.items
-                  .slice()
-                  .sort((a, b) => a.sortOrder - b.sortOrder)
-                  .map((item, idx) => (
-                    <tr key={item.id} className="border-b border-gray-100">
+                {estimate["items"]
+                  ["slice"]()
+                  ["sort"]((a, b) => a["sortOrder"] - b["sortOrder"])
+                  ["map"]((item, idx) => (
+                    <tr key={item["id"]} className="border-b border-gray-100">
                       <td className="py-3 text-gray-400">{idx + 1}</td>
-                      <td className="py-3">{item.description}</td>
-                      <td className="py-3 text-right">{item.quantity}</td>
+                      <td className="py-3">{item["description"]}</td>
+                      <td className="py-3 text-right">{item["quantity"]}</td>
                       <td className="py-3 text-right">
-                        {formatCurrency(item.unitPrice, estimate.currency)}
+                        {formatCurrency(item["unitPrice"], estimate["currency"])}
                       </td>
                       <td className="py-3 text-right font-medium">
-                        {formatCurrency(item.amount, estimate.currency)}
+                        {formatCurrency(item["amount"], estimate["currency"])}
                       </td>
                     </tr>
                   ))}
@@ -397,21 +397,21 @@ export default function EstimatePage({
               <div className="w-64 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Subtotal</span>
-                  <span>{formatCurrency(estimate.subtotal, estimate.currency)}</span>
+                  <span>{formatCurrency(estimate["subtotal"], estimate["currency"])}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Tax ({estimate.taxRate}%)</span>
-                  <span>{formatCurrency(estimate.taxAmount, estimate.currency)}</span>
+                  <span className="text-gray-500">Tax ({estimate["taxRate"]}%)</span>
+                  <span>{formatCurrency(estimate["taxAmount"], estimate["currency"])}</span>
                 </div>
-                {estimate.discount > 0 && (
+                {estimate["discount"] > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Discount</span>
-                    <span>-{formatCurrency(estimate.discount, estimate.currency)}</span>
+                    <span>-{formatCurrency(estimate["discount"], estimate["currency"])}</span>
                   </div>
                 )}
                 <div className="border-t-2 pt-2 flex justify-between text-lg font-bold">
                   <span>TOTAL</span>
-                  <span>{formatCurrency(estimate.total, estimate.currency)}</span>
+                  <span>{formatCurrency(estimate["total"], estimate["currency"])}</span>
                 </div>
               </div>
             </div>
@@ -419,7 +419,7 @@ export default function EstimatePage({
         </Card>
 
         {/* Notes */}
-        {estimate.notes && (
+        {estimate["notes"] && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-gray-500 uppercase tracking-wider">
@@ -427,7 +427,7 @@ export default function EstimatePage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 whitespace-pre-line text-sm">{estimate.notes}</p>
+              <p className="text-gray-700 whitespace-pre-line text-sm">{estimate["notes"]}</p>
             </CardContent>
           </Card>
         )}
@@ -460,7 +460,7 @@ export default function EstimatePage({
         )}
 
         {/* Accepted State */}
-        {estimate.status === "ACCEPTED" && (
+        {estimate["status"] === "ACCEPTED" && (
           <Card className="mb-6 border-emerald-200 bg-emerald-50">
             <CardContent className="pt-6 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-full mb-3">
@@ -475,7 +475,7 @@ export default function EstimatePage({
         )}
 
         {/* Rejected State */}
-        {estimate.status === "REJECTED" && (
+        {estimate["status"] === "REJECTED" && (
           <Card className="mb-6 border-red-200 bg-red-50">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
@@ -485,9 +485,9 @@ export default function EstimatePage({
                   <p className="text-sm text-red-700 mb-2">
                     Your contractor has been notified of your feedback.
                   </p>
-                  {estimate.rejectionReason && (
+                  {estimate["rejectionReason"] && (
                     <p className="text-sm text-red-700">
-                      <span className="font-medium">Your feedback:</span> {estimate.rejectionReason}
+                      <span className="font-medium">Your feedback:</span> {estimate["rejectionReason"]}
                     </p>
                   )}
                 </div>
@@ -497,7 +497,7 @@ export default function EstimatePage({
         )}
 
         {/* Converted State */}
-        {estimate.status === "INVOICED" && (
+        {estimate["status"] === "INVOICED" && (
           <Card className="mb-6 border-blue-200 bg-blue-50">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -524,7 +524,7 @@ export default function EstimatePage({
         open={showAcceptDialog}
         onClose={() => setShowAcceptDialog(false)}
         title="Confirm Acceptance"
-        description={`You are about to accept estimate ${estimate.number} for ${formatCurrency(estimate.total, estimate.currency)}. Once accepted, this estimate will be converted to an invoice for payment.`}
+        description={`You are about to accept estimate ${estimate["number"]} for ${formatCurrency(estimate["total"], estimate["currency"])}. Once accepted, this estimate will be converted to an invoice for payment.`}
         footer={
           <>
             <Button
@@ -550,7 +550,7 @@ export default function EstimatePage({
             id="acceptComment"
             placeholder="Any questions or special requests..."
             value={acceptComment}
-            onChange={(e) => setAcceptComment(e.target.value)}
+            onChange={(e) => setAcceptComment(e["target"]["value"])}
           />
         </div>
       </Modal>
@@ -591,7 +591,7 @@ export default function EstimatePage({
                   name="rejectReason"
                   value="scope"
                   checked={rejectReason === "scope"}
-                  onChange={(e) => setRejectReason(e.target.value)}
+                  onChange={(e) => setRejectReason(e["target"]["value"])}
                   className="form-radio h-4 w-4 text-emerald-600"
                 />
                 <span className="text-sm">Scope doesn&apos;t match my needs</span>
@@ -602,7 +602,7 @@ export default function EstimatePage({
                   name="rejectReason"
                   value="price"
                   checked={rejectReason === "price"}
-                  onChange={(e) => setRejectReason(e.target.value)}
+                  onChange={(e) => setRejectReason(e["target"]["value"])}
                   className="form-radio h-4 w-4 text-emerald-600"
                 />
                 <span className="text-sm">Price too high</span>
@@ -613,7 +613,7 @@ export default function EstimatePage({
                   name="rejectReason"
                   value="better"
                   checked={rejectReason === "better"}
-                  onChange={(e) => setRejectReason(e.target.value)}
+                  onChange={(e) => setRejectReason(e["target"]["value"])}
                   className="form-radio h-4 w-4 text-emerald-600"
                 />
                 <span className="text-sm">Found a better quote elsewhere</span>
@@ -624,7 +624,7 @@ export default function EstimatePage({
                   name="rejectReason"
                   value="other"
                   checked={rejectReason === "other"}
-                  onChange={(e) => setRejectReason(e.target.value)}
+                  onChange={(e) => setRejectReason(e["target"]["value"])}
                   className="form-radio h-4 w-4 text-emerald-600"
                 />
                 <span className="text-sm">Other reason</span>
@@ -637,7 +637,7 @@ export default function EstimatePage({
               id="rejectComment"
               placeholder="Please describe the changes you'd like..."
               value={rejectComment}
-              onChange={(e) => setRejectComment(e.target.value)}
+              onChange={(e) => setRejectComment(e["target"]["value"])}
             />
           </div>
         </div>

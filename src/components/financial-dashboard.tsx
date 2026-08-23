@@ -27,20 +27,20 @@ import type { FinancialDashboardData } from "@/lib/actions/reports";
 
 export function FinancialDashboard() {
   const t = useTranslations("reports");
-  const [data, setData] = React.useState<FinancialDashboardData | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const [data, setData] = React["useState"]<FinancialDashboardData | null>(null);
+  const [loading, setLoading] = React["useState"](true);
+  const [searchQuery, setSearchQuery] = React["useState"]("");
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     async function loadData() {
       try {
         const res = await fetch("/api/reports/financial-dashboard");
-        if (res.ok) {
-          const result = await res.json();
+        if (res["ok"]) {
+          const result = await res["json"]();
           setData(result);
         }
       } catch (err) {
-        console.error("Failed to load dashboard data", err);
+        console["error"]("Failed to load dashboard data", err);
       } finally {
         setLoading(false);
       }
@@ -49,7 +49,7 @@ export function FinancialDashboard() {
   }, []);
 
   const handleExport = () => {
-    window.open(`/api/export/invoices?format=csv`, "_blank");
+    window["open"](`/api/export/invoices?format=csv`, "_blank");
   };
 
   if (loading) {
@@ -57,7 +57,7 @@ export function FinancialDashboard() {
       <div className="space-y-6">
         <p className="text-sm text-muted-foreground">{t("loading")}</p>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4]["map"]((i) => (
             <Card key={i}>
               <CardContent className="pt-6">
                 <div className="h-8 bg-muted animate-pulse rounded mb-2"></div>
@@ -85,18 +85,18 @@ export function FinancialDashboard() {
     VOID: "outline",
   };
 
-  const filteredInvoices = data.invoices.filter((inv) =>
-    inv.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    inv.number.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredInvoices = data["invoices"]["filter"]((inv) =>
+    inv["customerName"]["toLowerCase"]()["includes"](searchQuery["toLowerCase"]()) ||
+    inv["number"]["toLowerCase"]()["includes"](searchQuery["toLowerCase"]())
   );
 
-  const maxRevenueValue = Math.max(0, ...data.revenueOverTime.map((d) => d.total), 1);
-  const maxBarValue = Math.max(
-    data.paidVsOutstanding.paid,
-    data.paidVsOutstanding.outstanding,
+  const maxRevenueValue = Math["max"](0, ...data["revenueOverTime"]["map"]((d) => d["total"]), 1);
+  const maxBarValue = Math["max"](
+    data["paidVsOutstanding"]["paid"],
+    data["paidVsOutstanding"]["outstanding"],
     1
   );
-  const maxOverdueValue = Math.max(0, ...data.overdueBreakdown.map((d) => d.amount), 1);
+  const maxOverdueValue = Math["max"](0, ...data["overdueBreakdown"]["map"]((d) => d["amount"]), 1);
 
   return (
     <div className="space-y-6">
@@ -109,7 +109,7 @@ export function FinancialDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">
-              {formatCurrency(data.kpis.totalRevenue)}
+              {formatCurrency(data["kpis"]["totalRevenue"])}
             </div>
             <p className="text-xs text-muted-foreground">
               Total invoiced across all customers
@@ -124,7 +124,7 @@ export function FinancialDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-600">
-              {formatCurrency(data.kpis.outstandingBalance)}
+              {formatCurrency(data["kpis"]["outstandingBalance"])}
             </div>
             <p className="text-xs text-muted-foreground">
               Currently owed by customers
@@ -139,10 +139,10 @@ export function FinancialDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(data.kpis.overdueAmount)}
+              {formatCurrency(data["kpis"]["overdueAmount"])}
             </div>
             <p className="text-xs text-muted-foreground">
-              {data.overdueBreakdown.length} overdue invoice(s)
+              {data["overdueBreakdown"]["length"]} overdue invoice(s)
             </p>
           </CardContent>
         </Card>
@@ -154,7 +154,7 @@ export function FinancialDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(data.kpis.paidThisMonth)}
+              {formatCurrency(data["kpis"]["paidThisMonth"])}
             </div>
             <p className="text-xs text-muted-foreground">
               Payments received this month
@@ -173,21 +173,21 @@ export function FinancialDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-48">
-              {data.revenueOverTime.length > 0 ? (
+              {data["revenueOverTime"]["length"] > 0 ? (
                 <div className="h-full w-full flex items-end gap-1">
-                  {data.revenueOverTime.map((d, i) => {
+                  {data["revenueOverTime"]["map"]((d, i) => {
                     const heightPct = maxRevenueValue > 0
-                      ? Math.max((d.total / maxRevenueValue) * 100, d.total > 0 ? 2 : 0)
+                      ? Math["max"]((d["total"] / maxRevenueValue) * 100, d["total"] > 0 ? 2 : 0)
                       : 0;
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center h-full justify-end">
                         <div
                           className="w-full bg-indigo-500 rounded-t hover:bg-indigo-600 transition-colors"
-                          style={{ height: `${heightPct}%`, minHeight: d.total > 0 ? "4px" : "0" }}
-                          title={`${d.date}: ${formatCurrency(d.total)}`}
+                          style={{ height: `${heightPct}%`, minHeight: d["total"] > 0 ? "4px" : "0" }}
+                          title={`${d["date"]}: ${formatCurrency(d["total"])}`}
                         />
                         <span className="text-[8px] text-muted-foreground rotate-[-45deg] mt-1">
-                          {d.date}
+                          {d["date"]}
                         </span>
                       </div>
                     );
@@ -214,13 +214,13 @@ export function FinancialDashboard() {
                   <div
                     className="h-full bg-emerald-500 rounded transition-all duration-500"
                     style={{
-                      width: `${(data.paidVsOutstanding.paid / maxBarValue) * 100}%`,
+                      width: `${(data["paidVsOutstanding"]["paid"] / maxBarValue) * 100}%`,
                       minWidth: "2px",
                     }}
                   />
                 </div>
                 <span className="w-32 text-sm font-medium text-right">
-                  {formatCurrency(data.paidVsOutstanding.paid)}
+                  {formatCurrency(data["paidVsOutstanding"]["paid"])}
                 </span>
               </div>
               <div className="flex items-center gap-4">
@@ -229,13 +229,13 @@ export function FinancialDashboard() {
                   <div
                     className="h-full bg-amber-500 rounded transition-all duration-500"
                     style={{
-                      width: `${(data.paidVsOutstanding.outstanding / maxBarValue) * 100}%`,
+                      width: `${(data["paidVsOutstanding"]["outstanding"] / maxBarValue) * 100}%`,
                       minWidth: "2px",
                     }}
                   />
                 </div>
                 <span className="w-32 text-sm font-medium text-right">
-                  {formatCurrency(data.paidVsOutstanding.outstanding)}
+                  {formatCurrency(data["paidVsOutstanding"]["outstanding"])}
                 </span>
               </div>
             </div>
@@ -252,18 +252,18 @@ export function FinancialDashboard() {
             <CardDescription>Sorted by days overdue</CardDescription>
           </CardHeader>
           <CardContent>
-            {data.overdueBreakdown.length === 0 ? (
+            {data["overdueBreakdown"]["length"] === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noOverdue")}</p>
             ) : (
               <div className="space-y-3 pt-2">
-                {data.overdueBreakdown.slice(0, 8).map((item, i) => {
-                  const barWidth = (item.amount / maxOverdueValue) * 100;
+                {data["overdueBreakdown"]["slice"](0, 8)["map"]((item, i) => {
+                  const barWidth = (item["amount"] / maxOverdueValue) * 100;
                   return (
-                    <div key={`${item.invoiceNumber}-${i}`} className="space-y-1">
+                    <div key={`${item["invoiceNumber"]}-${i}`} className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{item.customerName}</span>
+                        <span className="text-sm font-medium">{item["customerName"]}</span>
                         <span className="text-sm text-muted-foreground">
-                          {formatCurrency(item.amount)} · {item.daysOverdue}d overdue
+                          {formatCurrency(item["amount"])} · {item["daysOverdue"]}d overdue
                         </span>
                       </div>
                       <div className="w-full h-3 bg-gray-100 rounded overflow-hidden">
@@ -275,9 +275,9 @@ export function FinancialDashboard() {
                     </div>
                   );
                 })}
-                {data.overdueBreakdown.length > 8 && (
+                {data["overdueBreakdown"]["length"] > 8 && (
                   <p className="text-xs text-muted-foreground">
-                    +{data.overdueBreakdown.length - 8} more overdue invoices
+                    +{data["overdueBreakdown"]["length"] - 8} more overdue invoices
                   </p>
                 )}
               </div>
@@ -294,17 +294,17 @@ export function FinancialDashboard() {
           <CardContent>
             <div className="flex items-center gap-6">
               <div className="relative w-28 h-28">
-                {data.revenueByCustomer.length > 0 ? (
+                {data["revenueByCustomer"]["length"] > 0 ? (
                   <div
                     className="w-full h-full rounded-full"
                     style={{
-                      background: data.revenueByCustomer
-                        .map(
+                      background: data["revenueByCustomer"]
+                        ["map"](
                           (c, i, arr) =>
-                            `${c.color} ${i === 0 ? "0%" : `${(arr.slice(0, i).reduce((s, x) => s + x.amount, 0) / (data.revenueByCustomer.reduce((s, x) => s + x.amount, 0) || 1)) * 100}%`} ` +
-                            `${((arr.slice(0, i + 1).reduce((s, x) => s + x.amount, 0)) / (data.revenueByCustomer.reduce((s, x) => s + x.amount, 0) || 1)) * 100}%`
+                            `${c["color"]} ${i === 0 ? "0%" : `${(arr["slice"](0, i)["reduce"]((s, x) => s + x["amount"], 0) / (data["revenueByCustomer"]["reduce"]((s, x) => s + x["amount"], 0) || 1)) * 100}%`} ` +
+                            `${((arr["slice"](0, i + 1)["reduce"]((s, x) => s + x["amount"], 0)) / (data["revenueByCustomer"]["reduce"]((s, x) => s + x["amount"], 0) || 1)) * 100}%`
                         )
-                        .join(", "),
+                        ["join"](", "),
                     }}
                   />
                 ) : (
@@ -312,15 +312,15 @@ export function FinancialDashboard() {
                 )}
               </div>
               <div className="space-y-1.5">
-                {data.revenueByCustomer.map((c, i) => (
-                  <div key={c.name} className="flex items-center gap-2">
+                {data["revenueByCustomer"]["map"]((c, i) => (
+                  <div key={c["name"]} className="flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: c.color }}
+                      style={{ backgroundColor: c["color"] }}
                     />
-                    <span className="text-sm">{c.name}</span>
+                    <span className="text-sm">{c["name"]}</span>
                     <span className="text-sm font-medium text-muted-foreground">
-                      {formatCurrency(c.amount)}
+                      {formatCurrency(c["amount"])}
                     </span>
                   </div>
                 ))}
@@ -337,14 +337,14 @@ export function FinancialDashboard() {
             <div>
               <CardTitle className="text-base">{t("invoiceManagement")}</CardTitle>
               <CardDescription>
-                {filteredInvoices.length} of {data.invoices.length} invoices
+                {filteredInvoices["length"]} of {data["invoices"]["length"]} invoices
               </CardDescription>
             </div>
             <div className="flex items-center gap-3">
               <Input
                 placeholder="Search invoices..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => setSearchQuery(e["target"]["value"])}
                 className="w-48"
               />
               <Select defaultValue="all">
@@ -376,33 +376,33 @@ export function FinancialDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredInvoices.length === 0 ? (
+              {filteredInvoices["length"] === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
                     <p className="text-sm text-muted-foreground">{t("noInvoices")}</p>
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInvoices.slice(0, 15).map((inv) => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-medium">{inv.number}</TableCell>
-                    <TableCell>{inv.customerName}</TableCell>
+                filteredInvoices["slice"](0, 15)["map"]((inv) => (
+                  <TableRow key={inv["id"]}>
+                    <TableCell className="font-medium">{inv["number"]}</TableCell>
+                    <TableCell>{inv["customerName"]}</TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(inv.amount)}
+                      {formatCurrency(inv["amount"])}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span>{formatDate(inv.dueDate)}</span>
-                        {inv.daysOverdue > 0 && (
+                        <span>{formatDate(inv["dueDate"])}</span>
+                        {inv["daysOverdue"] > 0 && (
                           <Badge variant="destructive" className="text-xs">
-                            {inv.daysOverdue}d
+                            {inv["daysOverdue"]}d
                           </Badge>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusVariant[inv.status] ?? "secondary"}>
-                        {inv.status}
+                      <Badge variant={statusVariant[inv["status"]] ?? "secondary"}>
+                        {inv["status"]}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -410,9 +410,9 @@ export function FinancialDashboard() {
               )}
             </TableBody>
           </Table>
-          {filteredInvoices.length > 15 && (
+          {filteredInvoices["length"] > 15 && (
             <div className="text-center py-4 text-sm text-muted-foreground">
-              {filteredInvoices.length - 15} more invoices not shown
+              {filteredInvoices["length"] - 15} more invoices not shown
             </div>
           )}
         </CardContent>

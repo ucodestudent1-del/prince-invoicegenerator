@@ -20,13 +20,13 @@ import { getTranslations } from "next-intl/server";
 export default async function SubcontractorsPage({ params }: { params: { locale: string } }) {
   await requireFeature("subcontractorTracking");
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
+  if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("subcontractors");
 
   let subs;
   try {
-    subs = await db.subcontractor.findMany({
-      where: { orgId: user.organizationId },
+    subs = await db["subcontractor"]["findMany"]({
+      where: { orgId: user["organizationId"] },
       orderBy: { name: "asc" },
       include: { _count: { select: { projects: true } } },
     });
@@ -47,7 +47,7 @@ export default async function SubcontractorsPage({ params }: { params: { locale:
       </div>
       <Card>
         <CardContent className="pt-6">
-          {subs.length === 0 ? (
+          {subs["length"] === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noSubcontractors")}</p>
           ) : (
             <Table>
@@ -62,18 +62,18 @@ export default async function SubcontractorsPage({ params }: { params: { locale:
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {subs.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell>{s.company ?? "—"}</TableCell>
+                {subs["map"]((s) => (
+                  <TableRow key={s["id"]}>
+                    <TableCell className="font-medium">{s["name"]}</TableCell>
+                    <TableCell>{s["company"] ?? "—"}</TableCell>
                     <TableCell>
-                      {s.trade ? <Badge variant="secondary">{s.trade}</Badge> : "—"}
+                      {s["trade"] ? <Badge variant="secondary">{s["trade"]}</Badge> : "—"}
                     </TableCell>
-                    <TableCell>{s.email ?? "—"}</TableCell>
+                    <TableCell>{s["email"] ?? "—"}</TableCell>
                     <TableCell className="text-right">
-                      {s.rate ? formatCurrency(Number(s.rate)) : "—"}
+                      {s["rate"] ? formatCurrency(Number(s["rate"])) : "—"}
                     </TableCell>
-                    <TableCell className="text-right">{s._count.projects}</TableCell>
+                    <TableCell className="text-right">{s["_count"]["projects"]}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

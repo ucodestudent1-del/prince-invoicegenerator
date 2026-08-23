@@ -22,24 +22,24 @@ export function TemplateSelector({
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {templates.map((t) => {
-        const isActive = selected === t.value;
+      {templates["map"]((t) => {
+        const isActive = selected === t["value"];
         return (
           <Card
-            key={t.value}
+            key={t["value"]}
             className={`cursor-pointer border-2 transition-all ${
               isActive ? "border-primary" : "border-muted"
             }`}
-            onClick={() => onChange(t.value)}
+            onClick={() => onChange(t["value"])}
           >
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-between text-sm">
-                {t.label}
+                {t["label"]}
                 {isActive && <Check className="h-4 w-4 text-primary" />}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">{t.description}</p>
+              <p className="text-xs text-muted-foreground">{t["description"]}</p>
             </CardContent>
           </Card>
         );
@@ -53,10 +53,10 @@ export function TemplateSelectorForm({ current, onSaved, onTemplateChange }: {
   onSaved?: () => void;
   onTemplateChange?: (value: string) => void;
 }) {
-  const [selected, setSelected] = React.useState(current);
-  const [saving, setSaving] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState(false);
+  const [selected, setSelected] = React["useState"](current);
+  const [saving, setSaving] = React["useState"](false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [success, setSuccess] = React["useState"](false);
 
   async function save() {
     setSaving(true);
@@ -66,16 +66,16 @@ export function TemplateSelectorForm({ current, onSaved, onTemplateChange }: {
       const res = await fetch("/api/customization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "template", value: selected }),
+        body: JSON["stringify"]({ key: "template", value: selected }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save template.");
+      if (!res["ok"]) {
+        const data = await res["json"]();
+        throw new Error(data["error"] || "Failed to save template.");
       }
       setSuccess(true);
       onSaved?.();
     } catch (err: any) {
-      setError(err.message);
+      setError(err["message"]);
     } finally {
       setSaving(false);
     }

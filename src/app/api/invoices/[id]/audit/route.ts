@@ -6,9 +6,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const logs = await getInvoiceAuditLogs(params.id);
-    return NextResponse.json(logs);
+    const logs = await getInvoiceAuditLogs(params["id"]);
+    return NextResponse["json"](logs);
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
   }
 }

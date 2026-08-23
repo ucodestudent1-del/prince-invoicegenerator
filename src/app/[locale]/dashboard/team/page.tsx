@@ -17,13 +17,13 @@ import { getTranslations } from "next-intl/server";
 export default async function TeamPage({ params }: { params: { locale: string } }) {
   await requireFeature("multipleUsers");
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
   const t = await getTranslations("team");
 
   let members;
   try {
-    members = await db.user.findMany({
+    members = await db["user"]["findMany"]({
       where: { organizationId: orgId },
       orderBy: { createdAt: "asc" },
     });
@@ -51,20 +51,20 @@ export default async function TeamPage({ params }: { params: { locale: string } 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {members.map((m) => (
-                <TableRow key={m.id}>
+              {members["map"]((m) => (
+                <TableRow key={m["id"]}>
                   <TableCell className="flex items-center gap-2">
                     <Avatar className="h-7 w-7">
                       <AvatarFallback className="text-xs">
-                        {(m.name ?? "U").slice(0, 2).toUpperCase()}
+                        {(m["name"] ?? "U")["slice"](0, 2)["toUpperCase"]()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{m.name ?? "—"}</span>
+                    <span className="font-medium">{m["name"] ?? "—"}</span>
                   </TableCell>
-                  <TableCell>{m.email ?? "—"}</TableCell>
+                  <TableCell>{m["email"] ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={m.id === user.id ? "default" : "secondary"}>
-                      {m.role}
+                    <Badge variant={m["id"] === user["id"] ? "default" : "secondary"}>
+                      {m["role"]}
                     </Badge>
                   </TableCell>
                 </TableRow>

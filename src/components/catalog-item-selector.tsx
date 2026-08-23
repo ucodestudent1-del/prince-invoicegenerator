@@ -33,44 +33,44 @@ export function CatalogItemSelector({
   trigger,
   unitType,
 }: CatalogItemSelectorProps) {
-  const [open, setOpen] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [items, setItems] = React.useState<CatalogItemForInvoice[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [showQuickCreate, setShowQuickCreate] = React.useState(false);
-  const [quickName, setQuickName] = React.useState("");
-  const [quickPrice, setQuickPrice] = React.useState("");
-  const searchRef = React.useRef<HTMLInputElement>(null);
+  const [open, setOpen] = React["useState"](false);
+  const [searchQuery, setSearchQuery] = React["useState"]("");
+  const [items, setItems] = React["useState"]<CatalogItemForInvoice[]>([]);
+  const [loading, setLoading] = React["useState"](false);
+  const [showQuickCreate, setShowQuickCreate] = React["useState"](false);
+  const [quickName, setQuickName] = React["useState"]("");
+  const [quickPrice, setQuickPrice] = React["useState"]("");
+  const searchRef = React["useRef"]<HTMLInputElement>(null);
 
   async function fetchItems(query: string) {
     if (!open) return;
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (query) params.set("search", query);
-      if (unitType) params.set("unit", unitType);
-      params.set("limit", "100");
-      const res = await fetch(`/api/catalog/items?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
+      if (query) params["set"]("search", query);
+      if (unitType) params["set"]("unit", unitType);
+      params["set"]("limit", "100");
+      const res = await fetch(`/api/catalog/items?${params["toString"]()}`);
+      if (res["ok"]) {
+        const data = await res["json"]();
         setItems(data);
       }
     } catch (err) {
-      console.error("Failed to fetch catalog items", err);
+      console["error"]("Failed to fetch catalog items", err);
     } finally {
       setLoading(false);
     }
   }
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     if (!open) return;
     const timer = setTimeout(() => fetchItems(searchQuery), 250);
     return () => clearTimeout(timer);
   }, [open, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     if (open) {
-      setTimeout(() => searchRef.current?.focus(), 100);
+      setTimeout(() => searchRef["current"]?.["focus"](), 100);
     }
   }, [open]);
 
@@ -115,7 +115,7 @@ export function CatalogItemSelector({
         >
           <div
             className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[70vh]"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e["stopPropagation"]()}
           >
             <div className="p-4 border-b">
               <div className="relative">
@@ -125,7 +125,7 @@ export function CatalogItemSelector({
                   type="text"
                   placeholder="Search items by name, SKU, or description..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => setSearchQuery(e["target"]["value"])}
                   className="pl-10"
                 />
               </div>
@@ -136,40 +136,40 @@ export function CatalogItemSelector({
                 <div className="p-6 text-center text-muted-foreground">
                   Loading...
                 </div>
-              ) : items.length === 0 ? (
+              ) : items["length"] === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">
                   No items found.
                 </div>
               ) : (
                 <div className="py-1">
-                  {items.map((item) => (
+                  {items["map"]((item) => (
                     <div
-                      key={item.id}
+                      key={item["id"]}
                       className="flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer"
                       onClick={() => handleSelect(item)}
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          {item.isFavorite && (
+                          {item["isFavorite"] && (
                             <Star className="h-3 w-3 text-yellow-400 fill-current" />
                           )}
-                          <span className="font-medium">{item.name}</span>
+                          <span className="font-medium">{item["name"]}</span>
                           <span className="text-lg font-bold text-right ml-auto">
-                            {formatCurrency(item.price)}
+                            {formatCurrency(item["price"])}
                           </span>
                         </div>
-                        {item.description && (
+                        {item["description"] && (
                           <p className="text-sm text-muted-foreground mt-0.5">
-                            {item.description}
+                            {item["description"]}
                           </p>
                         )}
                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                           <Badge variant="outline" className="text-xs">
-                            {item.unit}
+                            {item["unit"]}
                           </Badge>
-                          {item.sku && <span>SKU: {item.sku}</span>}
-                          {item.taxRate > 0 && <span>Tax: {item.taxRate}%</span>}
-                          {item.discount > 0 && <span>Discount: {item.discount}%</span>}
+                          {item["sku"] && <span>SKU: {item["sku"]}</span>}
+                          {item["taxRate"] > 0 && <span>Tax: {item["taxRate"]}%</span>}
+                          {item["discount"] > 0 && <span>Discount: {item["discount"]}%</span>}
                         </div>
                       </div>
                     </div>
@@ -192,14 +192,14 @@ export function CatalogItemSelector({
                 <Input
                   placeholder="Item name"
                   value={quickName}
-                  onChange={(e) => setQuickName(e.target.value)}
+                  onChange={(e) => setQuickName(e["target"]["value"])}
                   autoFocus
                 />
                 <Input
                   type="number"
                   placeholder="Price"
                   value={quickPrice}
-                  onChange={(e) => setQuickPrice(e.target.value)}
+                  onChange={(e) => setQuickPrice(e["target"]["value"])}
                 />
                 <div className="flex gap-2">
                   <Button

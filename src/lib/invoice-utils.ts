@@ -9,10 +9,10 @@ export interface DefaultStageTemplate {
 }
 
 export function buildDefaultStages(config: any): DefaultStageTemplate[] {
-  const before = config?.remindBeforeDue ?? 7;
-  const after = config?.remindAfterDue ?? 1;
-  const subject = config?.emailSubject ?? "Payment reminder for invoice {{invoiceNumber}}";
-  const template = config?.emailTemplate ??
+  const before = config?.["remindBeforeDue"] ?? 7;
+  const after = config?.["remindAfterDue"] ?? 1;
+  const subject = config?.["emailSubject"] ?? "Payment reminder for invoice {{invoiceNumber}}";
+  const template = config?.["emailTemplate"] ??
     "Dear {{customerName}},\n\nThis is a reminder that invoice {{invoiceNumber}} for {{amount}} is due on {{dueDate}}.\n\nPlease arrange payment at your earliest convenience.\n\nThank you.";
 
   return [

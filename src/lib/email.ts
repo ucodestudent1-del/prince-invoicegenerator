@@ -50,24 +50,24 @@ export interface SendContext {
 
 export function renderTemplate(template: string | null | undefined, ctx: SendContext): string {
   if (!template) return "";
-  const balance = ctx.invoice.total - ctx.invoice.amountPaid;
-  const daysOverdue = ctx.invoice.dueDate
-    ? Math.max(0, Math.floor((Date.now() - new Date(ctx.invoice.dueDate).getTime()) / 86400000))
+  const balance = ctx["invoice"]["total"] - ctx["invoice"]["amountPaid"];
+  const daysOverdue = ctx["invoice"]["dueDate"]
+    ? Math["max"](0, Math["floor"]((Date["now"]() - new Date(ctx["invoice"]["dueDate"])["getTime"]()) / 86400000))
     : 0;
 
   const variables: Record<string, string> = {
-    invoiceNumber: ctx.invoice.number,
-    customerName: ctx.customer.name ?? ctx.customer.company ?? "Valued customer",
-    companyName: ctx.organization.name,
-    amount: formatCurrency(ctx.invoice.total, ctx.invoice.currency),
-    balance: formatCurrency(balance, ctx.invoice.currency),
-    dueDate: formatDate(ctx.invoice.dueDate),
-    issueDate: formatDate(ctx.invoice.issueDate),
+    invoiceNumber: ctx["invoice"]["number"],
+    customerName: ctx["customer"]["name"] ?? ctx["customer"]["company"] ?? "Valued customer",
+    companyName: ctx["organization"]["name"],
+    amount: formatCurrency(ctx["invoice"]["total"], ctx["invoice"]["currency"]),
+    balance: formatCurrency(balance, ctx["invoice"]["currency"]),
+    dueDate: formatDate(ctx["invoice"]["dueDate"]),
+    issueDate: formatDate(ctx["invoice"]["issueDate"]),
     daysOverdue: String(daysOverdue),
-    invoiceUrl: ctx.invoiceUrl ?? "",
+    invoiceUrl: ctx["invoiceUrl"] ?? "",
   };
 
-  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+  return template["replace"](/\{\{(\w+)\}\}/g, (match, key) => {
     return variables[key] !== undefined ? variables[key] : match;
   });
 }
@@ -75,20 +75,20 @@ export function renderTemplate(template: string | null | undefined, ctx: SendCon
 export function buildHtmlBody(bodyTemplate: string | null | undefined, ctx: SendContext): string {
   const plain = renderTemplate(bodyTemplate, ctx);
   if (!plain) return "";
-  return plain.replace(/\n/g, "<br>");
+  return plain["replace"](/\n/g, "<br>");
 }
 
 export function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl["NumberFormat"]("en-US", {
     style: "currency",
     currency,
-  }).format(amount || 0);
+  })["format"](amount || 0);
 }
 
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("en-US", {
+  return d["toLocaleDateString"]("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -96,19 +96,19 @@ export function formatDate(date: Date | string | null | undefined): string {
 }
 
 export async function sendEmail(params: EmailParams): Promise<EmailResult> {
-  const provider = process.env.EMAIL_PROVIDER || "console";
-  const from = params.from || process.env.FROM_EMAIL || "noreply@example.com";
+  const provider = process["env"]["EMAIL_PROVIDER"] || "console";
+  const from = params["from"] || process["env"]["FROM_EMAIL"] || "noreply@example.com";
 
   try {
     if (provider === "console" || provider === undefined) {
-      logInfo("email", `[Console] To: ${params.to} | Subject: ${params.subject}`);
-      if (process.env.NODE_ENV !== "production") {
-        logInfo("email", `[Console] Body: ${params.text || params.html || ""}`);
+      logInfo("email", `[Console] To: ${params["to"]} | Subject: ${params["subject"]}`);
+      if (process["env"]["NODE_ENV"] !== "production") {
+        logInfo("email", `[Console] Body: ${params["text"] || params["html"] || ""}`);
       }
       return {
         success: true,
         status: "DELIVERED",
-        messageId: `console-${Date.now()}`,
+        messageId: `console-${Date["now"]()}`,
         metadata: { provider: "console" },
       };
     }
@@ -116,33 +116,33 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
     if (provider === "resend") {
       // @ts-ignore - optional dependency, loaded at runtime only
       const mod = await import(/* webpackIgnore: true */ "resend") as any;
-      const Resend = mod.Resend;
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const result = await resend.emails.send({
+      const Resend = mod["Resend"];
+      const resend = new Resend(process["env"]["RESEND_API_KEY"]);
+      const result = await resend["emails"]["send"]({
         from,
-        to: params.to,
-        cc: params.cc,
-        bcc: params.bcc,
-        subject: params.subject,
-        html: params.html || params.text,
-        text: params.text,
-        metadata: params.metadata,
-        attachments: params.attachments?.map((a) => ({
-          filename: a.filename,
-          content: a.content,
+        to: params["to"],
+        cc: params["cc"],
+        bcc: params["bcc"],
+        subject: params["subject"],
+        html: params["html"] || params["text"],
+        text: params["text"],
+        metadata: params["metadata"],
+        attachments: params["attachments"]?.["map"]((a) => ({
+          filename: a["filename"],
+          content: a["content"],
         })),
       });
-      if (result.error) {
+      if (result["error"]) {
         return {
           success: false,
           status: "FAILED",
-          error: result.error.message,
+          error: result["error"]["message"],
         };
       }
       return {
         success: true,
-        status: result.data?.id ? "QUEUED" : "SENT",
-        messageId: result.data?.id,
+        status: result["data"]?.["id"] ? "QUEUED" : "SENT",
+        messageId: result["data"]?.["id"],
         metadata: { provider: "resend" },
       };
     }
@@ -150,60 +150,60 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
     if (provider === "smtp") {
       // @ts-ignore - optional dependency, loaded at runtime only
       const nodemailer = await import(/* webpackIgnore: true */ "nodemailer") as any;
-      const transporter = nodemailer.createTransporter({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT || 587),
-        secure: process.env.SMTP_SECURE === "true",
+      const transporter = nodemailer["createTransporter"]({
+        host: process["env"]["SMTP_HOST"],
+        port: Number(process["env"]["SMTP_PORT"] || 587),
+        secure: process["env"]["SMTP_SECURE"] === "true",
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: process["env"]["SMTP_USER"],
+          pass: process["env"]["SMTP_PASS"],
         },
       });
-      const info = await transporter.sendMail({
+      const info = await transporter["sendMail"]({
         from,
-        to: params.to,
-        cc: params.cc,
-        bcc: params.bcc,
-        subject: params.subject,
-        html: params.html,
-        text: params.text,
-        attachments: params.attachments?.map((a) => ({
-          filename: a.filename,
-          content: a.content,
-          contentType: a.contentType,
+        to: params["to"],
+        cc: params["cc"],
+        bcc: params["bcc"],
+        subject: params["subject"],
+        html: params["html"],
+        text: params["text"],
+        attachments: params["attachments"]?.["map"]((a) => ({
+          filename: a["filename"],
+          content: a["content"],
+          contentType: a["contentType"],
         })),
       });
       return {
         success: true,
         status: "SENT",
-        messageId: info.messageId,
-        metadata: { provider: "smtp", messageId: info.messageId },
+        messageId: info["messageId"],
+        metadata: { provider: "smtp", messageId: info["messageId"] },
       };
     }
 
     if (provider === "sendgrid") {
       // @ts-ignore - optional dependency, loaded at runtime only
       const sgMail = await import(/* webpackIgnore: true */ "@sendgrid/mail") as any;
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
-      const [result] = await sgMail.send({
+      sgMail["setApiKey"](process["env"]["SENDGRID_API_KEY"]!);
+      const [result] = await sgMail["send"]({
         from,
-        to: params.to,
-        cc: params.cc,
-        bcc: params.bcc,
-        subject: params.subject,
-        text: params.text,
-        html: params.html,
-        attachments: params.attachments?.map((a) => ({
-          filename: a.filename,
-          content: typeof Buffer !== "undefined" ? Buffer.from(a.content).toString("base64") : "",
-          type: a.contentType || "application/pdf",
+        to: params["to"],
+        cc: params["cc"],
+        bcc: params["bcc"],
+        subject: params["subject"],
+        text: params["text"],
+        html: params["html"],
+        attachments: params["attachments"]?.["map"]((a) => ({
+          filename: a["filename"],
+          content: typeof Buffer !== "undefined" ? Buffer["from"](a["content"])["toString"]("base64") : "",
+          type: a["contentType"] || "application/pdf",
           disposition: "attachment",
         })),
       });
       return {
         success: true,
         status: "QUEUED",
-        messageId: result?.headers?.["x-message-id"] as string,
+        messageId: result?.["headers"]?.["x-message-id"] as string,
         metadata: { provider: "sendgrid" },
       };
     }
@@ -218,18 +218,18 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
     return {
       success: false,
       status: "FAILED",
-      error: err?.message ?? "Email delivery failed",
+      error: err?.["message"] ?? "Email delivery failed",
     };
   }
 }
 
 export function isEmailConfigured(): boolean {
-  const provider = process.env.EMAIL_PROVIDER || "console";
+  const provider = process["env"]["EMAIL_PROVIDER"] || "console";
   if (provider === "console" || provider === undefined) return true;
 
-  if (provider === "resend") return !!process.env.RESEND_API_KEY;
-  if (provider === "smtp") return !!process.env.SMTP_HOST && !!process.env.SMTP_USER;
-  if (provider === "sendgrid") return !!process.env.SENDGRID_API_KEY;
+  if (provider === "resend") return !!process["env"]["RESEND_API_KEY"];
+  if (provider === "smtp") return !!process["env"]["SMTP_HOST"] && !!process["env"]["SMTP_USER"];
+  if (provider === "sendgrid") return !!process["env"]["SENDGRID_API_KEY"];
 
   return false;
 }

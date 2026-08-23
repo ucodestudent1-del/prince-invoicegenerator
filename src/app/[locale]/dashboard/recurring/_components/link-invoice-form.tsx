@@ -32,26 +32,26 @@ export function LinkInvoiceForm({
   const [isLinking, setIsLinking] = useState(false);
 
   async function handleLink(e: React.FormEvent) {
-    e.preventDefault();
+    e["preventDefault"]();
     if (!selectedInvoiceId) return;
     setError(null);
     setIsLinking(true);
     try {
       await linkInvoiceToRecurring(selectedInvoiceId, configId);
       setSelectedInvoiceId("");
-      router.refresh();
+      router["refresh"]();
     } catch (err: any) {
-      if (err?.digest === "NEXT_REDIRECT") {
-        router.push("/login?error=session");
+      if (err?.["digest"] === "NEXT_REDIRECT") {
+        router["push"]("/login?error=session");
         return;
       }
-      setError(err?.message ?? "Failed to link invoice.");
+      setError(err?.["message"] ?? "Failed to link invoice.");
     } finally {
       setIsLinking(false);
     }
   }
 
-  if (invoices.length === 0) {
+  if (invoices["length"] === 0) {
     return (
       <span className="text-xs text-muted-foreground">
         No invoices to link
@@ -71,9 +71,9 @@ export function LinkInvoiceForm({
             <SelectValue placeholder="Link invoice" />
           </SelectTrigger>
           <SelectContent>
-            {invoices.map((inv) => (
-              <SelectItem key={inv.id} value={inv.id}>
-                {inv.number} ({inv.type})
+            {invoices["map"]((inv) => (
+              <SelectItem key={inv["id"]} value={inv["id"]}>
+                {inv["number"]} ({inv["type"]})
               </SelectItem>
             ))}
           </SelectContent>

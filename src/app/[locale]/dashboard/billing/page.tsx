@@ -5,8 +5,8 @@ import { logServerError } from "@/lib/errors";
 
 export default async function BillingPage() {
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
 
    let org;
    try {
@@ -20,8 +20,8 @@ export default async function BillingPage() {
   return (
     <BillingPanel
       plan={plan}
-      status={org?.subscriptionStatus ?? null}
-      renewalDate={org?.currentPeriodEnd ? formatDate(org.currentPeriodEnd) : null}
+      status={org?.["subscriptionStatus"] ?? null}
+      renewalDate={org?.["currentPeriodEnd"] ? formatDate(org["currentPeriodEnd"]) : null}
     />
   );
 }

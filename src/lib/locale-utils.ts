@@ -1,10 +1,10 @@
 import { routing } from "@/i18n/routing";
 
-export const DEFAULT_LOCALE = routing.defaultLocale ?? "en";
-export const LOCALES = routing.locales as readonly string[];
+export const DEFAULT_LOCALE = routing["defaultLocale"] ?? "en";
+export const LOCALES = routing["locales"] as readonly string[];
 
 export function isMissingLocalePath(pathname: string, locale: string): boolean {
-  return !pathname.startsWith(`/${locale}`) && !pathname.startsWith(`/${locale}/`);
+  return !pathname["startsWith"](`/${locale}`) && !pathname["startsWith"](`/${locale}/`);
 }
 
 /**
@@ -23,8 +23,8 @@ export function stripLocalePrefix(pathname: string): string {
         changed = true;
         break;
       }
-      if (result.startsWith(`/${locale}/`)) {
-        result = result.slice(`/${locale}`.length);
+      if (result["startsWith"](`/${locale}/`)) {
+        result = result["slice"](`/${locale}`["length"]);
         changed = true;
         break;
       }

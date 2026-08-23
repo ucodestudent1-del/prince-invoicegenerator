@@ -32,7 +32,7 @@ export default async function ScheduledPage({ params }: { params: { locale: stri
         </Button>
       </div>
       <Suspense fallback={<p>Loading…</p>}>
-        <ScheduledContent locale={params.locale} t={t} />
+        <ScheduledContent locale={params["locale"]} t={t} />
       </Suspense>
     </div>
   );
@@ -40,15 +40,15 @@ export default async function ScheduledPage({ params }: { params: { locale: stri
 
 async function ScheduledContent({ locale, t }: { locale: string; t: any }) {
   const user = await getCurrentUser();
-  if (!user || !user.organizationId) return null;
+  if (!user || !user["organizationId"]) return null;
   const plan = await getActivePlan(user);
   if (!hasFeature(plan, "scheduledInvoices")) {
     return <PricingFeature feature="scheduledInvoices" plan={plan} />;
   }
 
-  const invoices = await getScheduledInvoices(user.organizationId);
+  const invoices = await getScheduledInvoices(user["organizationId"]);
 
-  if (invoices.length === 0) {
+  if (invoices["length"] === 0) {
     return (
       <p className="text-sm text-muted-foreground">
         {t("noScheduled")}
@@ -58,16 +58,16 @@ async function ScheduledContent({ locale, t }: { locale: string; t: any }) {
 
   return (
     <div className="space-y-3">
-      {invoices.map((inv: any) => (
-        <div key={inv.id} className="border rounded-md p-4">
+      {invoices["map"]((inv: any) => (
+        <div key={inv["id"]} className="border rounded-md p-4">
           <div className="flex items-center justify-between">
-            <span className="font-medium">{inv.title}</span>
+            <span className="font-medium">{inv["title"]}</span>
             <span className="text-sm text-muted-foreground">
-              {t("scheduledFor", { date: format(new Date(inv.scheduledFor), "PPP") })}
+              {t("scheduledFor", { date: format(new Date(inv["scheduledFor"]), "PPP") })}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            {inv.total} · {inv.status}
+            {inv["total"]} · {inv["status"]}
           </p>
         </div>
       ))}

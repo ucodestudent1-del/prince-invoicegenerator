@@ -5,19 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
 
 export function AuditLog({ invoiceId }: { invoiceId: string }) {
-  const [logs, setLogs] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [logs, setLogs] = React["useState"]<any[]>([]);
+  const [loading, setLoading] = React["useState"](true);
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     async function load() {
       try {
         const res = await fetch(`/api/invoices/${invoiceId}/audit`);
-        if (res.ok) {
-          const data = await res.json();
+        if (res["ok"]) {
+          const data = await res["json"]();
           setLogs(data);
         }
       } catch (err) {
-        console.error("Failed to load audit logs", err);
+        console["error"]("Failed to load audit logs", err);
       } finally {
         setLoading(false);
       }
@@ -38,7 +38,7 @@ export function AuditLog({ invoiceId }: { invoiceId: string }) {
     );
   }
 
-  if (logs.length === 0) {
+  if (logs["length"] === 0) {
     return (
       <Card>
         <CardHeader>
@@ -58,25 +58,25 @@ export function AuditLog({ invoiceId }: { invoiceId: string }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {logs.map((log) => (
-            <div key={log.id} className="border-b pb-2 last:border-0">
+          {logs["map"]((log) => (
+            <div key={log["id"]} className="border-b pb-2 last:border-0">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{log.action.replace(/_/g, " ")}</span>
-                <span className="text-xs text-muted-foreground">{formatDate(log.createdAt)}</span>
+                <span className="text-sm font-medium">{log["action"]["replace"](/_/g, " ")}</span>
+                <span className="text-xs text-muted-foreground">{formatDate(log["createdAt"])}</span>
               </div>
-              {(log.fromStatus || log.toStatus) && (
+              {(log["fromStatus"] || log["toStatus"]) && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {log.fromStatus && <span>{log.fromStatus}</span>}
-                  {log.fromStatus && log.toStatus && <span> → </span>}
-                  {log.toStatus && <span>{log.toStatus}</span>}
+                  {log["fromStatus"] && <span>{log["fromStatus"]}</span>}
+                  {log["fromStatus"] && log["toStatus"] && <span> → </span>}
+                  {log["toStatus"] && <span>{log["toStatus"]}</span>}
                 </p>
               )}
-              {log.amount != null && (
+              {log["amount"] != null && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Amount: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(log.amount)}
+                  Amount: {new Intl["NumberFormat"]("en-US", { style: "currency", currency: "USD" })["format"](log["amount"])}
                 </p>
               )}
-              {log.note && <p className="text-xs text-muted-foreground mt-0.5">{log.note}</p>}
+              {log["note"] && <p className="text-xs text-muted-foreground mt-0.5">{log["note"]}</p>}
             </div>
           ))}
         </div>

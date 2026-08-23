@@ -3,7 +3,7 @@ import { logError } from "@/lib/logging";
 export class ActionError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "ActionError";
+    this["name"] = "ActionError";
   }
 }
 
@@ -18,7 +18,7 @@ export async function withActionError<T>(
   try {
     return await fn();
   } catch (err: any) {
-    if (err?.digest === "NEXT_REDIRECT" || err?.digest === "NEXT_NOT_FOUND") {
+    if (err?.["digest"] === "NEXT_REDIRECT" || err?.["digest"] === "NEXT_NOT_FOUND") {
       throw err;
     }
     if (err instanceof ActionError) {
@@ -26,8 +26,8 @@ export async function withActionError<T>(
     }
     logError(context, err);
     const message =
-      err instanceof Error && err.message
-        ? `Unexpected error: ${err.message}`
+      err instanceof Error && err["message"]
+        ? `Unexpected error: ${err["message"]}`
         : "An unexpected error occurred. Please try again.";
     throw new ActionError(message);
   }

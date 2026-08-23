@@ -63,8 +63,8 @@ const DEFAULT_STAGES: Stage[] = [
     type: "PRE_DUE" as const,
     enabled: true,
     daysOffset: -7,
-    subjectTemplate: DEFAULT_SUBJECTS.PRE_DUE,
-    bodyTemplate: DEFAULT_BODIES.PRE_DUE,
+    subjectTemplate: DEFAULT_SUBJECTS["PRE_DUE"],
+    bodyTemplate: DEFAULT_BODIES["PRE_DUE"],
     channel: "EMAIL",
   },
   {
@@ -72,8 +72,8 @@ const DEFAULT_STAGES: Stage[] = [
     type: "DUE_DATE" as const,
     enabled: true,
     daysOffset: 0,
-    subjectTemplate: DEFAULT_SUBJECTS.DUE_DATE,
-    bodyTemplate: DEFAULT_BODIES.DUE_DATE,
+    subjectTemplate: DEFAULT_SUBJECTS["DUE_DATE"],
+    bodyTemplate: DEFAULT_BODIES["DUE_DATE"],
     channel: "EMAIL",
   },
   {
@@ -81,8 +81,8 @@ const DEFAULT_STAGES: Stage[] = [
     type: "POST_DUE" as const,
     enabled: true,
     daysOffset: 1,
-    subjectTemplate: DEFAULT_SUBJECTS.POST_DUE.replace("overdue", "is 1 day overdue"),
-    bodyTemplate: DEFAULT_BODIES.POST_DUE,
+    subjectTemplate: DEFAULT_SUBJECTS["POST_DUE"]["replace"]("overdue", "is 1 day overdue"),
+    bodyTemplate: DEFAULT_BODIES["POST_DUE"],
     channel: "EMAIL",
   },
   {
@@ -91,7 +91,7 @@ const DEFAULT_STAGES: Stage[] = [
     enabled: true,
     daysOffset: 7,
     subjectTemplate: "Invoice {{invoiceNumber}} is 7 days overdue",
-    bodyTemplate: DEFAULT_BODIES.POST_DUE,
+    bodyTemplate: DEFAULT_BODIES["POST_DUE"],
     channel: "EMAIL",
   },
   {
@@ -100,7 +100,7 @@ const DEFAULT_STAGES: Stage[] = [
     enabled: true,
     daysOffset: 14,
     subjectTemplate: "URGENT: Invoice {{invoiceNumber}} is 14 days overdue",
-    bodyTemplate: DEFAULT_BODIES.POST_DUE,
+    bodyTemplate: DEFAULT_BODIES["POST_DUE"],
     channel: "EMAIL",
   },
   {
@@ -109,7 +109,7 @@ const DEFAULT_STAGES: Stage[] = [
     enabled: true,
     daysOffset: 30,
     subjectTemplate: "FINAL NOTICE: Invoice {{invoiceNumber}} is 30 days overdue",
-    bodyTemplate: DEFAULT_BODIES.POST_DUE,
+    bodyTemplate: DEFAULT_BODIES["POST_DUE"],
     channel: "EMAIL",
   },
 ];
@@ -121,49 +121,49 @@ const STAGE_LABELS = {
 };
 
 export function ReminderSettingsForm() {
-  const [saving, setSaving] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
-  const [message, setMessage] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
+  const [loading, setLoading] = React["useState"](true);
+  const [message, setMessage] = React["useState"]<string | null>(null);
+  const [error, setError] = React["useState"]<string | null>(null);
 
-  const [config, setConfig] = React.useState<Config>({
+  const [config, setConfig] = React["useState"]<Config>({
     enabled: true,
     frequencyHours: 24,
     maxReminders: 5,
     stages: DEFAULT_STAGES,
   });
 
-  const [editingStageId, setEditingStageId] = React.useState<string | null>(null);
-  const [expandedStageId, setExpandedStageId] = React.useState<string | null>(null);
+  const [editingStageId, setEditingStageId] = React["useState"]<string | null>(null);
+  const [expandedStageId, setExpandedStageId] = React["useState"]<string | null>(null);
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     async function load() {
       try {
         const res = await fetch("/api/settings/reminders");
-        if (res.ok) {
-          const data = await res.json();
+        if (res["ok"]) {
+          const data = await res["json"]();
           if (data) {
-            const normalizedStages = (data.stages?.length > 0 ? data.stages : DEFAULT_STAGES).map(
+            const normalizedStages = (data["stages"]?.["length"] > 0 ? data["stages"] : DEFAULT_STAGES)["map"](
               (s: any) => ({
                 ...s,
-                type: s.type as "PRE_DUE" | "DUE_DATE" | "POST_DUE",
-                daysOffset: s.daysOffset ?? 0,
+                type: s["type"] as "PRE_DUE" | "DUE_DATE" | "POST_DUE",
+                daysOffset: s["daysOffset"] ?? 0,
               })
             );
             setConfig({
-              enabled: data.enabled,
-              frequencyHours: data.frequencyHours ?? 24,
-              maxReminders: data.maxReminders ?? 5,
-              remindBeforeDue: data.remindBeforeDue,
-              remindAfterDue: data.remindAfterDue,
-              emailSubject: data.emailSubject,
-              emailTemplate: data.emailTemplate,
+              enabled: data["enabled"],
+              frequencyHours: data["frequencyHours"] ?? 24,
+              maxReminders: data["maxReminders"] ?? 5,
+              remindBeforeDue: data["remindBeforeDue"],
+              remindAfterDue: data["remindAfterDue"],
+              emailSubject: data["emailSubject"],
+              emailTemplate: data["emailTemplate"],
               stages: normalizedStages,
             });
           }
         }
       } catch (err) {
-        console.error("Failed to load reminder settings", err);
+        console["error"]("Failed to load reminder settings", err);
       } finally {
         setLoading(false);
       }
@@ -174,25 +174,25 @@ export function ReminderSettingsForm() {
   function updateStage(id: string, updates: Partial<Stage>) {
     setConfig((prev) => ({
       ...prev,
-      stages: prev.stages.map((s) =>
-        s.id === id || (!s.id && editingStageId === id) ? { ...s, ...updates } : s
+      stages: prev["stages"]["map"]((s) =>
+        s["id"] === id || (!s["id"] && editingStageId === id) ? { ...s, ...updates } : s
       ),
     }));
   }
 
   function addStage(stage: Stage) {
-    const newStage = { ...stage, id: `new-${Date.now()}` };
+    const newStage = { ...stage, id: `new-${Date["now"]()}` };
     setConfig((prev) => ({
       ...prev,
-      stages: [...prev.stages, newStage],
+      stages: [...prev["stages"], newStage],
     }));
-    setEditingStageId(newStage.id);
+    setEditingStageId(newStage["id"]);
   }
 
   function removeStage(id: string) {
     setConfig((prev) => ({
       ...prev,
-      stages: prev.stages.filter((s) => s.id !== id && `new-${id}` !== id),
+      stages: prev["stages"]["filter"]((s) => s["id"] !== id && `new-${id}` !== id),
     }));
     if (editingStageId === id) setEditingStageId(null);
     if (expandedStageId === id) setExpandedStageId(null);
@@ -201,42 +201,42 @@ export function ReminderSettingsForm() {
   function toggleStage(id: string, enabled: boolean) {
     setConfig((prev) => ({
       ...prev,
-      stages: prev.stages.map((s) =>
-        s.id === id || (`new-${id}` === id && !s.id) ? { ...s, enabled } : s
+      stages: prev["stages"]["map"]((s) =>
+        s["id"] === id || (`new-${id}` === id && !s["id"]) ? { ...s, enabled } : s
       ),
     }));
   }
 
   const getSubjectPreview = (stage: Stage) => {
-    return (stage.subjectTemplate || DEFAULT_SUBJECTS[stage.type] || "")
-      .replace(/\{\{invoiceNumber\}\}/g, "INV-0042")
-      .replace(/\{\{customerName\}\}/g, "Acme Corp")
-      .replace(/\{\{companyName\}\}/g, config.stages ? "Your Company" : "Your Company")
-      .replace(/\{\{amount\}\}/g, "$1,250.00")
-      .replace(/\{\{balance\}\}/g, "$1,250.00")
-      .replace(/\{\{dueDate\}\}/g, "Aug 20, 2026")
-      .replace(/\{\{issueDate\}\}/g, "Aug 1, 2026")
-      .replace(/\{\{daysOverdue\}\}/g, "3")
-      .replace(/\{\{invoiceUrl\}\}/g, "https://app.example.com/invoice/INV-0042");
+    return (stage["subjectTemplate"] || DEFAULT_SUBJECTS[stage["type"]] || "")
+      ["replace"](/\{\{invoiceNumber\}\}/g, "INV-0042")
+      ["replace"](/\{\{customerName\}\}/g, "Acme Corp")
+      ["replace"](/\{\{companyName\}\}/g, config["stages"] ? "Your Company" : "Your Company")
+      ["replace"](/\{\{amount\}\}/g, "$1,250.00")
+      ["replace"](/\{\{balance\}\}/g, "$1,250.00")
+      ["replace"](/\{\{dueDate\}\}/g, "Aug 20, 2026")
+      ["replace"](/\{\{issueDate\}\}/g, "Aug 1, 2026")
+      ["replace"](/\{\{daysOverdue\}\}/g, "3")
+      ["replace"](/\{\{invoiceUrl\}\}/g, "https://app.example.com/invoice/INV-0042");
   };
 
   const getEditor = (stage: Stage) => {
-    const stageInfo = STAGE_LABELS[stage.type];
-    const Icon = stageInfo.icon;
+    const stageInfo = STAGE_LABELS[stage["type"]];
+    const Icon = stageInfo["icon"];
 
     return (
-      <div key={stage.id || `new-${stage.name}`} className="border rounded-lg p-4 space-y-4">
+      <div key={stage["id"] || `new-${stage["name"]}`} className="border rounded-lg p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className={stageInfo.color}>
+            <Badge variant="outline" className={stageInfo["color"]}>
               <Icon className="h-3 w-3 mr-1" />
-              {stageInfo.label}
+              {stageInfo["label"]}
             </Badge>
-            <span className="font-medium">{stage.name}</span>
+            <span className="font-medium">{stage["name"]}</span>
           </div>
           <Switch
-            checked={stage.enabled}
-            onCheckedChange={(v) => toggleStage(stage.id || "", v)}
+            checked={stage["enabled"]}
+            onCheckedChange={(v) => toggleStage(stage["id"] || "", v)}
           />
         </div>
 
@@ -244,19 +244,19 @@ export function ReminderSettingsForm() {
           <div className="space-y-1">
             <Label>Stage name</Label>
             <Input
-              value={stage.name}
-              onChange={(e) => updateStage(stage.id || "", { name: e.target.value })}
+              value={stage["name"]}
+              onChange={(e) => updateStage(stage["id"] || "", { name: e["target"]["value"] })}
             />
           </div>
           <div className="space-y-1">
             <Label>Days relative to due date</Label>
             <Input
               type="number"
-              value={stage.daysOffset}
+              value={stage["daysOffset"]}
               onChange={(e) =>
-                updateStage(stage.id || "", { daysOffset: parseInt(e.target.value, 10) || 0 })
+                updateStage(stage["id"] || "", { daysOffset: parseInt(e["target"]["value"], 10) || 0 })
               }
-              disabled={!stage.enabled}
+              disabled={!stage["enabled"]}
             />
             <p className="text-xs text-muted-foreground">
               Negative = before due, 0 = on due date, positive = after due
@@ -269,15 +269,15 @@ export function ReminderSettingsForm() {
             <Label>Time of day (optional)</Label>
             <Input
               type="time"
-              value={stage.timeOfDay || ""}
-              onChange={(e) => updateStage(stage.id || "", { timeOfDay: e.target.value || null })}
-              disabled={!stage.enabled}
+              value={stage["timeOfDay"] || ""}
+              onChange={(e) => updateStage(stage["id"] || "", { timeOfDay: e["target"]["value"] || null })}
+              disabled={!stage["enabled"]}
             />
           </div>
           <div className="space-y-1">
             <Label>Channel</Label>
             <Input
-              value={stage.channel || "EMAIL"}
+              value={stage["channel"] || "EMAIL"}
               disabled
               className="bg-muted"
             />
@@ -287,15 +287,15 @@ export function ReminderSettingsForm() {
         <div className="space-y-1">
           <Label>Email subject</Label>
           <Input
-            value={stage.subjectTemplate || ""}
+            value={stage["subjectTemplate"] || ""}
             onChange={(e) =>
-              updateStage(stage.id || "", { subjectTemplate: e.target.value })
+              updateStage(stage["id"] || "", { subjectTemplate: e["target"]["value"] })
             }
-            disabled={!stage.enabled}
-            placeholder={DEFAULT_SUBJECTS[stage.type]}
+            disabled={!stage["enabled"]}
+            placeholder={DEFAULT_SUBJECTS[stage["type"]]}
           />
           <div className="text-xs text-muted-foreground space-y-1">
-            <p>Available variables: {TEMPLATE_VARIABLES.join(", ")}</p>
+            <p>Available variables: {TEMPLATE_VARIABLES["join"](", ")}</p>
             <p className="font-medium">Preview:</p>
             <p className="text-xs break-all bg-muted/50 p-2 rounded">
               {getSubjectPreview(stage) || "(empty subject)"}
@@ -306,16 +306,16 @@ export function ReminderSettingsForm() {
         <div className="space-y-1">
           <Label>Email body</Label>
           <Textarea
-            value={stage.bodyTemplate || ""}
+            value={stage["bodyTemplate"] || ""}
             onChange={(e) =>
-              updateStage(stage.id || "", { bodyTemplate: e.target.value })
+              updateStage(stage["id"] || "", { bodyTemplate: e["target"]["value"] })
             }
-            disabled={!stage.enabled}
+            disabled={!stage["enabled"]}
             rows={6}
-            placeholder={DEFAULT_BODIES[stage.type]}
+            placeholder={DEFAULT_BODIES[stage["type"]]}
           />
           <p className="text-xs text-muted-foreground">
-            Use variables: {TEMPLATE_VARIABLES.join(", ")}
+            Use variables: {TEMPLATE_VARIABLES["join"](", ")}
           </p>
         </div>
       </div>
@@ -323,7 +323,7 @@ export function ReminderSettingsForm() {
   };
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+    e["preventDefault"]();
     setError(null);
     setMessage(null);
     setSaving(true);
@@ -331,37 +331,37 @@ export function ReminderSettingsForm() {
       const res = await fetch("/api/settings/reminders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          enabled: config.enabled,
-          frequencyHours: config.frequencyHours,
-          maxReminders: config.maxReminders,
-          remindBeforeDue: config.remindBeforeDue,
-          remindAfterDue: config.remindAfterDue,
-          emailSubject: config.emailSubject,
-          emailTemplate: config.emailTemplate,
-          stages: config.stages,
+        body: JSON["stringify"]({
+          enabled: config["enabled"],
+          frequencyHours: config["frequencyHours"],
+          maxReminders: config["maxReminders"],
+          remindBeforeDue: config["remindBeforeDue"],
+          remindAfterDue: config["remindAfterDue"],
+          emailSubject: config["emailSubject"],
+          emailTemplate: config["emailTemplate"],
+          stages: config["stages"],
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save settings.");
+      if (!res["ok"]) {
+        const data = await res["json"]();
+        throw new Error(data["error"] || "Failed to save settings.");
       }
       setMessage("Settings saved successfully.");
     } catch (err: any) {
-      setError(err.message);
+      setError(err["message"]);
     } finally {
       setSaving(false);
     }
   }
 
   function getTriggerDescription(stage: Stage): string {
-    if (stage.type === "PRE_DUE") {
-      return `${Math.abs(stage.daysOffset)} day(s) before due date`;
+    if (stage["type"] === "PRE_DUE") {
+      return `${Math["abs"](stage["daysOffset"])} day(s) before due date`;
     }
-    if (stage.type === "DUE_DATE") {
+    if (stage["type"] === "DUE_DATE") {
       return "On the due date";
     }
-    return `${stage.daysOffset} day(s) after due date`;
+    return `${stage["daysOffset"]} day(s) after due date`;
   }
 
   if (loading) {
@@ -400,7 +400,7 @@ export function ReminderSettingsForm() {
             </div>
             <Switch
               id="enabled"
-              checked={config.enabled}
+              checked={config["enabled"]}
               onCheckedChange={(v) => setConfig((prev) => ({ ...prev, enabled: v }))}
             />
           </div>
@@ -413,11 +413,11 @@ export function ReminderSettingsForm() {
                 type="number"
                 min="1"
                 max="168"
-                value={String(config.frequencyHours)}
+                value={String(config["frequencyHours"])}
                 onChange={(e) =>
-                  setConfig((prev) => ({ ...prev, frequencyHours: Number(e.target.value) || 24 }))
+                  setConfig((prev) => ({ ...prev, frequencyHours: Number(e["target"]["value"]) || 24 }))
                 }
-                disabled={!config.enabled}
+                disabled={!config["enabled"]}
               />
               <p className="text-xs text-muted-foreground">
                 Minimum hours between reminders for the same invoice.
@@ -430,11 +430,11 @@ export function ReminderSettingsForm() {
                 type="number"
                 min="1"
                 max="20"
-                value={String(config.maxReminders)}
+                value={String(config["maxReminders"])}
                 onChange={(e) =>
-                  setConfig((prev) => ({ ...prev, maxReminders: Number(e.target.value) || 5 }))
+                  setConfig((prev) => ({ ...prev, maxReminders: Number(e["target"]["value"]) || 5 }))
                 }
-                disabled={!config.enabled}
+                disabled={!config["enabled"]}
               />
               <p className="text-xs text-muted-foreground">
                 Maximum total reminders sent per invoice across all stages.
@@ -453,31 +453,31 @@ export function ReminderSettingsForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {config.stages.map((stage) => {
-            const stageInfo = STAGE_LABELS[stage.type];
-            const Icon = stageInfo.icon;
-            const isExpanded = expandedStageId === (stage.id || "");
+          {config["stages"]["map"]((stage) => {
+            const stageInfo = STAGE_LABELS[stage["type"]];
+            const Icon = stageInfo["icon"];
+            const isExpanded = expandedStageId === (stage["id"] || "");
 
             return (
-              <div key={stage.id || `stage-${stage.name}`} className="border rounded-lg">
+              <div key={stage["id"] || `stage-${stage["name"]}`} className="border rounded-lg">
                 <div
                   className="flex items-center justify-between p-4 cursor-pointer"
                   onClick={() =>
-                    setExpandedStageId(isExpanded ? null : stage.id || "")
+                    setExpandedStageId(isExpanded ? null : stage["id"] || "")
                   }
                 >
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline" className={stageInfo.color}>
+                    <Badge variant="outline" className={stageInfo["color"]}>
                       <Icon className="h-3 w-3 mr-1" />
-                      {stageInfo.label}
+                      {stageInfo["label"]}
                     </Badge>
                     <div>
-                      <span className="font-medium">{stage.name}</span>
+                      <span className="font-medium">{stage["name"]}</span>
                       <p className="text-sm text-muted-foreground">
                         {getTriggerDescription(stage)}
                       </p>
                     </div>
-                    {!stage.enabled && (
+                    {!stage["enabled"] && (
                       <Badge variant="secondary" className="ml-2">
                         Disabled
                       </Badge>
@@ -489,8 +489,8 @@ export function ReminderSettingsForm() {
                       variant="ghost"
                       size="sm"
                       onClick={(e) => {
-                        e.stopPropagation();
-                        removeStage(stage.id || "");
+                        e["stopPropagation"]();
+                        removeStage(stage["id"] || "");
                       }}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -519,8 +519,8 @@ export function ReminderSettingsForm() {
                   type: "POST_DUE",
                   enabled: true,
                   daysOffset: 3,
-                  subjectTemplate: DEFAULT_SUBJECTS.POST_DUE,
-                  bodyTemplate: DEFAULT_BODIES.POST_DUE,
+                  subjectTemplate: DEFAULT_SUBJECTS["POST_DUE"],
+                  bodyTemplate: DEFAULT_BODIES["POST_DUE"],
                   channel: "EMAIL",
                 })
               }
@@ -542,7 +542,7 @@ export function ReminderSettingsForm() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {TEMPLATE_VARIABLES.map((v) => (
+            {TEMPLATE_VARIABLES["map"]((v) => (
               <Badge key={v} variant="secondary" className="font-mono">
                 {v}
               </Badge>
@@ -551,7 +551,7 @@ export function ReminderSettingsForm() {
         </CardContent>
       </Card>
 
-      <Button type="submit" disabled={saving || !config.enabled}>
+      <Button type="submit" disabled={saving || !config["enabled"]}>
         {saving ? "Saving…" : "Save all settings"}
       </Button>
     </form>

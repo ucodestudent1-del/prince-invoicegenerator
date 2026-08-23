@@ -67,7 +67,7 @@ export default async function DashboardLayout({
   try {
     ensureEnv();
     user = await requireUser();
-    org = (await getCurrentOrg(user)) ?? (await ensureOrganization(user.id));
+    org = (await getCurrentOrg(user)) ?? (await ensureOrganization(user["id"]));
     plan = await getActivePlan(user);
   } catch (err) {
     logServerError("DashboardLayout", err);
@@ -83,7 +83,7 @@ export default async function DashboardLayout({
   const t = await getTranslations("navigation");
 
   return (
-    <div className={`flex min-h-screen ${org.theme === "dark" ? "dark" : ""}`}>
+    <div className={`flex min-h-screen ${org["theme"] === "dark" ? "dark" : ""}`}>
       <aside className="hidden w-60 flex-col border-r bg-muted/30 p-4 md:flex">
         <Link href="/" className="mb-6 flex items-center gap-2 font-bold">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs">
@@ -92,17 +92,17 @@ export default async function DashboardLayout({
   {APP_NAME}
         </Link>
         <nav className="flex-1 space-y-1">
-          {nav.map((item) => {
-            const locked = item.feature && !hasFeature(plan, item.feature);
+          {nav["map"]((item) => {
+            const locked = item["feature"] && !hasFeature(plan, item["feature"]);
             return (
               <Link
-                key={item.href}
-                href={locked ? "/pricing?upgrade=1" : item.href}
+                key={item["href"]}
+                href={locked ? "/pricing?upgrade=1" : item["href"]}
                 className="flex items-center justify-between rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 <span className="flex items-center gap-2">
                   <item.icon className="h-4 w-4" />
-                  {t(item.label.split(".")[1] as any)}
+                  {t(item["label"]["split"](".")[1] as any)}
                 </span>
                 {locked && <Lock className="h-3.5 w-3.5" />}
               </Link>
@@ -120,8 +120,8 @@ export default async function DashboardLayout({
           </div>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
-            <ThemeToggleForm current={org.theme} />
-            <UserMenu email={user.email} name={user.name} />
+            <ThemeToggleForm current={org["theme"]} />
+            <UserMenu email={user["email"]} name={user["name"]} />
           </div>
         </header>
         <main className="flex-1 p-6">{children}</main>

@@ -25,7 +25,7 @@ type AppUser = DefaultSession["user"] & {
 export async function getCurrentUser(): Promise<AppUser | null> {
   try {
     const session = await getServerSession(authOptions);
-    return session?.user ?? null;
+    return session?.["user"] ?? null;
   } catch (err) {
     logServerError("getCurrentUser (session lookup)", err);
     return null;
@@ -46,43 +46,43 @@ export async function requireUser(): Promise<AppUser> {
 export async function ensureOrganization(userId: string) {
   try {
     const user = await withRetry(() =>
-      db.user.findUnique({
+      db["user"]["findUnique"]({
         where: { id: userId },
         include: { organization: true },
       })
     );
     if (!user) return null;
-    if (user.organizationId && user.organization) return user.organization;
+    if (user["organizationId"] && user["organization"]) return user["organization"];
 
-    const onboarding = await db.onboardingState.findUnique({
+    const onboarding = await db["onboardingState"]["findUnique"]({
       where: { userId },
     });
 
-    if (!onboarding || !onboarding.isComplete) {
+    if (!onboarding || !onboarding["isComplete"]) {
       return null;
     }
 
     const slug = `org-${userId}`;
     try {
-      const org = await db.organization.create({
+      const org = await db["organization"]["create"]({
         data: {
-          name: `${user.name ?? "My"} Contracting`,
+          name: `${user["name"] ?? "My"} Contracting`,
           slug,
           ownerId: userId,
         },
       });
-      await db.user.update({
+      await db["user"]["update"]({
         where: { id: userId },
-        data: { organizationId: org.id },
+        data: { organizationId: org["id"] },
       });
       return org;
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-        const org = await db.organization.findUnique({ where: { slug } });
+      if (err instanceof Prisma["PrismaClientKnownRequestError"] && err["code"] === "P2002") {
+        const org = await db["organization"]["findUnique"]({ where: { slug } });
         if (org) {
-          await db.user.update({
+          await db["user"]["update"]({
             where: { id: userId },
-            data: { organizationId: org.id },
+            data: { organizationId: org["id"] },
           });
           return org;
         }
@@ -94,7 +94,7 @@ export async function ensureOrganization(userId: string) {
     // the user with safe columns and use getCurrentOrg's fallback.
     if (isMissingColumnError(err)) {
       try {
-        const user = await db.user.findUnique({
+        const user = await db["user"]["findUnique"]({
           where: { id: userId },
           select: {
             id: true,
@@ -103,9 +103,9 @@ export async function ensureOrganization(userId: string) {
           },
         });
         if (!user) return null;
-        if (user.organizationId) {
+        if (user["organizationId"]) {
           // Use getCurrentOrg which has the column fallback
-          return getCurrentOrg({ id: user.id } as AppUser);
+          return getCurrentOrg({ id: user["id"] } as AppUser);
         }
         // Can't create a new org — return null
         return null;
@@ -120,11 +120,11 @@ export async function ensureOrganization(userId: string) {
 
 export async function getCurrentOrg(user?: AppUser) {
   const currentUser = user ?? (await getCurrentUser());
-  const orgId = currentUser?.organizationId;
+  const orgId = currentUser?.["organizationId"];
   if (!orgId) return null;
   try {
     return await withRetry(() =>
-      db.organization.findUnique({ where: { id: orgId } })
+      db["organization"]["findUnique"]({ where: { id: orgId } })
     );
   } catch (err) {
     // If the Organization table has new columns from the latest schema
@@ -133,8 +133,8 @@ export async function getCurrentOrg(user?: AppUser) {
     // provide default values for the newer fields.
      if (isMissingColumnError(err)) {
       try {
-        const cookieTheme = cookies().get("theme")?.value;
-        const org = await db.organization.findUnique({
+        const cookieTheme = cookies()["get"]("theme")?.["value"];
+        const org = await db["organization"]["findUnique"]({
           where: { id: orgId },
           select: {
             id: true,
@@ -173,42 +173,42 @@ export async function getCurrentOrg(user?: AppUser) {
 // Detects Prisma errors where a database column is missing (schema drift).
 export function isMissingColumnError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
-  const msg = err.message;
+  const msg = err["message"];
   return (
-    msg.includes("does not exist in the current database") ||
-    msg.includes("column") && msg.includes("does not exist") ||
-    msg.includes("42703") // PostgreSQL undefined_column error code
+    msg["includes"]("does not exist in the current database") ||
+    msg["includes"]("column") && msg["includes"]("does not exist") ||
+    msg["includes"]("42703") // PostgreSQL undefined_column error code
   );
 }
 
 // Detects Prisma errors where an enum value is missing from the database (schema drift).
 export function isInvalidEnumValueError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
-  const msg = err.message;
+  const msg = err["message"];
   return (
-    msg.includes("invalid input value for enum") ||
-    msg.includes("22P02") // PostgreSQL invalid_text_representation error code
+    msg["includes"]("invalid input value for enum") ||
+    msg["includes"]("22P02") // PostgreSQL invalid_text_representation error code
   );
 }
 
 export async function getActivePlan(user?: AppUser): Promise<SubscriptionPlan> {
   const org = await getCurrentOrg(user);
-  return org?.plan ?? "FREE";
+  return org?.["plan"] ?? "FREE";
 }
 
 // Gate a feature behind the active subscription plan. Redirects to /pricing#upgrade.
 export async function requireFeature(feature: FeatureKey) {
   const user = await requireUser();
-  const orgId = user.organizationId;
+  const orgId = user["organizationId"];
   if (!orgId) return;
   try {
     const org = await withRetry(() =>
-      db.organization.findUnique({
+      db["organization"]["findUnique"]({
         where: { id: orgId },
         select: { plan: true },
       })
     );
-    const plan = org?.plan ?? "FREE";
+    const plan = org?.["plan"] ?? "FREE";
     if (!hasFeature(plan, feature)) {
       const locale = await getLocaleSafe();
       redirect({ href: "/pricing?upgrade=1", locale });

@@ -10,12 +10,12 @@ const MAGIC_LINK_EXPIRY_MINUTES = 15;
 
 export async function requestPortalAccess(email: string) {
   return withActionError("requestPortalAccess", async () => {
-    if (!email || email.trim() === "") {
+    if (!email || email["trim"]() === "") {
       actionError("Email address is required.");
     }
 
-    const customer = await db.customer.findFirst({
-      where: { email: email.trim() },
+    const customer = await db["customer"]["findFirst"]({
+      where: { email: email["trim"]() },
       include: { org: { select: { name: true } } },
     });
 
@@ -24,30 +24,30 @@ export async function requestPortalAccess(email: string) {
       return { success: true, message: "If an account exists, a login link has been sent." };
     }
 
-    if (!customer.portalAccess) {
+    if (!customer["portalAccess"]) {
       return { success: true, message: "If an account exists, a login link has been sent." };
     }
 
     // Generate magic link token
-    const token = randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + MAGIC_LINK_EXPIRY_MINUTES * 60 * 1000);
+    const token = randomBytes(32)["toString"]("hex");
+    const expiresAt = new Date(Date["now"]() + MAGIC_LINK_EXPIRY_MINUTES * 60 * 1000);
 
-    await db.portalSession.create({
+    await db["portalSession"]["create"]({
       data: {
-        customerId: customer.id,
+        customerId: customer["id"],
         token,
         expiresAt,
       },
     });
 
     // Build magic link URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://app.princeinvoice.com";
+    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "https://app.princeinvoice.com";
     const magicLink = `${baseUrl}/portal/auth/verify?token=${token}`;
 
     // Send email with magic link
     await sendEmail({
       to: email,
-      subject: `Sign in to ${customer.org?.name || "your account"}`,
+      subject: `Sign in to ${customer["org"]?.["name"] || "your account"}`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Sign in to your account</h2>
@@ -67,22 +67,22 @@ export async function verifyPortalToken(token: string) {
   return withActionError("verifyPortalToken", async () => {
     if (!token) actionError("Invalid token");
 
-    const session = await db.portalSession.findUnique({
+    const session = await db["portalSession"]["findUnique"]({
       where: { token },
       include: { customer: true },
     });
 
     if (!session) actionError("Invalid or expired token");
-    if (session.revokedAt) actionError("Token has been revoked");
-    if (session.expiresAt < new Date()) actionError("Token has expired");
+    if (session["revokedAt"]) actionError("Token has been revoked");
+    if (session["expiresAt"] < new Date()) actionError("Token has expired");
 
     // Create a new long-lived session
-    const newToken = randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000);
+    const newToken = randomBytes(32)["toString"]("hex");
+    const expiresAt = new Date(Date["now"]() + SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000);
 
-    const newSession = await db.portalSession.create({
+    const newSession = await db["portalSession"]["create"]({
       data: {
-        customerId: session.customerId,
+        customerId: session["customerId"],
         token: newToken,
         expiresAt,
         ipAddress: null,
@@ -91,17 +91,17 @@ export async function verifyPortalToken(token: string) {
     });
 
     // Revoke the magic link token
-    await db.portalSession.update({
-      where: { id: session.id },
+    await db["portalSession"]["update"]({
+      where: { id: session["id"] },
       data: { revokedAt: new Date() },
     });
 
     return {
-      token: newSession.token,
+      token: newSession["token"],
       customer: {
-        id: session.customer.id,
-        name: session.customer.name,
-        email: session.customer.email,
+        id: session["customer"]["id"],
+        name: session["customer"]["name"],
+        email: session["customer"]["email"],
       },
     };
   });
@@ -111,18 +111,18 @@ export async function getPortalSession(token: string) {
   return withActionError("getPortalSession", async () => {
     if (!token) return null;
 
-    const session = await db.portalSession.findUnique({
+    const session = await db["portalSession"]["findUnique"]({
       where: { token },
       include: { customer: { include: { org: { select: { name: true, brandColor: true } } } } },
     });
 
     if (!session) return null;
-    if (session.revokedAt) return null;
-    if (session.expiresAt < new Date()) return null;
+    if (session["revokedAt"]) return null;
+    if (session["expiresAt"] < new Date()) return null;
 
     // Update last accessed
-    await db.portalSession.update({
-      where: { id: session.id },
+    await db["portalSession"]["update"]({
+      where: { id: session["id"] },
       data: { lastAccessedAt: new Date() },
     });
 
@@ -132,7 +132,7 @@ export async function getPortalSession(token: string) {
 
 export async function revokePortalSession(token: string) {
   return withActionError("revokePortalSession", async () => {
-    await db.portalSession.updateMany({
+    await db["portalSession"]["updateMany"]({
       where: { token },
       data: { revokedAt: new Date() },
     });
@@ -145,11 +145,11 @@ export async function getPortalDashboard(token: string) {
     const session = await getPortalSession(token);
     if (!session) actionError("Unauthorized");
 
-    const customer = session.customer;
+    const customer = session["customer"];
 
-    const [invoices, payments] = await Promise.all([
-      db.invoice.findMany({
-        where: { customerId: customer.id },
+    const [invoices, payments] = await Promise["all"]([
+      db["invoice"]["findMany"]({
+        where: { customerId: customer["id"] },
         select: {
           id: true,
           number: true,
@@ -162,8 +162,8 @@ export async function getPortalDashboard(token: string) {
         orderBy: { createdAt: "desc" },
         take: 50,
       }),
-      db.payment.findMany({
-        where: { invoice: { customerId: customer.id } },
+      db["payment"]["findMany"]({
+        where: { invoice: { customerId: customer["id"] } },
         select: {
           id: true,
           amount: true,
@@ -179,12 +179,12 @@ export async function getPortalDashboard(token: string) {
 
     return {
       customer: {
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        outstandingBalance: customer.outstandingBalance,
-        totalInvoiced: customer.totalInvoiced,
-        totalPaid: customer.totalPaid,
+        id: customer["id"],
+        name: customer["name"],
+        email: customer["email"],
+        outstandingBalance: customer["outstandingBalance"],
+        totalInvoiced: customer["totalInvoiced"],
+        totalPaid: customer["totalPaid"],
       },
       invoices,
       payments,
@@ -207,24 +207,24 @@ export async function updatePortalProfile(
     if (!session) actionError("Unauthorized");
 
     const updateData: Record<string, any> = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.email !== undefined) updateData.email = data.email;
-    if (data.phone !== undefined) updateData.phone = data.phone;
-    if (data.website !== undefined) updateData.website = data.website;
-    if (data.taxId !== undefined) updateData.taxId = data.taxId;
+    if (data["name"] !== undefined) updateData["name"] = data["name"];
+    if (data["email"] !== undefined) updateData["email"] = data["email"];
+    if (data["phone"] !== undefined) updateData["phone"] = data["phone"];
+    if (data["website"] !== undefined) updateData["website"] = data["website"];
+    if (data["taxId"] !== undefined) updateData["taxId"] = data["taxId"];
 
-    const customer = await db.customer.update({
-      where: { id: session.customer.id },
+    const customer = await db["customer"]["update"]({
+      where: { id: session["customer"]["id"] },
       data: updateData,
     });
 
     return {
-      id: customer.id,
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-      website: customer.website,
-      taxId: customer.taxId,
+      id: customer["id"],
+      name: customer["name"],
+      email: customer["email"],
+      phone: customer["phone"],
+      website: customer["website"],
+      taxId: customer["taxId"],
     };
   });
 }

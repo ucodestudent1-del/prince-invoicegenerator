@@ -13,8 +13,8 @@ export function PricingCheckout({
   planName: string;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [loading, setLoading] = React["useState"](false);
+  const [error, setError] = React["useState"]<string | null>(null);
 
   async function handleCheckout() {
     setLoading(true);
@@ -23,33 +23,33 @@ export function PricingCheckout({
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planId }),
+        body: JSON["stringify"]({ plan: planId }),
       });
       
-      if (res.status === 401 || res.status === 400) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 401) {
-          router.push("/login");
+      if (res["status"] === 401 || res["status"] === 400) {
+        const data = await res["json"]()["catch"](() => ({}));
+        if (res["status"] === 401) {
+          router["push"]("/login");
           return;
         }
-        setError(data.error || "Checkout failed. Please try again.");
+        setError(data["error"] || "Checkout failed. Please try again.");
         return;
       }
       
-      if (res.status === 429) {
+      if (res["status"] === 429) {
         setError("Too many requests. Please wait a moment and try again.");
         return;
       }
       
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || `Checkout failed (${res.status})`);
+      if (!res["ok"]) {
+        const data = await res["json"]()["catch"](() => ({}));
+        setError(data["error"] || `Checkout failed (${res["status"]})`);
         return;
       }
       
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      const data = await res["json"]();
+      if (data["url"]) {
+        window["location"]["href"] = data["url"];
       } else {
         setError("No checkout URL returned. Please try again.");
       }

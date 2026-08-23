@@ -13,13 +13,13 @@ export default async function OnboardingPage() {
   const state = await getOnboardingState();
   const t = await getTranslations("onboarding");
 
-  if (!state.shouldOnboard) {
+  if (!state["shouldOnboard"]) {
     redirect({ href: "/dashboard", locale: await getLocaleSafe() });
   }
 
   const headersList = await headers();
-  const forwardedFor = headersList.get("x-forwarded-for");
-  const ipAddress = forwardedFor?.split(",")[0]?.trim() || null;
+  const forwardedFor = headersList["get"]("x-forwarded-for");
+  const ipAddress = forwardedFor?.["split"](",")[0]?.["trim"]() || null;
 
   const autoDetected = getAutoDetectedSettings(ipAddress || undefined);
 
@@ -27,10 +27,10 @@ export default async function OnboardingPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <OnboardingForm
         initialData={{
-          identity: state.identityData as any,
-          contact: state.contactData as any,
-          compliance: state.complianceData as any,
-          currentStep: state.currentStep as any,
+          identity: state["identityData"] as any,
+          contact: state["contactData"] as any,
+          compliance: state["complianceData"] as any,
+          currentStep: state["currentStep"] as any,
           autoDetected,
         }}
       />

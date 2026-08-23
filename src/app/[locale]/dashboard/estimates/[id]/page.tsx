@@ -35,14 +35,14 @@ export default async function EstimateDetailPage({
   params: { id: string; locale: string };
 }) {
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
+  if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("estimates");
-  const orgId = user.organizationId;
+  const orgId = user["organizationId"];
 
   let estimate: any;
   try {
-    estimate = await db.estimate.findFirst({
-      where: { id: params.id, orgId },
+    estimate = await db["estimate"]["findFirst"]({
+      where: { id: params["id"], orgId },
       include: {
         customer: true,
         project: true,
@@ -52,8 +52,8 @@ export default async function EstimateDetailPage({
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      estimate = await db.estimate.findFirst({
-        where: { id: params.id, orgId },
+      estimate = await db["estimate"]["findFirst"]({
+        where: { id: params["id"], orgId },
         select: {
           id: true,
           number: true,
@@ -90,23 +90,23 @@ export default async function EstimateDetailPage({
   }
 
   if (!estimate) {
-    redirect({ href: "/dashboard/estimates", locale: params.locale });
+    redirect({ href: "/dashboard/estimates", locale: params["locale"] });
     throw new Error("Unreachable: redirect should have exited");
   }
 
   const isExpired =
-    estimate.validUntil && new Date(estimate.validUntil) < new Date() &&
-    ["SENT", "VIEWED"].includes(estimate.status);
+    estimate["validUntil"] && new Date(estimate["validUntil"]) < new Date() &&
+    ["SENT", "VIEWED"]["includes"](estimate["status"]);
 
-  const canSend = estimate.status === "DRAFT";
+  const canSend = estimate["status"] === "DRAFT";
   const canConvertToInvoice =
-    estimate.status === "ACCEPTED" && !isExpired && !estimate.linkedInvoice;
-  const alreadyConverted = estimate.status === "INVOICED" && estimate.linkedInvoice;
+    estimate["status"] === "ACCEPTED" && !isExpired && !estimate["linkedInvoice"];
+  const alreadyConverted = estimate["status"] === "INVOICED" && estimate["linkedInvoice"];
 
-  const shareUrl = estimate.shareToken
-    ? `${process.env.NEXT_PUBLIC_BASE_URL || "https://app.example.com"}${
-      params.locale ? `/${params.locale}` : ""
-    }/estimate/${estimate.number}?token=${estimate.shareToken}`
+  const shareUrl = estimate["shareToken"]
+    ? `${process["env"]["NEXT_PUBLIC_BASE_URL"] || "https://app.example.com"}${
+      params["locale"] ? `/${params["locale"]}` : ""
+    }/estimate/${estimate["number"]}?token=${estimate["shareToken"]}`
     : null;
 
   return (
@@ -132,7 +132,7 @@ export default async function EstimateDetailPage({
             <form
               action={async () => {
                 "use server";
-                await sendEstimate(estimate.id, {});
+                await sendEstimate(estimate["id"], {});
               }}
             >
               <Button type="submit" size="sm">
@@ -144,7 +144,7 @@ export default async function EstimateDetailPage({
             <form
               action={async () => {
                 "use server";
-                await convertEstimateToInvoice(estimate.id, {});
+                await convertEstimateToInvoice(estimate["id"], {});
               }}
             >
               <Button type="submit" size="sm">
@@ -163,22 +163,22 @@ export default async function EstimateDetailPage({
                 <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
                   {t("estimateLabel")}
                 </span>
-                <h1 className="text-2xl font-bold mt-1">{estimate.number}</h1>
+                <h1 className="text-2xl font-bold mt-1">{estimate["number"]}</h1>
                 <p className="text-sm text-muted-foreground">
-                  {t("issued", { date: formatDate(estimate.issueDate) })}
+                  {t("issued", { date: formatDate(estimate["issueDate"]) })}
                   {" · "}
-                  {t("validUntil", { date: formatDate(estimate.validUntil) })}
+                  {t("validUntil", { date: formatDate(estimate["validUntil"]) })}
                 </p>
               </div>
             </div>
-            <Badge variant={estimateStatusVariant[estimate.status] ?? "secondary"}>
-              {estimate.status}
+            <Badge variant={estimateStatusVariant[estimate["status"]] ?? "secondary"}>
+              {estimate["status"]}
             </Badge>
           </div>
 
           {isExpired && (
             <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-              This estimate expired on {formatDate(estimate.validUntil)}.
+              This estimate expired on {formatDate(estimate["validUntil"])}.
             </div>
           )}
 
@@ -186,10 +186,10 @@ export default async function EstimateDetailPage({
             <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
               This estimate was converted to invoice{" "}
               <Link
-                href={`/dashboard/invoices/${estimate.linkedInvoice.id}`}
+                href={`/dashboard/invoices/${estimate["linkedInvoice"]["id"]}`}
                 className="font-medium underline"
               >
-                {estimate.linkedInvoice.number}
+                {estimate["linkedInvoice"]["number"]}
               </Link>
               .
             </div>
@@ -201,17 +201,17 @@ export default async function EstimateDetailPage({
                 {t("customer")}
               </p>
               <p className="font-medium">
-                {estimate.customer?.name || estimate.customer?.company || "—"}
+                {estimate["customer"]?.["name"] || estimate["customer"]?.["company"] || "—"}
               </p>
-              {estimate.customer?.email && <p className="text-muted-foreground">{estimate.customer.email}</p>}
-              {estimate.customer?.address && <p className="text-muted-foreground">{estimate.customer.address}</p>}
+              {estimate["customer"]?.["email"] && <p className="text-muted-foreground">{estimate["customer"]["email"]}</p>}
+              {estimate["customer"]?.["address"] && <p className="text-muted-foreground">{estimate["customer"]["address"]}</p>}
             </div>
-            {estimate.project && (
+            {estimate["project"] && (
               <div>
                 <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
                   {t("project")}
                 </p>
-                <p>{estimate.project.name}</p>
+                <p>{estimate["project"]["name"]}</p>
               </div>
             )}
           </div>
@@ -221,24 +221,24 @@ export default async function EstimateDetailPage({
               <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
                 {t("status")}
               </p>
-              <Badge variant={estimateStatusVariant[estimate.status] ?? "secondary"}>
-                {estimate.status}
+              <Badge variant={estimateStatusVariant[estimate["status"]] ?? "secondary"}>
+                {estimate["status"]}
               </Badge>
             </div>
-            {estimate.viewedAt && (
+            {estimate["viewedAt"] && (
               <div>
                 <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
                   Viewed
                 </p>
-                <p className="text-muted-foreground">{formatDate(estimate.viewedAt)}</p>
+                <p className="text-muted-foreground">{formatDate(estimate["viewedAt"])}</p>
               </div>
             )}
-            {estimate.acceptedAt && (
+            {estimate["acceptedAt"] && (
               <div>
                 <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
                   Accepted
                 </p>
-                <p className="text-muted-foreground">{formatDate(estimate.acceptedAt)}</p>
+                <p className="text-muted-foreground">{formatDate(estimate["acceptedAt"])}</p>
               </div>
             )}
           </div>
@@ -254,13 +254,13 @@ export default async function EstimateDetailPage({
               </tr>
             </thead>
             <tbody>
-              {estimate.items.map((item: any, idx: number) => (
-                <tr key={item.id} className="border-b">
+              {estimate["items"]["map"]((item: any, idx: number) => (
+                <tr key={item["id"]} className="border-b">
                   <td className="py-2 text-gray-400">{idx + 1}</td>
-                  <td className="py-2">{item.description}</td>
-                  <td className="py-2 text-right">{item.quantity}</td>
-                  <td className="py-2 text-right">{formatCurrency(item.unitPrice, estimate.currency)}</td>
-                  <td className="py-2 text-right font-medium">{formatCurrency(item.amount, estimate.currency)}</td>
+                  <td className="py-2">{item["description"]}</td>
+                  <td className="py-2 text-right">{item["quantity"]}</td>
+                  <td className="py-2 text-right">{formatCurrency(item["unitPrice"], estimate["currency"])}</td>
+                  <td className="py-2 text-right font-medium">{formatCurrency(item["amount"], estimate["currency"])}</td>
                 </tr>
               ))}
             </tbody>
@@ -270,36 +270,36 @@ export default async function EstimateDetailPage({
             <div className="w-72 space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("subtotal")}</span>
-                <span>{formatCurrency(estimate.subtotal, estimate.currency)}</span>
+                <span>{formatCurrency(estimate["subtotal"], estimate["currency"])}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("tax")}</span>
-                <span>{formatCurrency(estimate.taxAmount, estimate.currency)}</span>
+                <span>{formatCurrency(estimate["taxAmount"], estimate["currency"])}</span>
               </div>
-              {estimate.discount > 0 && (
+              {estimate["discount"] > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("discount")}</span>
-                  <span>-{formatCurrency(estimate.discount, estimate.currency)}</span>
+                  <span>-{formatCurrency(estimate["discount"], estimate["currency"])}</span>
                 </div>
               )}
               <div className="flex justify-between border-t pt-1 text-base font-bold">
                 <span>{t("total")}</span>
-                <span>{formatCurrency(estimate.total, estimate.currency)}</span>
+                <span>{formatCurrency(estimate["total"], estimate["currency"])}</span>
               </div>
             </div>
           </div>
 
-          {estimate.notes && (
+          {estimate["notes"] && (
             <div className="text-sm text-muted-foreground">
               <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("notes")}</p>
-              <p className="whitespace-pre-line">{estimate.notes}</p>
+              <p className="whitespace-pre-line">{estimate["notes"]}</p>
             </div>
           )}
 
-          {estimate.rejectionReason && (
+          {estimate["rejectionReason"] && (
             <div className="text-sm">
               <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">Rejection feedback</p>
-              <p className="text-red-700">{estimate.rejectionReason}</p>
+              <p className="text-red-700">{estimate["rejectionReason"]}</p>
             </div>
           )}
         </CardContent>
@@ -316,7 +316,7 @@ export default async function EstimateDetailPage({
               <form
                 action={async () => {
                   "use server";
-                  await sendEstimate(estimate.id, {});
+                  await sendEstimate(estimate["id"], {});
                 }}
               >
                 <Button type="submit" className="w-full">
@@ -328,7 +328,7 @@ export default async function EstimateDetailPage({
               <form
                 action={async () => {
                   "use server";
-                  await convertEstimateToInvoice(estimate.id, {});
+                  await convertEstimateToInvoice(estimate["id"], {});
                 }}
               >
                 <Button type="submit" variant="outline" className="w-full">
@@ -349,7 +349,7 @@ export default async function EstimateDetailPage({
           </CardContent>
         </Card>
 
-        <EstimateAuditLog estimateId={estimate.id} />
+        <EstimateAuditLog estimateId={estimate["id"]} />
       </div>
     </div>
   );

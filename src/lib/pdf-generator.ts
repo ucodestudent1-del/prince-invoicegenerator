@@ -40,7 +40,7 @@ export async function generateInvoicePdf(
     );
   }
 
-  const browser = await puppeteer.launch({
+  const browser = await puppeteer["launch"]({
     headless: true,
     args: [
       "--no-sandbox",
@@ -52,18 +52,18 @@ export async function generateInvoicePdf(
   });
 
   try {
-    const page = await browser.newPage();
+    const page = await browser["newPage"]();
 
     // Set content and wait for rendering to complete
-    await page.setContent(fullHtml, {
+    await page["setContent"](fullHtml, {
       waitUntil: ["networkidle0", "domcontentloaded"],
       timeout: 30000,
     });
 
     // Generate PDF with print-optimized settings
-    const pdfBuffer = await page.pdf({
-      width: paper.width,
-      height: paper.height,
+    const pdfBuffer = await page["pdf"]({
+      width: paper["width"],
+      height: paper["height"],
       printBackground: true,
       preferCSSPageSize: true,
       margin: { top: "0", right: "0", bottom: "0", left: "0" },
@@ -71,9 +71,9 @@ export async function generateInvoicePdf(
       displayHeaderFooter: false,
     });
 
-    return Buffer.from(pdfBuffer);
+    return Buffer["from"](pdfBuffer);
   } finally {
-    await browser.close();
+    await browser["close"]();
   }
 }
 
@@ -93,8 +93,8 @@ function wrapHtmlForPdf(bodyHtml: string, paper: { width: string; height: string
     }
 
     html, body {
-      width: ${paper.width};
-      height: ${paper.height};
+      width: ${paper["width"]};
+      height: ${paper["height"]};
       margin: 0;
       padding: 0;
       background: white;
@@ -108,7 +108,7 @@ function wrapHtmlForPdf(bodyHtml: string, paper: { width: string; height: string
 
     /* Page setup */
     @page {
-      size: ${paper.width} ${paper.height};
+      size: ${paper["width"]} ${paper["height"]};
       margin: 0;
     }
 

@@ -16,19 +16,19 @@ export async function GET(
 ) {
   try {
     const user = await requireUser();
-    if (!user?.organizationId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user?.["organizationId"]) {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const paperSize = (searchParams.get("paperSize") as "A4" | "Letter" | "Legal") || "A4";
+    const { searchParams } = new URL(req["url"]);
+    const paperSize = (searchParams["get"]("paperSize") as "A4" | "Letter" | "Legal") || "A4";
 
-    const invoice = await getInvoiceData(params.id, user.organizationId);
+    const invoice = await getInvoiceData(params["id"], user["organizationId"]);
     if (!invoice) {
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+      return NextResponse["json"]({ error: "Invoice not found" }, { status: 404 });
     }
 
-    const org = await getOrgData(user.organizationId);
+    const org = await getOrgData(user["organizationId"]);
 
     const pdfBuffer = await generateInvoicePdf(invoice, org, { paperSize });
 
@@ -36,15 +36,15 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="invoice-${invoice.number}.pdf"`,
-        "Content-Length": pdfBuffer.length.toString(),
+        "Content-Disposition": `attachment; filename="invoice-${invoice["number"]}.pdf"`,
+        "Content-Length": pdfBuffer["length"]["toString"](),
         "Cache-Control": "private, no-cache, no-store",
       },
     });
   } catch (err: any) {
     logError("GET /api/invoices/[id]/pdf", err);
-    return NextResponse.json(
-      { error: err.message || "Failed to generate PDF" },
+    return NextResponse["json"](
+      { error: err["message"] || "Failed to generate PDF" },
       { status: 500 }
     );
   }
@@ -57,36 +57,36 @@ export async function POST(
 ) {
   try {
     const user = await requireUser();
-    if (!user?.organizationId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user?.["organizationId"]) {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const paperSize = (body.paperSize as "A4" | "Letter" | "Legal") || "A4";
+    const body = await req["json"]();
+    const paperSize = (body["paperSize"] as "A4" | "Letter" | "Legal") || "A4";
 
-    const invoice = await getInvoiceData(params.id, user.organizationId);
+    const invoice = await getInvoiceData(params["id"], user["organizationId"]);
     if (!invoice) {
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+      return NextResponse["json"]({ error: "Invoice not found" }, { status: 404 });
     }
 
-    const org = await getOrgData(user.organizationId);
+    const org = await getOrgData(user["organizationId"]);
 
     const pdfBuffer = await generateInvoicePdf(invoice, org, { paperSize });
 
     // Upload to R2 for persistent storage
     let r2Url: string | undefined;
     try {
-      const uploadResult = await uploadPdfToR2(pdfBuffer, invoice.number);
-      r2Url = uploadResult.url;
+      const uploadResult = await uploadPdfToR2(pdfBuffer, invoice["number"]);
+      r2Url = uploadResult["url"];
 
       // Save PDF record to database
-      await db.invoicePdf.create({
+      await db["invoicePdf"]["create"]({
         data: {
-          orgId: user.organizationId,
-          invoiceId: invoice.id,
-          url: uploadResult.url,
+          orgId: user["organizationId"],
+          invoiceId: invoice["id"],
+          url: uploadResult["url"],
           paperSize,
-          fileSize: uploadResult.size,
+          fileSize: uploadResult["size"],
         },
       });
     } catch (uploadErr) {
@@ -94,16 +94,16 @@ export async function POST(
       logError("POST /api/invoices/[id]/pdf (R2 upload)", uploadErr);
     }
 
-    return NextResponse.json({
+    return NextResponse["json"]({
       success: true,
       url: r2Url,
-      size: pdfBuffer.length,
+      size: pdfBuffer["length"],
       paperSize,
     });
   } catch (err: any) {
     logError("POST /api/invoices/[id]/pdf", err);
-    return NextResponse.json(
-      { error: err.message || "Failed to generate PDF" },
+    return NextResponse["json"](
+      { error: err["message"] || "Failed to generate PDF" },
       { status: 500 }
     );
   }
@@ -111,7 +111,7 @@ export async function POST(
 
 async function getInvoiceData(invoiceId: string, orgId: string) {
   try {
-    return await db.invoice.findFirst({
+    return await db["invoice"]["findFirst"]({
       where: { id: invoiceId, orgId },
       include: {
         customer: true,
@@ -122,7 +122,7 @@ async function getInvoiceData(invoiceId: string, orgId: string) {
   } catch (err) {
     if (isMissingColumnError(err)) {
       // Fallback for schema drift
-      return await db.invoice.findFirst({
+      return await db["invoice"]["findFirst"]({
         where: { id: invoiceId, orgId },
         include: {
           customer: true,
@@ -136,7 +136,7 @@ async function getInvoiceData(invoiceId: string, orgId: string) {
 }
 
 async function getOrgData(orgId: string) {
-  return await db.organization.findUnique({
+  return await db["organization"]["findUnique"]({
     where: { id: orgId },
     select: {
       id: true,

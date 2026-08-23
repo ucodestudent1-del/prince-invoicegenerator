@@ -6,18 +6,18 @@ import { NextRequest, NextResponse } from "next/server";
 // Ensure host header is trusted in production behind a proxy (Railway, Vercel, etc.)
 // In NextAuth v4, NEXTAUTH_URL controls proxy trust. AUTH_TRUST_HOST is used as
 // a secondary signal to suppress the warning.
-const trustProxy = process.env.AUTH_TRUST_HOST === "true";
+const trustProxy = process["env"]["AUTH_TRUST_HOST"] === "true";
 
 // Fallback: derive NEXTAUTH_URL from the request host if not explicitly set.
 // This is critical for Railway/Vercel where the app URL isn't known at build time.
 function ensureAuthUrl(request: NextRequest) {
-  if (!process.env.NEXTAUTH_URL) {
-    const host = request.headers.get("host");
+  if (!process["env"]["NEXTAUTH_URL"]) {
+    const host = request["headers"]["get"]("host");
     if (host) {
-      const proto = request.headers.get("x-forwarded-proto") || "https";
-      process.env.NEXTAUTH_URL = `${proto}://${host}`;
-      if (process.env.NODE_ENV === "production") {
-        console.warn(`[auth] NEXTAUTH_URL was not set; derived from request: ${process.env.NEXTAUTH_URL}`);
+      const proto = request["headers"]["get"]("x-forwarded-proto") || "https";
+      process["env"]["NEXTAUTH_URL"] = `${proto}://${host}`;
+      if (process["env"]["NODE_ENV"] === "production") {
+        console["warn"](`[auth] NEXTAUTH_URL was not set; derived from request: ${process["env"]["NEXTAUTH_URL"]}`);
       }
     }
   }
@@ -35,12 +35,12 @@ function getHandler() {
 function preflightCheck(request: NextRequest): NextResponse | null {
   ensureAuthUrl(request);
 
-  if (process.env.NODE_ENV === "production") {
-    if (!process.env.NEXTAUTH_SECRET) {
-      console.error(
+  if (process["env"]["NODE_ENV"] === "production") {
+    if (!process["env"]["NEXTAUTH_SECRET"]) {
+      console["error"](
         "[auth] NEXTAUTH_SECRET is not set — NextAuth cannot initialize in production."
       );
-      return NextResponse.json(
+      return NextResponse["json"](
         {
           error:
             "Server is misconfigured: NEXTAUTH_SECRET is required in production. " +
@@ -49,11 +49,11 @@ function preflightCheck(request: NextRequest): NextResponse | null {
         { status: 500 }
       );
     }
-    if (!process.env.NEXTAUTH_URL) {
-      console.error(
+    if (!process["env"]["NEXTAUTH_URL"]) {
+      console["error"](
         "[auth] NEXTAUTH_URL is not set — callback URLs will be incorrect."
       );
-      return NextResponse.json(
+      return NextResponse["json"](
         {
           error:
             "Server is misconfigured: NEXTAUTH_URL is required in production. " +
@@ -63,7 +63,7 @@ function preflightCheck(request: NextRequest): NextResponse | null {
       );
     }
     if (!trustProxy) {
-      console.warn(
+      console["warn"](
         "[auth] AUTH_TRUST_HOST is not set to 'true' in production. " +
         "Behind a proxy, this may cause incorrect callback URLs and session cookie domain issues."
       );
@@ -84,15 +84,15 @@ export async function GET(
 
   try {
     const limit = rateLimit(request);
-    if (!limit.ok) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    if (!limit["ok"]) {
+      return NextResponse["json"]({ error: "Too many requests" }, { status: 429 });
     }
-    const params = await context.params;
+    const params = await context["params"];
     const authHandler = getHandler();
     return authHandler(request, { params });
   } catch (err) {
-    console.error("Auth GET error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console["error"]("Auth GET error:", err);
+    return NextResponse["json"]({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -105,15 +105,15 @@ export async function POST(
 
   try {
     const limit = rateLimit(request);
-    if (!limit.ok) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    if (!limit["ok"]) {
+      return NextResponse["json"]({ error: "Too many requests" }, { status: 429 });
     }
-    const params = await context.params;
+    const params = await context["params"];
     const authHandler = getHandler();
     return authHandler(request, { params });
   } catch (err) {
-    console.error("Auth POST error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console["error"]("Auth POST error:", err);
+    return NextResponse["json"]({ error: "Internal server error" }, { status: 500 });
   }
 }
 

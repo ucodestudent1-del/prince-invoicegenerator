@@ -44,7 +44,7 @@ async function logEstimateAudit(
   userId?: string | null
 ) {
   try {
-    await db.estimateAudit.create({
+    await db["estimateAudit"]["create"]({
       data: {
         orgId,
         estimateId,
@@ -66,10 +66,10 @@ async function logEstimateAudit(
 export async function sendEstimate(estimateId: string, input: SendEstimateInput) {
   return withActionError("sendEstimate", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
-    const orgId = user.organizationId;
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
 
-    const estimate = await db.estimate.findFirst({
+    const estimate = await db["estimate"]["findFirst"]({
       where: { id: estimateId, orgId },
       include: {
         customer: true,
@@ -78,13 +78,13 @@ export async function sendEstimate(estimateId: string, input: SendEstimateInput)
       },
     });
     if (!estimate) actionError("Estimate not found");
-    if (estimate.status !== "DRAFT") actionError("Only draft estimates can be sent");
+    if (estimate["status"] !== "DRAFT") actionError("Only draft estimates can be sent");
 
     const shareToken = randomUUID();
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://app.example.com";
-    const shareUrl = `${baseUrl}/estimate/${estimate.number}?token=${shareToken}`;
+    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "https://app.example.com";
+    const shareUrl = `${baseUrl}/estimate/${estimate["number"]}?token=${shareToken}`;
 
-    await db.estimate.update({
+    await db["estimate"]["update"]({
       where: { id: estimateId },
       data: {
         status: "SENT" as EstimateStatus,
@@ -99,15 +99,15 @@ export async function sendEstimate(estimateId: string, input: SendEstimateInput)
       "SENT",
       "DRAFT",
       "SENT",
-      input.message,
-      user.id
+      input["message"],
+      user["id"]
     );
 
-    const customerEmail = estimate.customer.email;
+    const customerEmail = estimate["customer"]["email"];
     if (customerEmail) {
       const subject =
-        input.subjectOverride ||
-        `Estimate ${estimate.number} from your contractor — Total: ${formatCurrency(estimate.total, estimate.currency)}`;
+        input["subjectOverride"] ||
+        `Estimate ${estimate["number"]} from your contractor — Total: ${formatCurrency(estimate["total"], estimate["currency"])}`;
 
       const shareUrlWithTracking = `${shareUrl}`;
 
@@ -115,32 +115,32 @@ export async function sendEstimate(estimateId: string, input: SendEstimateInput)
         <html>
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-              <h1 style="color: #1e40af; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px;">Estimate ${estimate.number}</h1>
-        <p>Hello ${estimate.customer.name || estimate.customer.company || "there"},</p>
-        <p>${input.message || `Please review and approve estimate ${estimate.number} below.`}</p>
+              <h1 style="color: #1e40af; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px;">Estimate ${estimate["number"]}</h1>
+        <p>Hello ${estimate["customer"]["name"] || estimate["customer"]["company"] || "there"},</p>
+        <p>${input["message"] || `Please review and approve estimate ${estimate["number"]} below.`}</p>
               <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; text-align: center; margin: 24px 0;">
-                <p style="font-size: 16px; color: #6b7280; margin-bottom: 12px;">Total amount: <strong style="color: #111827; font-size: 20px;">${formatCurrency(estimate.total, estimate.currency)}</strong></p>
-                <p style="font-size: 14px; color: #9ca3af; margin-bottom: 20px;">Valid until: ${formatDate(estimate.validUntil)}</p>
+                <p style="font-size: 16px; color: #6b7280; margin-bottom: 12px;">Total amount: <strong style="color: #111827; font-size: 20px;">${formatCurrency(estimate["total"], estimate["currency"])}</strong></p>
+                <p style="font-size: 14px; color: #9ca3af; margin-bottom: 20px;">Valid until: ${formatDate(estimate["validUntil"])}</p>
                 <a href="${shareUrlWithTracking}" style="display: inline-block; background: #10b981; color: white; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 16px;">View & Approve Estimate</a>
               </div>
-              <p style="font-size: 14px; color: #9ca3af;">This estimate is valid until ${formatDate(estimate.validUntil)}. You can securely view, accept, or reject this estimate using the link above.</p>
-              <p style="font-size: 14px; color: #9ca3af;">${process.env.NEXT_PUBLIC_COMPANY_NAME || "Your contractor"}</p>
+              <p style="font-size: 14px; color: #9ca3af;">This estimate is valid until ${formatDate(estimate["validUntil"])}. You can securely view, accept, or reject this estimate using the link above.</p>
+              <p style="font-size: 14px; color: #9ca3af;">${process["env"]["NEXT_PUBLIC_COMPANY_NAME"] || "Your contractor"}</p>
             </div>
           </body>
         </html>
       `;
 
-      const ccList = input.ccEmails?.filter(Boolean) || [];
+      const ccList = input["ccEmails"]?.["filter"](Boolean) || [];
 
       await sendEmail({
         to: customerEmail,
-        cc: ccList.length > 0 ? ccList : undefined,
+        cc: ccList["length"] > 0 ? ccList : undefined,
         subject,
         html: htmlBody,
-        text: `Estimate ${estimate.number} — Total: ${formatCurrency(estimate.total, estimate.currency)}. View & approve: ${shareUrlWithTracking}`,
+        text: `Estimate ${estimate["number"]} — Total: ${formatCurrency(estimate["total"], estimate["currency"])}. View & approve: ${shareUrlWithTracking}`,
         metadata: {
-          estimateId: estimate.id,
-          estimateNumber: estimate.number,
+          estimateId: estimate["id"],
+          estimateNumber: estimate["number"],
           orgId,
           status: "SENT",
         },
@@ -153,7 +153,7 @@ export async function sendEstimate(estimateId: string, input: SendEstimateInput)
         "SENT",
         "SENT",
         `Email sent to ${customerEmail}`,
-        user.id
+        user["id"]
       );
     }
 
@@ -165,56 +165,56 @@ export async function sendEstimate(estimateId: string, input: SendEstimateInput)
 
 export async function recordEstimateView(token: string) {
   return withActionError("recordEstimateView", async () => {
-    const estimate = await db.estimate.findFirst({
+    const estimate = await db["estimate"]["findFirst"]({
       where: { shareToken: token },
       include: { customer: true },
     });
     if (!estimate) actionError("Estimate not found");
-    if (!["SENT", "VIEWED"].includes(estimate.status)) {
-      return { alreadyActioned: true, status: estimate.status };
+    if (!["SENT", "VIEWED"]["includes"](estimate["status"])) {
+      return { alreadyActioned: true, status: estimate["status"] };
     }
 
     const data: Record<string, any> = {};
-    if (estimate.viewedAt === null) {
-      data.viewedAt = new Date();
+    if (estimate["viewedAt"] === null) {
+      data["viewedAt"] = new Date();
     }
-    if (estimate.status === "SENT") {
-      data.status = "VIEWED";
+    if (estimate["status"] === "SENT") {
+      data["status"] = "VIEWED";
     }
 
-    await db.estimate.update({
-      where: { id: estimate.id },
+    await db["estimate"]["update"]({
+      where: { id: estimate["id"] },
       data,
     });
 
     await logEstimateAudit(
-      estimate.id,
-      estimate.orgId,
+      estimate["id"],
+      estimate["orgId"],
       "VIEWED",
-      estimate.status === "SENT" ? "VIEWED" : "VIEWED",
-      estimate.status === "SENT" ? "VIEWED" : "VIEWED"
+      estimate["status"] === "SENT" ? "VIEWED" : "VIEWED",
+      estimate["status"] === "SENT" ? "VIEWED" : "VIEWED"
     );
 
-    return { estimateId: estimate.id, status: estimate.status === "SENT" ? "VIEWED" : estimate.status };
+    return { estimateId: estimate["id"], status: estimate["status"] === "SENT" ? "VIEWED" : estimate["status"] };
   });
 }
 
 export async function acceptEstimate(token: string, comment?: string) {
   return withActionError("acceptEstimate", async () => {
-    const estimate = await db.estimate.findFirst({
+    const estimate = await db["estimate"]["findFirst"]({
       where: { shareToken: token },
     });
     if (!estimate) actionError("Estimate not found");
-    if (estimate.validUntil && estimate.validUntil < new Date()) {
+    if (estimate["validUntil"] && estimate["validUntil"] < new Date()) {
       actionError("This estimate has expired");
     }
     const allowedStatuses = ["SENT", "VIEWED"];
-    if (!allowedStatuses.includes(estimate.status)) {
+    if (!allowedStatuses["includes"](estimate["status"])) {
       actionError("This estimate cannot be accepted in its current state");
     }
 
-    const updated = await db.estimate.update({
-      where: { id: estimate.id },
+    const updated = await db["estimate"]["update"]({
+      where: { id: estimate["id"] },
       data: {
         status: "ACCEPTED" as EstimateStatus,
         acceptedAt: new Date(),
@@ -222,33 +222,33 @@ export async function acceptEstimate(token: string, comment?: string) {
     });
 
     await logEstimateAudit(
-      estimate.id,
-      estimate.orgId,
+      estimate["id"],
+      estimate["orgId"],
       "ACCEPTED",
-      estimate.status,
+      estimate["status"],
       "ACCEPTED",
       comment
     );
 
     await revalidateWithLocale(`/dashboard/estimates`);
-    await revalidateWithLocale(`/dashboard/estimates/${estimate.id}`);
+    await revalidateWithLocale(`/dashboard/estimates/${estimate["id"]}`);
 
-    return { estimateId: estimate.id, status: "ACCEPTED", acceptedAt: updated.acceptedAt };
+    return { estimateId: estimate["id"], status: "ACCEPTED", acceptedAt: updated["acceptedAt"] };
   });
 }
 
 export async function rejectEstimate(token: string, reason?: string, comment?: string) {
   return withActionError("rejectEstimate", async () => {
-    const estimate = await db.estimate.findFirst({
+    const estimate = await db["estimate"]["findFirst"]({
       where: { shareToken: token },
     });
     if (!estimate) actionError("Estimate not found");
-    if (!["SENT", "VIEWED"].includes(estimate.status)) {
+    if (!["SENT", "VIEWED"]["includes"](estimate["status"])) {
       actionError("This estimate cannot be rejected in its current state");
     }
 
-    const updated = await db.estimate.update({
-      where: { id: estimate.id },
+    const updated = await db["estimate"]["update"]({
+      where: { id: estimate["id"] },
       data: {
         status: "REJECTED" as EstimateStatus,
         rejectedAt: new Date(),
@@ -257,28 +257,28 @@ export async function rejectEstimate(token: string, reason?: string, comment?: s
     });
 
     await logEstimateAudit(
-      estimate.id,
-      estimate.orgId,
+      estimate["id"],
+      estimate["orgId"],
       "REJECTED",
-      estimate.status,
+      estimate["status"],
       "REJECTED",
       reason || comment
     );
 
     await revalidateWithLocale(`/dashboard/estimates`);
-    await revalidateWithLocale(`/dashboard/estimates/${estimate.id}`);
+    await revalidateWithLocale(`/dashboard/estimates/${estimate["id"]}`);
 
-    return { estimateId: estimate.id, status: "REJECTED", rejectedAt: updated.rejectedAt };
+    return { estimateId: estimate["id"], status: "REJECTED", rejectedAt: updated["rejectedAt"] };
   });
 }
 
 export async function convertEstimateToInvoice(estimateId: string, input: ConvertEstimateInput) {
   return withActionError("convertEstimateToInvoice", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
-    const orgId = user.organizationId;
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
 
-    const estimate = await db.estimate.findFirst({
+    const estimate = await db["estimate"]["findFirst"]({
       where: { id: estimateId, orgId },
       include: {
         items: true,
@@ -288,62 +288,62 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
       },
     });
     if (!estimate) actionError("Estimate not found");
-    if (estimate.status !== "ACCEPTED") {
+    if (estimate["status"] !== "ACCEPTED") {
       actionError("Only accepted estimates can be converted to invoices");
     }
-    if (estimate.validUntil && estimate.validUntil < new Date()) {
+    if (estimate["validUntil"] && estimate["validUntil"] < new Date()) {
       actionError("This estimate has expired. Duplicate it to create a new one.");
     }
-    if (estimate.linkedInvoice) {
-      actionError(`This estimate was already converted to invoice ${estimate.linkedInvoice.number}.`);
+    if (estimate["linkedInvoice"]) {
+      actionError(`This estimate was already converted to invoice ${estimate["linkedInvoice"]["number"]}.`);
     }
 
-    let number = input.invoiceNumber;
+    let number = input["invoiceNumber"];
     if (!number) {
       number = await getNextInvoiceNumber(db, orgId);
     }
 
     const now = new Date();
-    const dueDate = input.dueDate
-      ? new Date(input.dueDate)
-      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const dueDate = input["dueDate"]
+      ? new Date(input["dueDate"])
+      : new Date(now["getTime"]() + 30 * 24 * 60 * 60 * 1000);
 
     try {
-      const invoice = await db.invoice.create({
+      const invoice = await db["invoice"]["create"]({
         data: {
           orgId,
           number,
-          customerId: estimate.customerId,
-          projectId: estimate.projectId ?? null,
+          customerId: estimate["customerId"],
+          projectId: estimate["projectId"] ?? null,
           type: "STANDARD",
           issueDate: now,
           dueDate,
-          currency: estimate.currency,
-          taxRate: estimate.taxRate,
-          discount: estimate.discount,
-          subtotal: estimate.subtotal,
-          taxAmount: estimate.taxAmount,
-          total: estimate.total,
-          notes: estimate.notes,
-          createdById: user.id,
-          estimateId: estimate.id,
+          currency: estimate["currency"],
+          taxRate: estimate["taxRate"],
+          discount: estimate["discount"],
+          subtotal: estimate["subtotal"],
+          taxAmount: estimate["taxAmount"],
+          total: estimate["total"],
+          notes: estimate["notes"],
+          createdById: user["id"],
+          estimateId: estimate["id"],
           items: {
-            create: estimate.items.map((it) => ({
-              description: it.description,
-              quantity: it.quantity,
-              unitPrice: it.unitPrice,
-              amount: it.amount,
-              sortOrder: it.sortOrder,
+            create: estimate["items"]["map"]((it) => ({
+              description: it["description"],
+              quantity: it["quantity"],
+              unitPrice: it["unitPrice"],
+              amount: it["amount"],
+              sortOrder: it["sortOrder"],
             })),
           },
         },
       });
 
-      const updatedEstimate = await db.estimate.update({
+      const updatedEstimate = await db["estimate"]["update"]({
         where: { id: estimateId },
         data: {
           status: "INVOICED" as EstimateStatus,
-          linkedInvoiceId: invoice.id,
+          linkedInvoiceId: invoice["id"],
           convertedAt: new Date(),
         },
       });
@@ -354,20 +354,20 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
         "CONVERTED_TO_INVOICE",
         "ACCEPTED",
         "INVOICED",
-        `Converted to invoice ${invoice.number}`,
-        user.id
+        `Converted to invoice ${invoice["number"]}`,
+        user["id"]
       );
 
       try {
-        await db.invoiceAudit.create({
+        await db["invoiceAudit"]["create"]({
           data: {
-            invoiceId: invoice.id,
+            invoiceId: invoice["id"],
             orgId,
             action: "CREATED_FROM_ESTIMATE",
             fromStatus: null,
             toStatus: "DRAFT",
-            note: `Converted from estimate ${estimate.number}`,
-            createdById: user.id,
+            note: `Converted from estimate ${estimate["number"]}`,
+            createdById: user["id"],
           },
         });
       } catch (auditErr) {
@@ -381,42 +381,42 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
       await revalidateWithLocale(`/dashboard/estimates/${estimateId}`);
 
       return {
-        invoiceId: invoice.id,
-        invoiceNumber: invoice.number,
+        invoiceId: invoice["id"],
+        invoiceNumber: invoice["number"],
         status: "DRAFT",
       };
     } catch (err) {
       if (isMissingColumnError(err)) {
-        const invoice = await db.invoice.create({
+        const invoice = await db["invoice"]["create"]({
           data: {
             orgId,
             number,
-            customerId: estimate.customerId,
-            projectId: estimate.projectId ?? null,
+            customerId: estimate["customerId"],
+            projectId: estimate["projectId"] ?? null,
             type: "STANDARD",
             issueDate: now,
             dueDate,
-            currency: estimate.currency,
-            taxRate: estimate.taxRate,
-            discount: estimate.discount,
-            subtotal: estimate.subtotal,
-            taxAmount: estimate.taxAmount,
-            total: estimate.total,
-            notes: estimate.notes,
-            createdById: user.id,
+            currency: estimate["currency"],
+            taxRate: estimate["taxRate"],
+            discount: estimate["discount"],
+            subtotal: estimate["subtotal"],
+            taxAmount: estimate["taxAmount"],
+            total: estimate["total"],
+            notes: estimate["notes"],
+            createdById: user["id"],
             items: {
-              create: estimate.items.map((it) => ({
-                description: it.description,
-                quantity: it.quantity,
-                unitPrice: it.unitPrice,
-                amount: it.amount,
-                sortOrder: it.sortOrder,
+              create: estimate["items"]["map"]((it) => ({
+                description: it["description"],
+                quantity: it["quantity"],
+                unitPrice: it["unitPrice"],
+                amount: it["amount"],
+                sortOrder: it["sortOrder"],
               })),
             },
           },
         });
 
-        const updatedEstimate = await db.estimate.update({
+        const updatedEstimate = await db["estimate"]["update"]({
           where: { id: estimateId },
           data: {
             status: "INVOICED" as EstimateStatus,
@@ -430,8 +430,8 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
           "CONVERTED_TO_INVOICE",
           "ACCEPTED",
           "INVOICED",
-          `Converted to invoice ${invoice.number}`,
-          user.id
+          `Converted to invoice ${invoice["number"]}`,
+          user["id"]
         );
 
         await revalidateWithLocale("/dashboard/invoices");
@@ -439,8 +439,8 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
         await revalidateWithLocale(`/dashboard/estimates/${estimateId}`);
 
         return {
-          invoiceId: invoice.id,
-          invoiceNumber: invoice.number,
+          invoiceId: invoice["id"],
+          invoiceNumber: invoice["number"],
           status: "DRAFT",
         };
       }
@@ -452,10 +452,10 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
 export async function getEstimateDetail(estimateId: string) {
   return withActionError("getEstimateDetail", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
-    const orgId = user.organizationId;
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
 
-    const estimate = await db.estimate.findFirst({
+    const estimate = await db["estimate"]["findFirst"]({
       where: { id: estimateId, orgId },
       include: {
         customer: true,
@@ -474,17 +474,17 @@ export async function getEstimateDetail(estimateId: string) {
 export async function getEstimateAuditLogs(estimateId: string) {
   return withActionError("getEstimateAuditLogs", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
-    const orgId = user.organizationId;
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
 
-    const estimate = await db.estimate.findFirst({
+    const estimate = await db["estimate"]["findFirst"]({
       where: { id: estimateId, orgId },
       select: { id: true },
     });
     if (!estimate) actionError("Estimate not found");
 
     try {
-      const logs = await db.estimateAudit.findMany({
+      const logs = await db["estimateAudit"]["findMany"]({
         where: { estimateId },
         orderBy: { createdAt: "desc" },
       });
@@ -501,7 +501,7 @@ export async function getEstimateAuditLogs(estimateId: string) {
 export async function getEstimateByShareToken(token: string) {
   return withActionError("getEstimateByShareToken", async () => {
     try {
-      const estimate = await db.estimate.findFirst({
+      const estimate = await db["estimate"]["findFirst"]({
         where: { shareToken: token },
         include: {
           customer: true,
@@ -526,7 +526,7 @@ export async function checkExpiredEstimates() {
     const now = new Date();
 
     try {
-      const expired = await db.estimate.updateMany({
+      const expired = await db["estimate"]["updateMany"]({
         where: {
           status: { in: ["SENT", "VIEWED"] },
           validUntil: { lt: now },
@@ -536,7 +536,7 @@ export async function checkExpiredEstimates() {
         },
       });
 
-      return { count: expired.count };
+      return { count: expired["count"] };
     } catch (err) {
       if (isMissingColumnError(err)) {
         return { count: 0 };

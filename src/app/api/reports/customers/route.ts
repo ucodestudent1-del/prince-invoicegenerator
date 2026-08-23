@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const report = await getCustomerAnalytics();
-    return NextResponse.json(report);
+    return NextResponse["json"](report);
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
   }
 }

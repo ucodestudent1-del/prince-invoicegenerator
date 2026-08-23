@@ -31,13 +31,13 @@ const variant: Record<string, any> = {
 export default async function EstimatesPage({ params }: { params: { locale: string } }) {
   await requireFeature("estimates");
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
   const t = await getTranslations("estimates");
 
   let estimates;
   try {
-    estimates = await db.estimate.findMany({
+    estimates = await db["estimate"]["findMany"]({
       where: { orgId },
       orderBy: { createdAt: "desc" },
       include: { customer: true },
@@ -59,7 +59,7 @@ export default async function EstimatesPage({ params }: { params: { locale: stri
       </div>
       <Card>
         <CardContent className="pt-6">
-          {estimates.length === 0 ? (
+          {estimates["length"] === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noEstimates")}</p>
           ) : (
             <Table>
@@ -73,25 +73,25 @@ export default async function EstimatesPage({ params }: { params: { locale: stri
                 </TableRow>
               </TableHeader>
               <TableBody>
-                 {estimates.map((e) => (
-                   <TableRow key={e.id}>
+                 {estimates["map"]((e) => (
+                   <TableRow key={e["id"]}>
                      <TableCell className="font-medium">
                        <Link
-                         href={`/dashboard/estimates/${e.id}`}
+                         href={`/dashboard/estimates/${e["id"]}`}
                          className="text-blue-600 hover:underline"
                        >
-                         {e.number}
+                         {e["number"]}
                        </Link>
                      </TableCell>
-                     <TableCell>{e.customer?.name ?? "Unknown"}</TableCell>
-                     <TableCell>{formatDate(e.validUntil)}</TableCell>
+                     <TableCell>{e["customer"]?.["name"] ?? "Unknown"}</TableCell>
+                     <TableCell>{formatDate(e["validUntil"])}</TableCell>
                      <TableCell>
-                       <Badge variant={variant[e.status] ?? "secondary"}>
-                         {e.status}
+                       <Badge variant={variant[e["status"]] ?? "secondary"}>
+                         {e["status"]}
                        </Badge>
                      </TableCell>
                      <TableCell className="text-right">
-                       {formatCurrency(e.total)}
+                       {formatCurrency(e["total"])}
                      </TableCell>
                    </TableRow>
                  ))}

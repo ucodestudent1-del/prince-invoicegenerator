@@ -40,13 +40,13 @@ export default async function InvoiceDetailPage({
   params: { id: string; locale: string };
 }) {
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
+  if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("invoices");
 
   let invoice;
   try {
-    invoice = await db.invoice.findFirst({
-      where: { id: params.id, orgId: user.organizationId },
+    invoice = await db["invoice"]["findFirst"]({
+      where: { id: params["id"], orgId: user["organizationId"] },
       include: {
         customer: true,
         project: true,
@@ -56,8 +56,8 @@ export default async function InvoiceDetailPage({
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      invoice = await db.invoice.findFirst({
-        where: { id: params.id, orgId: user.organizationId },
+      invoice = await db["invoice"]["findFirst"]({
+        where: { id: params["id"], orgId: user["organizationId"] },
         select: {
           id: true,
           number: true,
@@ -93,12 +93,12 @@ export default async function InvoiceDetailPage({
     }
   }
   if (!invoice) {
-    redirect({ href: "/dashboard/invoices", locale: params.locale });
+    redirect({ href: "/dashboard/invoices", locale: params["locale"] });
     // redirect() throws in the framework, but TypeScript doesn't know that for i18n redirect
     throw new Error("Unreachable: redirect should have exited");
   }
-  if (!invoice.customer) {
-    logServerError("InvoiceDetailPage", new Error(`Invoice ${invoice.id} has no customer relation`));
+  if (!invoice["customer"]) {
+    logServerError("InvoiceDetailPage", new Error(`Invoice ${invoice["id"]} has no customer relation`));
   }
 
   const statusVariant: Record<string, any> = {
@@ -110,10 +110,10 @@ export default async function InvoiceDetailPage({
     VOID: "outline",
   };
 
-  const remainingBalance = invoice.total - invoice.amountPaid;
+  const remainingBalance = invoice["total"] - invoice["amountPaid"];
 
-  const reminders = await getReminders({ invoiceId: params.id }).catch(() => []);
-  const suppression = await getInvoiceReminderSuppression(params.id).catch(() => null);
+  const reminders = await getReminders({ invoiceId: params["id"] })["catch"](() => []);
+  const suppression = await getInvoiceReminderSuppression(params["id"])["catch"](() => null);
 
   return (
     <div className="space-y-6">
@@ -125,20 +125,20 @@ export default async function InvoiceDetailPage({
         </Button>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href={`/dashboard/invoices/${invoice.id}/print`} target="_blank">
+            <Link href={`/dashboard/invoices/${invoice["id"]}/print`} target="_blank">
               <Printer className="mr-2 h-4 w-4" /> {t("exportPdf")}
             </Link>
           </Button>
           <Button asChild variant="outline">
-            <a href={`/api/invoices/${invoice.id}/pdf`} target="_blank" download>
+            <a href={`/api/invoices/${invoice["id"]}/pdf`} target="_blank" download>
               <Download className="mr-2 h-4 w-4" /> Download PDF
             </a>
           </Button>
-          {invoice.status !== "PAID" && (
+          {invoice["status"] !== "PAID" && (
             <form
               action={async () => {
                 "use server";
-                await markInvoicePaid(invoice.id);
+                await markInvoicePaid(invoice["id"]);
               }}
             >
               <Button type="submit" size="sm">
@@ -149,7 +149,7 @@ export default async function InvoiceDetailPage({
           <form
             action={async () => {
               "use server";
-              await deleteInvoice(invoice.id);
+              await deleteInvoice(invoice["id"]);
             }}
           >
             <Button type="submit" size="sm" variant="destructive">
@@ -165,55 +165,55 @@ export default async function InvoiceDetailPage({
             <CardContent className="space-y-6 pt-6">
               <div className="flex items-start justify-between border-b pb-4">
                 <div className="flex items-start gap-4">
-                  {invoice.logoUrl && (
-                    <Image src={invoice.logoUrl} alt={t("logoAlt")} width={48} height={48} className="h-12 w-auto object-contain" />
+                  {invoice["logoUrl"] && (
+                    <Image src={invoice["logoUrl"]} alt={t("logoAlt")} width={48} height={48} className="h-12 w-auto object-contain" />
                   )}
                   <div>
                     <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
                       {t("invoiceLabel")}
                     </span>
-                    <h1 className="text-2xl font-bold mt-1">{invoice.number}</h1>
+                    <h1 className="text-2xl font-bold mt-1">{invoice["number"]}</h1>
                     <p className="text-sm text-muted-foreground">
-                      {t("issued", { date: formatDate(invoice.issueDate) })} &middot; {t("dueDate", { date: formatDate(invoice.dueDate) })}
+                      {t("issued", { date: formatDate(invoice["issueDate"]) })} &middot; {t("dueDate", { date: formatDate(invoice["dueDate"]) })}
                     </p>
                   </div>
                 </div>
-                <Badge variant={statusVariant[invoice.status] ?? "secondary"}>
-                  {invoice.status}
+                <Badge variant={statusVariant[invoice["status"]] ?? "secondary"}>
+                  {invoice["status"]}
                 </Badge>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 text-sm">
                 <div>
                   <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("billTo")}</p>
-                  {invoice.billToAddress ? (
-                    <div className="whitespace-pre-line">{invoice.billToAddress}</div>
+                  {invoice["billToAddress"] ? (
+                    <div className="whitespace-pre-line">{invoice["billToAddress"]}</div>
                   ) : (
                     <>
-                      <p className="font-medium">{invoice.customer?.name ?? "Unknown"}</p>
-                      {invoice.customer?.company && <p>{invoice.customer.company}</p>}
-                      {invoice.customer?.email && <p>{invoice.customer.email}</p>}
-                      {invoice.customer?.address && <p>{invoice.customer.address}</p>}
+                      <p className="font-medium">{invoice["customer"]?.["name"] ?? "Unknown"}</p>
+                      {invoice["customer"]?.["company"] && <p>{invoice["customer"]["company"]}</p>}
+                      {invoice["customer"]?.["email"] && <p>{invoice["customer"]["email"]}</p>}
+                      {invoice["customer"]?.["address"] && <p>{invoice["customer"]["address"]}</p>}
                     </>
                   )}
-                  {invoice.shipToAddress && (
+                  {invoice["shipToAddress"] && (
                     <div className="mt-3 pt-3 border-t">
                       <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("shipTo")}</p>
-                      <div className="whitespace-pre-line">{invoice.shipToAddress}</div>
+                      <div className="whitespace-pre-line">{invoice["shipToAddress"]}</div>
                     </div>
                   )}
                 </div>
                 <div>
-                  {invoice.project && (
+                  {invoice["project"] && (
                     <div className="mb-4">
                       <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("project")}</p>
-                      <p>{invoice.project.name}</p>
+                      <p>{invoice["project"]["name"]}</p>
                     </div>
                   )}
                   <div>
                     <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("type")}</p>
-                    <Badge variant="outline" className={getTypeBadgeClass(invoice.type)}>
-                      {getTypeLabel(invoice.type, t)}
+                    <Badge variant="outline" className={getTypeBadgeClass(invoice["type"])}>
+                      {getTypeLabel(invoice["type"], t)}
                     </Badge>
                   </div>
                 </div>
@@ -230,16 +230,16 @@ export default async function InvoiceDetailPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {invoice.items.map((it: any, idx: any) => (
-                    <tr key={it.id} className="border-b">
+                  {invoice["items"]["map"]((it: any, idx: any) => (
+                    <tr key={it["id"]} className="border-b">
                       <td className="py-2 text-gray-400">{idx + 1}</td>
-                      <td className="py-2">{it.description}</td>
-                      <td className="py-2 text-right">{it.quantity}</td>
+                      <td className="py-2">{it["description"]}</td>
+                      <td className="py-2 text-right">{it["quantity"]}</td>
                       <td className="py-2 text-right">
-                        {formatCurrency(it.unitPrice, invoice.currency)}
+                        {formatCurrency(it["unitPrice"], invoice["currency"])}
                       </td>
                       <td className="py-2 text-right font-medium">
-                        {formatCurrency(it.amount, invoice.currency)}
+                        {formatCurrency(it["amount"], invoice["currency"])}
                       </td>
                     </tr>
                   ))}
@@ -250,43 +250,43 @@ export default async function InvoiceDetailPage({
                 <div className="w-72 space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("subtotal")}</span>
-                    <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
+                    <span>{formatCurrency(invoice["subtotal"], invoice["currency"])}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("tax")}</span>
-                    <span>{formatCurrency(invoice.taxAmount, invoice.currency)}</span>
+                    <span>{formatCurrency(invoice["taxAmount"], invoice["currency"])}</span>
                   </div>
-                  {invoice.discount > 0 && (
+                  {invoice["discount"] > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("discount")}</span>
-                      <span>-{formatCurrency(invoice.discount, invoice.currency)}</span>
+                      <span>-{formatCurrency(invoice["discount"], invoice["currency"])}</span>
                     </div>
                   )}
-                  {invoice.retainageAmount > 0 && (
+                  {invoice["retainageAmount"] > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("retainage")}</span>
-                      <span>{formatCurrency(invoice.retainageAmount, invoice.currency)}</span>
+                      <span>{formatCurrency(invoice["retainageAmount"], invoice["currency"])}</span>
                     </div>
                   )}
                   <div className="flex justify-between border-t pt-1 text-base font-bold">
                     <span>{t("total")}</span>
-                    <span>{formatCurrency(invoice.total, invoice.currency)}</span>
+                    <span>{formatCurrency(invoice["total"], invoice["currency"])}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{t("paid")}</span>
-                    <span>{formatCurrency(invoice.amountPaid, invoice.currency)}</span>
+                    <span>{formatCurrency(invoice["amountPaid"], invoice["currency"])}</span>
                   </div>
                   <div className="flex justify-between border-t pt-1 text-base font-bold text-orange-600">
                     <span>{t("balanceDue")}</span>
-                    <span>{formatCurrency(remainingBalance, invoice.currency)}</span>
+                    <span>{formatCurrency(remainingBalance, invoice["currency"])}</span>
                   </div>
                 </div>
               </div>
 
-              {invoice.notes && (
+              {invoice["notes"] && (
                 <div className="text-sm text-muted-foreground">
                   <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">{t("notes")}</p>
-                  <p className="whitespace-pre-line">{invoice.notes}</p>
+                  <p className="whitespace-pre-line">{invoice["notes"]}</p>
                 </div>
               )}
             </CardContent>
@@ -295,14 +295,14 @@ export default async function InvoiceDetailPage({
 
         <div className="space-y-6">
           <InvoiceStatusManager
-            invoiceId={invoice.id}
-            currentStatus={invoice.status}
+            invoiceId={invoice["id"]}
+            currentStatus={invoice["status"]}
           />
-          {invoice.status !== "PAID" && (
+          {invoice["status"] !== "PAID" && (
             <form
               action={async () => {
                 "use server";
-                await sendReminder(invoice.id);
+                await sendReminder(invoice["id"]);
               }}
             >
               <Button type="submit" variant="outline" className="w-full">
@@ -311,16 +311,16 @@ export default async function InvoiceDetailPage({
             </form>
           )}
 
-          {reminders.length > 0 && (
+          {reminders["length"] > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Reminders sent</CardTitle>
                 <CardDescription>
-                  {reminders.length} reminder(s) have been sent for this invoice.
+                  {reminders["length"]} reminder(s) have been sent for this invoice.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {reminders.slice(0, 5).map((r: any) => {
+                {reminders["slice"](0, 5)["map"]((r: any) => {
                   const statusVariant: Record<string, any> = {
                     SENT: "secondary",
                     DELIVERED: "success",
@@ -331,24 +331,24 @@ export default async function InvoiceDetailPage({
                     PENDING: "secondary",
                   };
                   return (
-                    <div key={r.id} className="flex items-center justify-between">
+                    <div key={r["id"]} className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-sm">
-                          {r.stage?.name || r.type}
+                          {r["stage"]?.["name"] || r["type"]}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDate(r.sentAt || r.scheduledAt)}
+                          {formatDate(r["sentAt"] || r["scheduledAt"])}
                         </p>
                       </div>
-                      <Badge variant={statusVariant[r.status] ?? "secondary"}>
-                        {r.status}
+                      <Badge variant={statusVariant[r["status"]] ?? "secondary"}>
+                        {r["status"]}
                       </Badge>
                     </div>
                   );
                 })}
-                {reminders.length > 5 && (
+                {reminders["length"] > 5 && (
                   <p className="text-xs text-muted-foreground">
-                    +{reminders.length - 5} more
+                    +{reminders["length"] - 5} more
                   </p>
                 )}
               </CardContent>
@@ -357,7 +357,7 @@ export default async function InvoiceDetailPage({
         </div>
       </div>
 
-      {invoice.status !== "PAID" && invoice.customer?.email && (
+      {invoice["status"] !== "PAID" && invoice["customer"]?.["email"] && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Automated reminders</CardTitle>
@@ -366,11 +366,11 @@ export default async function InvoiceDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {suppression?.suppressedAll && (
+            {suppression?.["suppressedAll"] && (
               <div className="rounded-md border border-amber-500/50 bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
                 All automated reminders are suppressed for this invoice.
-                {suppression.snoozedUntil &&
-                  ` Snoozed until ${formatDate(suppression.snoozedUntil)}.`}
+                {suppression["snoozedUntil"] &&
+                  ` Snoozed until ${formatDate(suppression["snoozedUntil"])}.`}
               </div>
             )}
 
@@ -387,15 +387,15 @@ export default async function InvoiceDetailPage({
               <form
                 action={async () => {
                   "use server";
-                  if (suppression?.suppressedAll) {
-                    await clearInvoiceReminderSuppression(invoice.id);
+                  if (suppression?.["suppressedAll"]) {
+                    await clearInvoiceReminderSuppression(invoice["id"]);
                   } else {
-                    await setInvoiceReminderSuppression(invoice.id, { suppressedAll: true });
+                    await setInvoiceReminderSuppression(invoice["id"], { suppressedAll: true });
                   }
                 }}
               >
-                <Button type="submit" variant={suppression?.suppressedAll ? "outline" : "destructive"} size="sm">
-                  {suppression?.suppressedAll ? "Restore reminders" : "Suppress all"}
+                <Button type="submit" variant={suppression?.["suppressedAll"] ? "outline" : "destructive"} size="sm">
+                  {suppression?.["suppressedAll"] ? "Restore reminders" : "Suppress all"}
                 </Button>
               </form>
             </div>
@@ -414,10 +414,10 @@ export default async function InvoiceDetailPage({
                 action={async () => {
                   "use server";
                   const snoozeDate = new Date();
-                  snoozeDate.setDate(snoozeDate.getDate() + 14);
-                  await setInvoiceReminderSuppression(invoice.id, {
+                  snoozeDate["setDate"](snoozeDate["getDate"]() + 14);
+                  await setInvoiceReminderSuppression(invoice["id"], {
                     suppressedAll: false,
-                    snoozedUntil: snoozeDate.toISOString(),
+                    snoozedUntil: snoozeDate["toISOString"](),
                   });
                 }}
               >
@@ -432,8 +432,8 @@ export default async function InvoiceDetailPage({
 
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <PaymentHistory invoiceId={invoice.id} currency={invoice.currency} />
-        <AuditLog invoiceId={invoice.id} />
+        <PaymentHistory invoiceId={invoice["id"]} currency={invoice["currency"]} />
+        <AuditLog invoiceId={invoice["id"]} />
       </div>
     </div>
   );

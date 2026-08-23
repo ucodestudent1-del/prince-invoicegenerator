@@ -12,26 +12,26 @@ import { useTranslations } from "next-intl";
 export function ProjectForm({ customers }: { customers: { id: string; name: string }[] }) {
   const t = useTranslations("projects");
   const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
-  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e["preventDefault"]();
     setSaving(true);
     setError(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(e["currentTarget"]);
     try {
       await createProject({
-        name: String(fd.get("name") || ""),
-        customerId: String(fd.get("customerId") || "") || null,
-        address: String(fd.get("address") || "") || undefined,
-        startDate: String(fd.get("startDate") || "") || null,
-        endDate: String(fd.get("endDate") || "") || null,
+        name: String(fd["get"]("name") || ""),
+        customerId: String(fd["get"]("customerId") || "") || null,
+        address: String(fd["get"]("address") || "") || undefined,
+        startDate: String(fd["get"]("startDate") || "") || null,
+        endDate: String(fd["get"]("endDate") || "") || null,
       });
-      router.push("/dashboard/projects");
-      router.refresh();
+      router["push"]("/dashboard/projects");
+      router["refresh"]();
     } catch (err: any) {
-      setError(err?.message ?? t("failed"));
+      setError(err?.["message"] ?? t("failed"));
       setSaving(false);
     }
   }
@@ -54,7 +54,7 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
           </div>
           <div className="space-y-1">
             <Label htmlFor="customerId">{t("customer")}</Label>
-            {customers.length === 0 ? (
+            {customers["length"] === 0 ? (
               <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                 {t("noCustomersFound")}{" "}
                 <Link
@@ -71,9 +71,9 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
               >
                 <option value="">{t("none")}</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
+                {customers["map"]((c) => (
+                  <option key={c["id"]} value={c["id"]}>
+                    {c["name"]}
                   </option>
                 ))}
               </select>
@@ -94,7 +94,7 @@ export function ProjectForm({ customers }: { customers: { id: string; name: stri
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>{t("cancel")}</Button>
+            <Button type="button" variant="outline" onClick={() => router["back"]()}>{t("cancel")}</Button>
             <Button type="submit" disabled={saving}>{saving ? t("saving") : t("create")}</Button>
           </div>
         </form>

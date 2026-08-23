@@ -17,23 +17,23 @@ export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
   const router = useRouter();
   const locale = useLocaleSafe();
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [sent, setSent] = React.useState(false);
+  const [loading, setLoading] = React["useState"](false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [sent, setSent] = React["useState"](false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e["preventDefault"]();
     setLoading(true);
     setError(null);
 
-    const fd = new FormData(e.currentTarget);
-    const email = String(fd.get("email") || "").trim();
+    const fd = new FormData(e["currentTarget"]);
+    const email = String(fd["get"]("email") || "")["trim"]();
 
     try {
       await requestPasswordReset(email);
       setSent(true);
     } catch (err: any) {
-      setError(err?.message || t("unexpectedError"));
+      setError(err?.["message"] || t("unexpectedError"));
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
                 variant="outline"
                 className="w-full"
                 onClick={() =>
-                  router.push(getPathnameWithLocale({ href: "/login", locale }))
+                  router["push"](getPathnameWithLocale({ href: "/login", locale }))
                 }
               >
                 {t("backToLogin")}

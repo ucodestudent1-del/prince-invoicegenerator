@@ -77,14 +77,14 @@ export default async function HomePage() {
         {/* Features */}
         <section id="features" className="container py-16 md:py-24">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <Card key={f.title}>
+            {features["map"]((f) => (
+              <Card key={f["title"]}>
                 <CardContent className="pt-6">
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground">
                     <f.icon className="h-5 w-5" />
                   </span>
-                  <h3 className="mt-4 font-semibold">{f.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
+                  <h3 className="mt-4 font-semibold">{f["title"]}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{f["body"]}</p>
                 </CardContent>
               </Card>
             ))}

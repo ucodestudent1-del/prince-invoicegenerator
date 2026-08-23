@@ -24,8 +24,8 @@ export function ThemeToggle({
 }
 
 export function ThemeToggleForm({ current }: { current: string }) {
-  const [theme, setTheme] = React.useState(current);
-  const [saving, setSaving] = React.useState(false);
+  const [theme, setTheme] = React["useState"](current);
+  const [saving, setSaving] = React["useState"](false);
 
   async function toggle() {
     const next = theme === "dark" ? "light" : "dark";
@@ -35,16 +35,16 @@ export function ThemeToggleForm({ current }: { current: string }) {
       const res = await fetch("/api/customization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "theme", value: next }),
+        body: JSON["stringify"]({ key: "theme", value: next }),
       });
-      if (!res.ok) {
+      if (!res["ok"]) {
         // Even if the API returns an error, the server may have set a cookie fallback
         // for when the theme column doesn't exist. Reload to pick up the cookie.
       }
-      window.location.reload();
+      window["location"]["reload"]();
     } catch (err) {
       // Network error — reload to try again
-      window.location.reload();
+      window["location"]["reload"]();
     } finally {
       setSaving(false);
     }

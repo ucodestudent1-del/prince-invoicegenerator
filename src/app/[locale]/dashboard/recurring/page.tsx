@@ -25,7 +25,7 @@ import { LinkInvoiceForm } from "./_components/link-invoice-form";
 
 export default async function RecurringPage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
+  if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("recurring");
 
   let configs;
@@ -59,7 +59,7 @@ export default async function RecurringPage({ params }: { params: { locale: stri
           <CardTitle className="text-lg">{t("configurations")}</CardTitle>
         </CardHeader>
         <CardContent>
-          {configs.length === 0 ? (
+          {configs["length"] === 0 ? (
             <p className="text-sm text-muted-foreground">
               {t("noConfigs")}
             </p>
@@ -76,23 +76,23 @@ export default async function RecurringPage({ params }: { params: { locale: stri
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {configs.map((config) => (
-                  <TableRow key={config.id}>
-                    <TableCell>{config.customer?.name ?? "—"}</TableCell>
-                    <TableCell>{config.frequency}</TableCell>
-                    <TableCell>{formatDate(config.nextRunDate)}</TableCell>
+                {configs["map"]((config) => (
+                  <TableRow key={config["id"]}>
+                    <TableCell>{config["customer"]?.["name"] ?? "—"}</TableCell>
+                    <TableCell>{config["frequency"]}</TableCell>
+                    <TableCell>{formatDate(config["nextRunDate"])}</TableCell>
                     <TableCell>
-                      <Badge variant={config.active ? "success" : "secondary"}>
-                        {config.active ? t("active") : t("paused")}
+                      <Badge variant={config["active"] ? "success" : "secondary"}>
+                        {config["active"] ? t("active") : t("paused")}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {config.lastInvoice ? (
+                      {config["lastInvoice"] ? (
                         <Link
-                          href={`/dashboard/invoices/${config.lastInvoice.id}`}
+                          href={`/dashboard/invoices/${config["lastInvoice"]["id"]}`}
                           className="text-primary hover:underline"
                         >
-                          {config.lastInvoice.number}
+                          {config["lastInvoice"]["number"]}
                         </Link>
                       ) : (
                         <span className="text-muted-foreground">—</span>
@@ -100,24 +100,24 @@ export default async function RecurringPage({ params }: { params: { locale: stri
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex flex-col gap-2 items-end">
-                      {config.lastInvoice ||
-                      (Array.isArray((config as any).defaultItems) &&
-                        (config as any).defaultItems.length > 0) ? (
-                        <GenerateInvoiceButton configId={config.id} />
+                      {config["lastInvoice"] ||
+                      (Array["isArray"]((config as any)["defaultItems"]) &&
+                        (config as any)["defaultItems"]["length"] > 0) ? (
+                        <GenerateInvoiceButton configId={config["id"]} />
                       ) : (
                           <LinkInvoiceForm
-                            configId={config.id}
+                            configId={config["id"]}
                             invoices={availableInvoices}
                           />
                         )}
                         <form
                           action={async () => {
                             "use server";
-                            await toggleRecurringConfig(config.id, !config.active);
+                            await toggleRecurringConfig(config["id"], !config["active"]);
                           }}
                         >
                           <Button type="submit" variant="outline" size="sm">
-                            {config.active ? (
+                            {config["active"] ? (
                               <Pause className="h-4 w-4" />
                             ) : (
                               <Play className="h-4 w-4" />

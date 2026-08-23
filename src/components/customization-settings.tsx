@@ -31,35 +31,35 @@ const layouts = [
 ];
 
 export function CustomizationSettings() {
-  const [brandColor, setBrandColor] = React.useState("#ea5804");
-  const [accentColor, setAccentColor] = React.useState("#ea5804");
-  const [fontFamily, setFontFamily] = React.useState("");
-  const [layout, setLayout] = React.useState("default");
-  const [loading, setLoading] = React.useState(true);
+  const [brandColor, setBrandColor] = React["useState"]("#ea5804");
+  const [accentColor, setAccentColor] = React["useState"]("#ea5804");
+  const [fontFamily, setFontFamily] = React["useState"]("");
+  const [layout, setLayout] = React["useState"]("default");
+  const [loading, setLoading] = React["useState"](true);
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     async function load() {
       try {
-        const [colorsRes, fontsRes, layoutRes] = await Promise.all([
+        const [colorsRes, fontsRes, layoutRes] = await Promise["all"]([
           fetch("/api/customization?key=colors"),
           fetch("/api/customization?key=fonts"),
           fetch("/api/customization?key=layout"),
         ]);
-        if (colorsRes.ok) {
-          const data = await colorsRes.json();
-          setBrandColor(data.brandColor || "#ea5804");
-          setAccentColor(data.accentColor || "#ea580ade");
+        if (colorsRes["ok"]) {
+          const data = await colorsRes["json"]();
+          setBrandColor(data["brandColor"] || "#ea5804");
+          setAccentColor(data["accentColor"] || "#ea580ade");
         }
-        if (fontsRes.ok) {
-          const data = await fontsRes.json();
+        if (fontsRes["ok"]) {
+          const data = await fontsRes["json"]();
           setFontFamily(data || "");
         }
-        if (layoutRes.ok) {
-          const data = await layoutRes.json();
+        if (layoutRes["ok"]) {
+          const data = await layoutRes["json"]();
           setLayout(data || "default");
         }
       } catch (err) {
-        console.error("Failed to load customization", err);
+        console["error"]("Failed to load customization", err);
       } finally {
         setLoading(false);
       }
@@ -71,7 +71,7 @@ export function CustomizationSettings() {
     await fetch("/api/customization", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: JSON["stringify"]({
         key: "colors",
         brandColor,
         accentColor,
@@ -83,7 +83,7 @@ export function CustomizationSettings() {
     await fetch("/api/customization", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "fonts", value: fontFamily }),
+      body: JSON["stringify"]({ key: "fonts", value: fontFamily }),
     });
   }
 
@@ -91,7 +91,7 @@ export function CustomizationSettings() {
     await fetch("/api/customization", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "layout", value: layout }),
+      body: JSON["stringify"]({ key: "layout", value: layout }),
     });
   }
 
@@ -112,12 +112,12 @@ export function CustomizationSettings() {
                   id="brandColor"
                   type="color"
                   value={brandColor || "#ea580ade"}
-                  onChange={(e) => setBrandColor(e.target.value)}
+                  onChange={(e) => setBrandColor(e["target"]["value"])}
                   className="w-12 h-8 p-0"
                 />
                 <Input
                   value={brandColor || "#ea580ade"}
-                  onChange={(e) => setBrandColor(e.target.value)}
+                  onChange={(e) => setBrandColor(e["target"]["value"])}
                 />
               </div>
             </div>
@@ -128,12 +128,12 @@ export function CustomizationSettings() {
                   id="accentColor"
                   type="color"
                   value={accentColor || "#ea580ade"}
-                  onChange={(e) => setAccentColor(e.target.value)}
+                  onChange={(e) => setAccentColor(e["target"]["value"])}
                   className="w-12 h-8 p-0"
                 />
                 <Input
                   value={accentColor || "#ea580ade"}
-                  onChange={(e) => setAccentColor(e.target.value)}
+                  onChange={(e) => setAccentColor(e["target"]["value"])}
                 />
               </div>
             </div>
@@ -154,9 +154,9 @@ export function CustomizationSettings() {
                 <SelectValue placeholder="Select a font" />
               </SelectTrigger>
               <SelectContent>
-                {fonts.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
+                {fonts["map"]((f) => (
+                  <SelectItem key={f["value"]} value={f["value"]}>
+                    {f["label"]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -178,9 +178,9 @@ export function CustomizationSettings() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {layouts.map((l) => (
-                  <SelectItem key={l.value} value={l.value}>
-                    {l.label}
+                {layouts["map"]((l) => (
+                  <SelectItem key={l["value"]} value={l["value"]}>
+                    {l["label"]}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -13,12 +13,12 @@ const VERIFICATION_TOKEN_EXPIRY_MINUTES = 24 * 60;
 const VERIFICATION_RESEND_COOLDOWN_SECONDS = 60;
 
 function isValidPassword(password: string): boolean {
-  if (!password || password.length < 8) return false;
-  if (password.length > 128) return false;
-  if (!/[A-Z]/.test(password)) return false;
-  if (!/[a-z]/.test(password)) return false;
-  if (!/[0-9]/.test(password)) return false;
-  if (!/[^A-Za-z0-9]/.test(password)) return false;
+  if (!password || password["length"] < 8) return false;
+  if (password["length"] > 128) return false;
+  if (!/[A-Z]/["test"](password)) return false;
+  if (!/[a-z]/["test"](password)) return false;
+  if (!/[0-9]/["test"](password)) return false;
+  if (!/[^A-Za-z0-9]/["test"](password)) return false;
   return true;
 }
 
@@ -30,21 +30,21 @@ export async function signup(data: {
   marketing?: boolean;
 }) {
   return withActionError("signup", async () => {
-    if (!data.terms) {
+    if (!data["terms"]) {
       actionError("You must accept the terms and conditions.");
     }
 
-    const normalizedEmail = data.email.toLowerCase().trim();
+    const normalizedEmail = data["email"]["toLowerCase"]()["trim"]();
 
     if (!checkRateLimit(`signup:${normalizedEmail}`, 5, 60 * 60 * 1000)) {
       actionError("Too many signup attempts. Please try again later.");
     }
 
-    if (!isValidPassword(data.password)) {
+    if (!isValidPassword(data["password"])) {
       actionError("Password must be at least 8 characters with uppercase, lowercase, number, and symbol.");
     }
 
-    const existing = await db.user.findUnique({
+    const existing = await db["user"]["findUnique"]({
       where: { email: normalizedEmail },
     });
 
@@ -52,22 +52,22 @@ export async function signup(data: {
       actionError("An account with this email already exists.");
     }
 
-    const hashedPassword = await bcrypt.hash(data.password, 12);
+    const hashedPassword = await bcrypt["hash"](data["password"], 12);
 
-    const user = await db.user.create({
+    const user = await db["user"]["create"]({
       data: {
         email: normalizedEmail,
-        name: data.name.trim(),
+        name: data["name"]["trim"](),
         password: hashedPassword,
       },
     });
 
-    const token = randomBytes(32).toString("hex");
+    const token = randomBytes(32)["toString"]("hex");
     const expiresAt = new Date(
-      Date.now() + VERIFICATION_TOKEN_EXPIRY_MINUTES * 60 * 1000
+      Date["now"]() + VERIFICATION_TOKEN_EXPIRY_MINUTES * 60 * 1000
     );
 
-    await db.verificationToken.create({
+    await db["verificationToken"]["create"]({
       data: {
         identifier: normalizedEmail,
         token,
@@ -76,12 +76,12 @@ export async function signup(data: {
       },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "http://localhost:3000";
     const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
 
     await sendEmail({
       to: normalizedEmail,
-      subject: `Verify your email for ${process.env.APP_NAME || "Prince"}`,
+      subject: `Verify your email for ${process["env"]["APP_NAME"] || "Prince"}`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Verify your email address</h2>
@@ -93,7 +93,7 @@ export async function signup(data: {
       text: `Verify your email: ${verifyUrl}\n\nThis link expires in 24 hours.`,
     });
 
-    return { success: true, userId: user.id };
+    return { success: true, userId: user["id"] };
   });
 }
 
@@ -103,37 +103,37 @@ export async function verifyEmail(token: string) {
       actionError("Invalid token");
     }
 
-    if (!checkRateLimit(`verify-email:${token.slice(0, 8)}`, 10, 60 * 1000)) {
+    if (!checkRateLimit(`verify-email:${token["slice"](0, 8)}`, 10, 60 * 1000)) {
       actionError("Too many attempts. Please try again later.");
     }
 
-    const record = await db.verificationToken.findUnique({
+    const record = await db["verificationToken"]["findUnique"]({
       where: { token },
     });
 
-    if (!record || record.type !== "EMAIL_VERIFY") {
+    if (!record || record["type"] !== "EMAIL_VERIFY") {
       actionError("Invalid or expired token");
     }
 
-    if (record.expires < new Date()) {
-      await db.verificationToken.delete({ where: { token } });
+    if (record["expires"] < new Date()) {
+      await db["verificationToken"]["delete"]({ where: { token } });
       actionError("Token has expired. Please request a new one.");
     }
 
-    const user = await db.user.findUnique({
-      where: { email: record.identifier },
+    const user = await db["user"]["findUnique"]({
+      where: { email: record["identifier"] },
     });
 
     if (!user) {
       actionError("User not found");
     }
 
-    await db.user.update({
-      where: { id: user.id },
+    await db["user"]["update"]({
+      where: { id: user["id"] },
       data: { emailVerified: new Date() },
     });
 
-    await db.verificationToken.delete({ where: { token } });
+    await db["verificationToken"]["delete"]({ where: { token } });
 
     return { success: true };
   });
@@ -141,24 +141,24 @@ export async function verifyEmail(token: string) {
 
 export async function requestPasswordReset(email: string) {
   return withActionError("requestPasswordReset", async () => {
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = email["toLowerCase"]()["trim"]();
 
     if (!checkRateLimit(`password-reset:${normalizedEmail}`, 3, 60 * 60 * 1000)) {
       actionError("Too many password reset requests. Please try again later.");
     }
 
-    const user = await db.user.findUnique({
+    const user = await db["user"]["findUnique"]({
       where: { email: normalizedEmail },
     });
 
-    if (!user || !user.password) {
+    if (!user || !user["password"]) {
       return { success: true };
     }
 
-    const token = randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    const token = randomBytes(32)["toString"]("hex");
+    const expiresAt = new Date(Date["now"]() + 60 * 60 * 1000);
 
-    await db.verificationToken.create({
+    await db["verificationToken"]["create"]({
       data: {
         identifier: normalizedEmail,
         token,
@@ -167,12 +167,12 @@ export async function requestPasswordReset(email: string) {
       },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "http://localhost:3000";
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
     await sendEmail({
       to: normalizedEmail,
-      subject: `Reset your password for ${process.env.APP_NAME || "Prince"}`,
+      subject: `Reset your password for ${process["env"]["APP_NAME"] || "Prince"}`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Reset your password</h2>
@@ -194,31 +194,31 @@ export async function resetPassword(token: string, newPassword: string) {
       actionError("Invalid token");
     }
 
-    if (!checkRateLimit(`reset-password:${token.slice(0, 8)}`, 10, 60 * 1000)) {
+    if (!checkRateLimit(`reset-password:${token["slice"](0, 8)}`, 10, 60 * 1000)) {
       actionError("Too many attempts. Please try again later.");
     }
 
-    const record = await db.verificationToken.findUnique({
+    const record = await db["verificationToken"]["findUnique"]({
       where: { token },
     });
 
-    if (!record || record.type !== "PASSWORD_RESET") {
+    if (!record || record["type"] !== "PASSWORD_RESET") {
       actionError("Invalid or expired token");
     }
 
-    if (record.expires < new Date()) {
-      await db.verificationToken.delete({ where: { token } });
+    if (record["expires"] < new Date()) {
+      await db["verificationToken"]["delete"]({ where: { token } });
       actionError("Token has expired. Please request a new one.");
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    const hashedPassword = await bcrypt["hash"](newPassword, 12);
 
-    await db.user.update({
-      where: { email: record.identifier },
+    await db["user"]["update"]({
+      where: { email: record["identifier"] },
       data: { password: hashedPassword },
     });
 
-    await db.verificationToken.delete({ where: { token } });
+    await db["verificationToken"]["delete"]({ where: { token } });
 
     return { success: true };
   });
@@ -228,43 +228,43 @@ export async function resendVerificationEmail() {
   return withActionError("resendVerificationEmail", async () => {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
+    if (!session?.["user"]?.["email"]) {
       actionError("You must be logged in to resend verification.");
     }
 
-    if (!checkRateLimit(`verify-email:${session.user.email}`, 3, 60 * 60 * 1000)) {
+    if (!checkRateLimit(`verify-email:${session["user"]["email"]}`, 3, 60 * 60 * 1000)) {
       actionError("Too many verification requests. Please try again later.");
     }
 
-    const existingToken = await db.verificationToken.findFirst({
-      where: { identifier: session.user.email },
+    const existingToken = await db["verificationToken"]["findFirst"]({
+      where: { identifier: session["user"]["email"] },
       orderBy: { expires: "desc" },
     });
 
-    if (existingToken && existingToken.expires > new Date(Date.now() + VERIFICATION_RESEND_COOLDOWN_SECONDS * 1000)) {
+    if (existingToken && existingToken["expires"] > new Date(Date["now"]() + VERIFICATION_RESEND_COOLDOWN_SECONDS * 1000)) {
       actionError("Please wait before requesting another email.");
     }
 
-    const token = randomBytes(32).toString("hex");
+    const token = randomBytes(32)["toString"]("hex");
     const expiresAt = new Date(
-      Date.now() + VERIFICATION_TOKEN_EXPIRY_MINUTES * 60 * 1000
+      Date["now"]() + VERIFICATION_TOKEN_EXPIRY_MINUTES * 60 * 1000
     );
 
-    await db.verificationToken.create({
+    await db["verificationToken"]["create"]({
       data: {
-        identifier: session.user.email,
+        identifier: session["user"]["email"],
         token,
         expires: expiresAt,
         type: "EMAIL_VERIFY",
       },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "http://localhost:3000";
     const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
 
     await sendEmail({
-      to: session.user.email,
-      subject: `Verify your email for ${process.env.APP_NAME || "Prince"}`,
+      to: session["user"]["email"],
+      subject: `Verify your email for ${process["env"]["APP_NAME"] || "Prince"}`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Verify your email address</h2>

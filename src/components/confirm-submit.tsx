@@ -11,7 +11,7 @@ export function ConfirmSubmit({ message }: { message: string }) {
       variant="destructive"
       size="sm"
       onClick={(e) => {
-        if (!confirm(message)) e.preventDefault();
+        if (!confirm(message)) e["preventDefault"]();
       }}
     >
       {t("removeAll")}

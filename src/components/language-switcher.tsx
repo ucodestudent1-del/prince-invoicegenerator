@@ -28,8 +28,8 @@ export function LanguageSwitcher() {
 
   function onSelect(newLocale: string) {
     startTransition(() => {
-      router.replace(window.location.pathname, { locale: newLocale });
-      updateUserLocale(newLocale).catch(() => {
+      router["replace"](window["location"]["pathname"], { locale: newLocale });
+      updateUserLocale(newLocale)["catch"](() => {
         // Non-blocking: the URL/cookie already changed, so the user sees
         // the new language even if the DB update fails.
       });
@@ -45,7 +45,7 @@ export function LanguageSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {routing.locales.map((loc) => (
+        {routing["locales"]["map"]((loc) => (
           <DropdownMenuItem
             key={loc}
             onClick={() => onSelect(loc)}

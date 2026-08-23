@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-const Table = React.forwardRef<
+const Table = React["forwardRef"]<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
@@ -13,17 +13,17 @@ const Table = React.forwardRef<
     />
   </div>
 ));
-Table.displayName = "Table";
+Table["displayName"] = "Table";
 
-const TableHeader = React.forwardRef<
+const TableHeader = React["forwardRef"]<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
   <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
 ));
-TableHeader.displayName = "TableHeader";
+TableHeader["displayName"] = "TableHeader";
 
-const TableBody = React.forwardRef<
+const TableBody = React["forwardRef"]<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
@@ -33,9 +33,9 @@ const TableBody = React.forwardRef<
     {...props}
   />
 ));
-TableBody.displayName = "TableBody";
+TableBody["displayName"] = "TableBody";
 
-const TableRow = React.forwardRef<
+const TableRow = React["forwardRef"]<
   HTMLTableRowElement,
   React.HTMLAttributes<HTMLTableRowElement>
 >(({ className, ...props }, ref) => (
@@ -48,9 +48,9 @@ const TableRow = React.forwardRef<
     {...props}
   />
 ));
-TableRow.displayName = "TableRow";
+TableRow["displayName"] = "TableRow";
 
-const TableHead = React.forwardRef<
+const TableHead = React["forwardRef"]<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement>
 >(({ className, ...props }, ref) => (
@@ -63,9 +63,9 @@ const TableHead = React.forwardRef<
     {...props}
   />
 ));
-TableHead.displayName = "TableHead";
+TableHead["displayName"] = "TableHead";
 
-const TableCell = React.forwardRef<
+const TableCell = React["forwardRef"]<
   HTMLTableCellElement,
   React.TdHTMLAttributes<HTMLTableCellElement>
 >(({ className, ...props }, ref) => (
@@ -75,6 +75,6 @@ const TableCell = React.forwardRef<
     {...props}
   />
 ));
-TableCell.displayName = "TableCell";
+TableCell["displayName"] = "TableCell";
 
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell };

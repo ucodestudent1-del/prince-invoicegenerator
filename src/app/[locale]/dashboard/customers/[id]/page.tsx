@@ -26,14 +26,14 @@ export default async function CustomerDetailPage({
   params: { id: string; locale: string };
 }) {
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
   const t = await getTranslations("customers");
 
   let customer;
   try {
-    customer = await db.customer.findFirst({
-      where: { id: params.id, orgId },
+    customer = await db["customer"]["findFirst"]({
+      where: { id: params["id"], orgId },
       include: {
         invoices: {
           orderBy: { createdAt: "desc" },
@@ -46,8 +46,8 @@ export default async function CustomerDetailPage({
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      customer = await db.customer.findFirst({
-        where: { id: params.id, orgId },
+      customer = await db["customer"]["findFirst"]({
+        where: { id: params["id"], orgId },
         include: {
           invoices: { orderBy: { createdAt: "desc" }, take: 50 },
           estimates: { orderBy: { createdAt: "desc" }, take: 50 },
@@ -61,13 +61,13 @@ export default async function CustomerDetailPage({
   }
 
   if (!customer) {
-    redirect({ href: "/dashboard/customers", locale: params.locale });
+    redirect({ href: "/dashboard/customers", locale: params["locale"] });
     throw new Error("Unreachable: redirect should have exited");
   }
 
   // Calculate financial summary
-  const totalInvoiced = customer.invoices.reduce((sum: number, inv: any) => sum + inv.total, 0);
-  const totalPaid = customer.invoices.reduce((sum: number, inv: any) => sum + inv.amountPaid, 0);
+  const totalInvoiced = customer["invoices"]["reduce"]((sum: number, inv: any) => sum + inv["total"], 0);
+  const totalPaid = customer["invoices"]["reduce"]((sum: number, inv: any) => sum + inv["amountPaid"], 0);
   const outstandingBalance = totalInvoiced - totalPaid;
 
   return (
@@ -81,20 +81,20 @@ export default async function CustomerDetailPage({
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{customer.name}</h1>
-            {customer.company && (
-              <p className="text-sm text-muted-foreground">{customer.company}</p>
+            <h1 className="text-2xl font-bold">{customer["name"]}</h1>
+            {customer["company"] && (
+              <p className="text-sm text-muted-foreground">{customer["company"]}</p>
             )}
           </div>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href={`/dashboard/customers/${customer.id}/edit`}>
+            <Link href={`/dashboard/customers/${customer["id"]}/edit`}>
               <Edit className="mr-2 h-4 w-4" /> Edit
             </Link>
           </Button>
           <Button asChild>
-            <Link href={`/dashboard/invoices/new?customerId=${customer.id}`}>
+            <Link href={`/dashboard/invoices/new?customerId=${customer["id"]}`}>
               <Plus className="mr-2 h-4 w-4" /> New Invoice
             </Link>
           </Button>
@@ -104,12 +104,12 @@ export default async function CustomerDetailPage({
       {/* Status Badge */}
       <div className="flex items-center gap-2">
         <Badge
-          variant={customer.status === "ACTIVE" ? "default" : "secondary"}
+          variant={customer["status"] === "ACTIVE" ? "default" : "secondary"}
           className="text-xs"
         >
-          {customer.status}
+          {customer["status"]}
         </Badge>
-        {customer.portalAccess && (
+        {customer["portalAccess"] && (
           <Badge variant="outline" className="text-xs">
             Portal Access
           </Badge>
@@ -156,31 +156,31 @@ export default async function CustomerDetailPage({
             <Mail className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-xs text-muted-foreground">Email</p>
-              <p className="text-sm">{customer.email || "—"}</p>
+              <p className="text-sm">{customer["email"] || "—"}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Phone className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-xs text-muted-foreground">Phone</p>
-              <p className="text-sm">{customer.phone || "—"}</p>
+              <p className="text-sm">{customer["phone"] || "—"}</p>
             </div>
           </div>
-          {customer.website && (
+          {customer["website"] && (
             <div className="flex items-center gap-3">
               <Globe className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Website</p>
-                <p className="text-sm">{customer.website}</p>
+                <p className="text-sm">{customer["website"]}</p>
               </div>
             </div>
           )}
-          {customer.taxId && (
+          {customer["taxId"] && (
             <div className="flex items-center gap-3">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Tax ID</p>
-                <p className="text-sm">{customer.taxId}</p>
+                <p className="text-sm">{customer["taxId"]}</p>
               </div>
             </div>
           )}
@@ -188,7 +188,7 @@ export default async function CustomerDetailPage({
       </Card>
 
       {/* Tabs for Invoices, Estimates, Activity */}
-      <ClientDetailView customerId={customer.id} />
+      <ClientDetailView customerId={customer["id"]} />
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function getTypeLabel(type: InvoiceType, t: (key: string) => string): str
   const variant = TYPE_VARIANTS[type];
   if (!variant) return type;
   try {
-    return t(variant.labelKey);
+    return t(variant["labelKey"]);
   } catch {
     return type;
   }
@@ -34,5 +34,5 @@ export function getTypeLabel(type: InvoiceType, t: (key: string) => string): str
 export function getTypeBadgeClass(type: InvoiceType): string {
   const variant = TYPE_VARIANTS[type];
   if (!variant) return "bg-gray-100 text-gray-700 border-gray-200";
-  return `${variant.bg} ${variant.color} ${variant.border} border`;
+  return `${variant["bg"]} ${variant["color"]} ${variant["border"]} border`;
 }

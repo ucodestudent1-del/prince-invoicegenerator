@@ -30,20 +30,20 @@ const statusVariant: Record<string, any> = {
 
 export default async function InvoicesPage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
   const t = await getTranslations("invoices");
 
   let invoices;
   try {
-    invoices = await db.invoice.findMany({
+    invoices = await db["invoice"]["findMany"]({
       where: { orgId },
       orderBy: { createdAt: "desc" },
       include: { customer: true },
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      invoices = await db.invoice.findMany({
+      invoices = await db["invoice"]["findMany"]({
         where: { orgId },
         orderBy: { createdAt: "desc" },
         select: {
@@ -107,7 +107,7 @@ export default async function InvoicesPage({ params }: { params: { locale: strin
 
       <Card>
         <CardContent className="pt-6">
-          {invoices.length === 0 ? (
+          {invoices["length"] === 0 ? (
             <p className="text-sm text-muted-foreground">
               {t("noInvoices")}
             </p>
@@ -126,36 +126,36 @@ export default async function InvoicesPage({ params }: { params: { locale: strin
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((inv) => {
-                  const outstanding = inv.total - inv.amountPaid;
+                {invoices["map"]((inv) => {
+                  const outstanding = inv["total"] - inv["amountPaid"];
                   return (
-                    <TableRow key={inv.id}>
+                    <TableRow key={inv["id"]}>
                       <TableCell>
                         <Link
-                          href={`/dashboard/invoices/${inv.id}`}
+                          href={`/dashboard/invoices/${inv["id"]}`}
                           className="font-medium hover:underline"
                         >
-                          {inv.number}
+                          {inv["number"]}
                         </Link>
                       </TableCell>
-                      <TableCell>{inv.customer?.name ?? "Unknown"}</TableCell>
+                      <TableCell>{inv["customer"]?.["name"] ?? "Unknown"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={getTypeBadgeClass(inv.type)}>
-                          {getTypeLabel(inv.type, t)}
+                        <Badge variant="outline" className={getTypeBadgeClass(inv["type"])}>
+                          {getTypeLabel(inv["type"], t)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{formatDate(inv.issueDate)}</TableCell>
-                      <TableCell>{formatDate(inv.dueDate)}</TableCell>
+                      <TableCell>{formatDate(inv["issueDate"])}</TableCell>
+                      <TableCell>{formatDate(inv["dueDate"])}</TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant[inv.status] ?? "secondary"}>
-                          {inv.status}
+                        <Badge variant={statusVariant[inv["status"]] ?? "secondary"}>
+                          {inv["status"]}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(inv.total, inv.currency)}
+                        {formatCurrency(inv["total"], inv["currency"])}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {formatCurrency(outstanding, inv.currency)}
+                        {formatCurrency(outstanding, inv["currency"])}
                       </TableCell>
                     </TableRow>
                   );

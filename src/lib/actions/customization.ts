@@ -9,10 +9,10 @@ import type { TemplateStyle } from "@prisma/client";
 export async function saveTemplateSettings(template: TemplateStyle) {
   return withActionError("saveTemplateSettings", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    await db.organization.update({
-      where: { id: user.organizationId },
+    await db["organization"]["update"]({
+      where: { id: user["organizationId"] },
       data: { template },
     });
 
@@ -24,25 +24,25 @@ export async function saveTemplateSettings(template: TemplateStyle) {
 export async function getTemplateSettings() {
   return withActionError("getTemplateSettings", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    const org = await db.organization.findUnique({
-      where: { id: user.organizationId },
+    const org = await db["organization"]["findUnique"]({
+      where: { id: user["organizationId"] },
       select: { template: true },
     });
 
-    return org?.template ?? "STANDARD";
+    return org?.["template"] ?? "STANDARD";
   });
 }
 
 export async function saveThemeSettings(theme: string) {
   return withActionError("saveThemeSettings", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
     try {
-      await db.organization.update({
-        where: { id: user.organizationId },
+      await db["organization"]["update"]({
+        where: { id: user["organizationId"] },
         data: { theme },
       });
     } catch (err: any) {
@@ -51,7 +51,7 @@ export async function saveThemeSettings(theme: string) {
         // The client reads it on reload and passes it back as initialTheme.
         // Once the migration is applied, the DB column takes over.
         const { cookies } = await import("next/headers");
-        cookies().set("theme", theme, {
+        cookies()["set"]("theme", theme, {
           maxAge: 60 * 60 * 24 * 365,
           path: "/",
         });
@@ -67,19 +67,19 @@ export async function saveThemeSettings(theme: string) {
 export async function getThemeSettings() {
   return withActionError("getThemeSettings", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
     try {
-      const org = await db.organization.findUnique({
-        where: { id: user.organizationId },
+      const org = await db["organization"]["findUnique"]({
+        where: { id: user["organizationId"] },
         select: { theme: true },
       });
 
-      return org?.theme ?? "light";
+      return org?.["theme"] ?? "light";
     } catch (err: any) {
       if (isMissingColumnError(err)) {
         const { cookies } = await import("next/headers");
-        const cookieTheme = cookies().get("theme")?.value;
+        const cookieTheme = cookies()["get"]("theme")?.["value"];
         if (cookieTheme === "dark" || cookieTheme === "light") {
           return cookieTheme;
         }
@@ -97,13 +97,13 @@ export async function saveBrandColors(input: {
 }) {
   return withActionError("saveBrandColors", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    await db.organization.update({
-      where: { id: user.organizationId },
+    await db["organization"]["update"]({
+      where: { id: user["organizationId"] },
       data: {
-        brandColor: input.brandColor,
-        accentColor: input.accentColor,
+        brandColor: input["brandColor"],
+        accentColor: input["accentColor"],
       },
     });
 
@@ -115,16 +115,16 @@ export async function saveBrandColors(input: {
 export async function getBrandColors() {
   return withActionError("getBrandColors", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    const org = await db.organization.findUnique({
-      where: { id: user.organizationId },
+    const org = await db["organization"]["findUnique"]({
+      where: { id: user["organizationId"] },
       select: { brandColor: true, accentColor: true },
     });
 
     return {
-      brandColor: org?.brandColor ?? "#ea5804",
-      accentColor: org?.accentColor ?? "#ea5804",
+      brandColor: org?.["brandColor"] ?? "#ea5804",
+      accentColor: org?.["accentColor"] ?? "#ea5804",
     };
   });
 }
@@ -132,10 +132,10 @@ export async function getBrandColors() {
 export async function saveFontSettings(fontFamily: string) {
   return withActionError("saveFontSettings", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    await db.organization.update({
-      where: { id: user.organizationId },
+    await db["organization"]["update"]({
+      where: { id: user["organizationId"] },
       data: { fontFamily: fontFamily || null },
     });
 
@@ -146,24 +146,24 @@ export async function saveFontSettings(fontFamily: string) {
 export async function getFontSettings() {
   return withActionError("getFontSettings", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    const org = await db.organization.findUnique({
-      where: { id: user.organizationId },
+    const org = await db["organization"]["findUnique"]({
+      where: { id: user["organizationId"] },
       select: { fontFamily: true },
     });
 
-    return org?.fontFamily ?? "";
+    return org?.["fontFamily"] ?? "";
   });
 }
 
 export async function saveLayoutSettings(layout: string) {
   return withActionError("saveLayoutSettings", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    await db.organization.update({
-      where: { id: user.organizationId },
+    await db["organization"]["update"]({
+      where: { id: user["organizationId"] },
       data: { layout },
     });
 
@@ -174,13 +174,13 @@ export async function saveLayoutSettings(layout: string) {
 export async function getLayoutSettings() {
   return withActionError("getLayoutSettings", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    const org = await db.organization.findUnique({
-      where: { id: user.organizationId },
+    const org = await db["organization"]["findUnique"]({
+      where: { id: user["organizationId"] },
       select: { layout: true },
     });
 
-    return org?.layout ?? "default";
+    return org?.["layout"] ?? "default";
   });
 }

@@ -15,7 +15,7 @@ export default function EstimateError({
   const t = useTranslations("errors");
 
   useEffect(() => {
-    console.error("Estimate page error:", error);
+    console["error"]("Estimate page error:", error);
   }, [error]);
 
   return (
@@ -30,9 +30,9 @@ export default function EstimateError({
         <p className="text-sm text-gray-500">
           {t("estimateLoadFailedDescription")}
         </p>
-        {error.digest && (
+        {error["digest"] && (
           <p className="text-xs text-gray-400 font-mono">
-            {t("errorId", { id: error.digest })}
+            {t("errorId", { id: error["digest"] })}
           </p>
         )}
         <Button onClick={reset} variant="outline">

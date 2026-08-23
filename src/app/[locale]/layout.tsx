@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     canonical: "https://princeinvoicegenerator.up.railway.app",
   },
   other: {
-    "application/ld+json": JSON.stringify({
+    "application/ld+json": JSON["stringify"]({
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       name: "Prince Invoice Generator",
@@ -58,9 +58,9 @@ export const metadata: Metadata = {
 
 async function getInitialTheme() {
   try {
-    const cookieTheme = cookies().get("theme")?.value;
+    const cookieTheme = cookies()["get"]("theme")?.["value"];
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.["user"]?.["id"]) {
       return {
         theme: cookieTheme === "dark" || cookieTheme === "light" ? cookieTheme : "light",
         brandColor: null,
@@ -69,8 +69,8 @@ async function getInitialTheme() {
     }
 
     try {
-      const user = await db.user.findUnique({
-        where: { id: session.user.id },
+      const user = await db["user"]["findUnique"]({
+        where: { id: session["user"]["id"] },
         select: {
           organization: {
             select: { theme: true, brandColor: true, fontFamily: true },
@@ -78,9 +78,9 @@ async function getInitialTheme() {
         },
       });
       return {
-        theme: user?.organization?.theme ?? cookieTheme ?? "light",
-        brandColor: user?.organization?.brandColor ?? null,
-        fontFamily: user?.organization?.fontFamily ?? null,
+        theme: user?.["organization"]?.["theme"] ?? cookieTheme ?? "light",
+        brandColor: user?.["organization"]?.["brandColor"] ?? null,
+        fontFamily: user?.["organization"]?.["fontFamily"] ?? null,
       };
     } catch (dbErr) {
       if (isMissingColumnError(dbErr) && cookieTheme) {
@@ -90,7 +90,7 @@ async function getInitialTheme() {
           fontFamily: null,
         };
       }
-      console.error("getInitialTheme DB error:", dbErr);
+      console["error"]("getInitialTheme DB error:", dbErr);
       return { theme: "light", brandColor: null, fontFamily: null };
     }
   } catch {
@@ -110,9 +110,9 @@ export default async function RootLayout({
   const { theme, brandColor, fontFamily } = await getInitialTheme();
 
   return (
-    <html lang={params.locale}>
+    <html lang={params["locale"]}>
       <body className="min-h-screen antialiased">
-        <NextIntlClientProvider locale={params.locale} messages={messages}>
+        <NextIntlClientProvider locale={params["locale"]} messages={messages}>
           <LocaleRedirectGuard />
           <ThemeClient
             initialTheme={theme}

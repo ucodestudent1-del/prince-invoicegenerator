@@ -6,15 +6,15 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const body = await req.json();
-    const status = body.status;
+    const body = await req["json"]();
+    const status = body["status"];
     const validStatuses = ["DRAFT", "SENT", "VIEWED", "PAID", "UNPAID", "OVERDUE", "VOID"];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ error: "Invalid status." }, { status: 400 });
+    if (!validStatuses["includes"](status)) {
+      return NextResponse["json"]({ error: "Invalid status." }, { status: 400 });
     }
-    await markInvoiceStatus(params.id, status);
-    return NextResponse.json({ success: true });
+    await markInvoiceStatus(params["id"], status);
+    return NextResponse["json"]({ success: true });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
   }
 }

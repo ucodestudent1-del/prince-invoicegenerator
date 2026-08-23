@@ -42,40 +42,40 @@ export function InvoiceForm({
 }) {
   const t = useTranslations("invoices");
   const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
-  const [saving, setSaving] = React.useState(false);
-  const [customerId, setCustomerId] = React.useState("");
-  const [projectId, setProjectId] = React.useState("");
-  const [type, setType] = React.useState<"STANDARD" | "PROGRESS" | "RECURRING">("STANDARD");
-  const [issueDate, setIssueDate] = React.useState(
-    new Date().toISOString().slice(0, 10)
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
+  const [customerId, setCustomerId] = React["useState"]("");
+  const [projectId, setProjectId] = React["useState"]("");
+  const [type, setType] = React["useState"]<"STANDARD" | "PROGRESS" | "RECURRING">("STANDARD");
+  const [issueDate, setIssueDate] = React["useState"](
+    new Date()["toISOString"]()["slice"](0, 10)
   );
-  const [dueDate, setDueDate] = React.useState("");
-  const [scheduledFor, setScheduledFor] = React.useState("");
-  const [taxRate, setTaxRate] = React.useState<string | number>(0);
-  const [discount, setDiscount] = React.useState<string | number>(0);
-  const [retainageRate, setRetainageRate] = React.useState<string | number>(0);
-  const [invoiceNumber, setInvoiceNumber] = React.useState("");
-  const [notes, setNotes] = React.useState("");
-  const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
-  const [logoFile, setLogoFile] = React.useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
-  const [billToAddress, setBillToAddress] = React.useState("");
-  const [shipToAddress, setShipToAddress] = React.useState("");
-  const [items, setItems] = React.useState([
+  const [dueDate, setDueDate] = React["useState"]("");
+  const [scheduledFor, setScheduledFor] = React["useState"]("");
+  const [taxRate, setTaxRate] = React["useState"]<string | number>(0);
+  const [discount, setDiscount] = React["useState"]<string | number>(0);
+  const [retainageRate, setRetainageRate] = React["useState"]<string | number>(0);
+  const [invoiceNumber, setInvoiceNumber] = React["useState"]("");
+  const [notes, setNotes] = React["useState"]("");
+  const [logoUrl, setLogoUrl] = React["useState"]<string | null>(null);
+  const [logoFile, setLogoFile] = React["useState"]<File | null>(null);
+  const [logoPreview, setLogoPreview] = React["useState"]<string | null>(null);
+  const [billToAddress, setBillToAddress] = React["useState"]("");
+  const [shipToAddress, setShipToAddress] = React["useState"]("");
+  const [items, setItems] = React["useState"]([
     { description: "", quantity: 1, unitPrice: 0, sku: "" },
   ]);
-  const [trackedTime, setTrackedTime] = React.useState<any[] | null>(null);
+  const [trackedTime, setTrackedTime] = React["useState"]<any[] | null>(null);
 
   const handleAddTrackedTime = (entries: any[]) => {
-    entries.forEach((entry) => {
-      const hours = entry.duration / 3600;
+    entries["forEach"]((entry) => {
+      const hours = entry["duration"] / 3600;
       setItems((prev) => [
         ...prev,
         {
-          description: entry.description || `${entry.project?.name || "Project"} - ${formatDuration(entry.duration)}`,
+          description: entry["description"] || `${entry["project"]?.["name"] || "Project"} - ${formatDuration(entry["duration"])}`,
           quantity: hours,
-          unitPrice: entry.hourlyRate,
+          unitPrice: entry["hourlyRate"],
           sku: "",
         },
       ]);
@@ -83,71 +83,71 @@ export function InvoiceForm({
   };
 
   function formatDuration(seconds: number) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
+    const h = Math["floor"](seconds / 3600);
+    const m = Math["floor"]((seconds % 3600) / 60);
     return `${h}h ${m}m`;
   }
 
   async function loadTrackedTime() {
     try {
       const res = await fetch("/api/time-tracking/entries?action=for-invoice");
-      if (res.ok) {
-        const data = await res.json();
+      if (res["ok"]) {
+        const data = await res["json"]();
         setTrackedTime(data);
       }
     } catch (err) {
-      console.error("Failed to load tracked time:", err);
+      console["error"]("Failed to load tracked time:", err);
     }
   }
 
-  const subtotal = items.reduce((a, i) => a + i.quantity * (Number(i.unitPrice) || 0), 0);
+  const subtotal = items["reduce"]((a, i) => a + i["quantity"] * (Number(i["unitPrice"]) || 0), 0);
   const taxAmount = ((subtotal * (Number(taxRate) || 0)) / 100);
   const total = subtotal + taxAmount - (Number(discount) || 0);
   const retainageAmount = canRetainage ? ((total * (Number(retainageRate) || 0)) / 100) : 0;
 
   function updateItem(idx: number, field: string, value: any) {
     setItems((prev) =>
-      prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it))
+      prev["map"]((it, i) => (i === idx ? { ...it, [field]: value } : it))
     );
   }
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const file = e["target"]["files"]?.[0];
     if (!file) return;
-    if (!["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.type)) {
+    if (!["image/png", "image/jpeg", "image/jpg", "image/webp"]["includes"](file["type"])) {
       setError("Invalid file type. Accepted: PNG, JPG, WebP");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file["size"] > 5 * 1024 * 1024) {
       setError("File too large. Maximum 5MB");
       return;
     }
     setError(null);
     setLogoFile(file);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setLogoPreview(reader.result as string);
+    reader["onloadend"] = () => {
+      setLogoPreview(reader["result"] as string);
     };
-    reader.readAsDataURL(file);
+    reader["readAsDataURL"](file);
   }
 
   async function uploadLogo(file: File): Promise<string | null> {
     const form = new FormData();
-    form.append("file", file);
+    form["append"]("file", file);
     const res = await fetch("/api/invoices/upload-logo", {
       method: "POST",
       body: form,
     });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error ?? "Logo upload failed");
+    if (!res["ok"]) {
+      const data = await res["json"]();
+      throw new Error(data["error"] ?? "Logo upload failed");
     }
-    const data = await res.json();
-    return data.url as string;
+    const data = await res["json"]();
+    return data["url"] as string;
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+    e["preventDefault"]();
     setError(null);
     if (!customerId) {
       setError("Please select a customer.");
@@ -161,7 +161,7 @@ export function InvoiceForm({
         try {
           uploadedLogoUrl = await uploadLogo(logoFile);
         } catch (logoErr) {
-          console.error("Logo upload failed, continuing without logo:", logoErr);
+          console["error"]("Logo upload failed, continuing without logo:", logoErr);
         }
       }
         const invoice = await createInvoice({
@@ -180,21 +180,21 @@ export function InvoiceForm({
           shipToAddress: shipToAddress || null,
           scheduledFor: scheduledFor || null,
           items: items
-            .filter((i) => i.description)
-            .map((i) => ({
-              description: i.description,
-              quantity: Number(i.quantity) || 0,
-              unitPrice: Number(i.unitPrice) || 0,
-              sku: i.sku || null,
+            ["filter"]((i) => i["description"])
+            ["map"]((i) => ({
+              description: i["description"],
+              quantity: Number(i["quantity"]) || 0,
+              unitPrice: Number(i["unitPrice"]) || 0,
+              sku: i["sku"] || null,
             })),
         });
-        if (!invoice?.id) {
+        if (!invoice?.["id"]) {
           throw new Error("Failed to create invoice. Please try again.");
         }
-        window.open(`/dashboard/invoices/${invoice.id}/print?auto`, "_blank");
-        router.push(`/dashboard/invoices/${invoice.id}`);
+        window["open"](`/dashboard/invoices/${invoice["id"]}/print?auto`, "_blank");
+        router["push"](`/dashboard/invoices/${invoice["id"]}`);
     } catch (err: any) {
-      setError(err?.message ?? "Failed to create invoice.");
+      setError(err?.["message"] ?? "Failed to create invoice.");
       setSaving(false);
     }
   }
@@ -214,7 +214,7 @@ export function InvoiceForm({
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <Label htmlFor="customer">Customer</Label>
-            {customers.length === 0 ? (
+            {customers["length"] === 0 ? (
               <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                 No customers found.{" "}
                 <Link
@@ -230,13 +230,13 @@ export function InvoiceForm({
                 name="customer"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                 value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
+                onChange={(e) => setCustomerId(e["target"]["value"])}
                 required
               >
                 <option value="">Select a customer…</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
+                {customers["map"]((c) => (
+                  <option key={c["id"]} value={c["id"]}>
+                    {c["name"]}
                   </option>
                 ))}
               </select>
@@ -244,7 +244,7 @@ export function InvoiceForm({
           </div>
           <div className="space-y-1" hidden={!canProjectManagement}>
             <Label htmlFor="project">Project</Label>
-            {projects.length === 0 ? (
+            {projects["length"] === 0 ? (
               <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                 No projects found.{" "}
                 <Link
@@ -260,12 +260,12 @@ export function InvoiceForm({
                 name="project"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                 value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
+                onChange={(e) => setProjectId(e["target"]["value"])}
               >
                 <option value="">None</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
+                {projects["map"]((p) => (
+                  <option key={p["id"]} value={p["id"]}>
+                    {p["name"]}
                   </option>
                 ))}
               </select>
@@ -277,7 +277,7 @@ export function InvoiceForm({
               id="type"
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
               value={type}
-              onChange={(e) => setType(e.target.value as "STANDARD" | "PROGRESS" | "RECURRING")}
+              onChange={(e) => setType(e["target"]["value"] as "STANDARD" | "PROGRESS" | "RECURRING")}
             >
               <option value="STANDARD">{t("standard")}</option>
               {canProgress && <option value="PROGRESS">{t("progress")}</option>}
@@ -291,7 +291,7 @@ export function InvoiceForm({
                 id="invoiceNumber"
                 placeholder="e.g. INV-001 or custom name"
                 value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
+                onChange={(e) => setInvoiceNumber(e["target"]["value"])}
               />
             </div>
           )}
@@ -301,7 +301,7 @@ export function InvoiceForm({
               id="issue"
               type="date"
               value={issueDate}
-              onChange={(e) => setIssueDate(e.target.value)}
+              onChange={(e) => setIssueDate(e["target"]["value"])}
             />
           </div>
           <div className="space-y-1">
@@ -310,7 +310,7 @@ export function InvoiceForm({
               id="due"
               type="date"
               value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              onChange={(e) => setDueDate(e["target"]["value"])}
             />
           </div>
           <div className="space-y-1" hidden={!canSchedule}>
@@ -319,7 +319,7 @@ export function InvoiceForm({
               id="scheduledFor"
               type="date"
               value={scheduledFor}
-              onChange={(e) => setScheduledFor(e.target.value)}
+              onChange={(e) => setScheduledFor(e["target"]["value"])}
               min={issueDate}
             />
             <p className="text-xs text-muted-foreground">
@@ -354,7 +354,7 @@ export function InvoiceForm({
               id="billTo"
               placeholder="Address line 1&#10;City, State ZIP"
               value={billToAddress}
-              onChange={(e) => setBillToAddress(e.target.value)}
+              onChange={(e) => setBillToAddress(e["target"]["value"])}
               rows={3}
             />
           </div>
@@ -364,7 +364,7 @@ export function InvoiceForm({
               id="shipTo"
               placeholder="Address line 1&#10;City, State ZIP"
               value={shipToAddress}
-              onChange={(e) => setShipToAddress(e.target.value)}
+              onChange={(e) => setShipToAddress(e["target"]["value"])}
               rows={3}
             />
           </div>
@@ -400,16 +400,16 @@ export function InvoiceForm({
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {items.map((it, idx) => (
+          {items["map"]((it, idx) => (
             <div key={idx} className="flex gap-2 items-end">
               {canUseCatalog && (
                 <CatalogItemSelector
                   onSelect={(item) => {
-                    updateItem(idx, "description", item.name);
-                    updateItem(idx, "unitPrice", item.price);
-                    updateItem(idx, "sku", item.sku || "");
-                    if (item.taxRate > 0) {
-                      setTaxRate(item.taxRate);
+                    updateItem(idx, "description", item["name"]);
+                    updateItem(idx, "unitPrice", item["price"]);
+                    updateItem(idx, "sku", item["sku"] || "");
+                    if (item["taxRate"] > 0) {
+                      setTaxRate(item["taxRate"]);
                     }
                   }}
                   trigger={<Button type="button" variant="outline" size="sm">Browse</Button>}
@@ -417,30 +417,30 @@ export function InvoiceForm({
               )}
               <Input
                 placeholder="Description"
-                value={it.description}
-                onChange={(e) => updateItem(idx, "description", e.target.value)}
+                value={it["description"]}
+                onChange={(e) => updateItem(idx, "description", e["target"]["value"])}
                 className="flex-1"
               />
               <Input
                 type="number"
                 className="w-20"
-                value={it.quantity}
+                value={it["quantity"]}
                 min={0}
-                onChange={(e) => updateItem(idx, "quantity", e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => updateItem(idx, "quantity", e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
               />
               <Input
                 type="number"
                 className="w-28"
-                value={it.unitPrice}
+                value={it["unitPrice"]}
                 min={0}
                 step="0.01"
-                onChange={(e) => updateItem(idx, "unitPrice", e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => updateItem(idx, "unitPrice", e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setItems((p) => p.filter((_, i) => i !== idx))}
+                onClick={() => setItems((p) => p["filter"]((_, i) => i !== idx))}
               >
                 &#x2715;
               </Button>
@@ -456,7 +456,7 @@ export function InvoiceForm({
                 step="0.01"
                 value={taxRate}
                 min={0}
-                onChange={(e) => setTaxRate(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => setTaxRate(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
               />
             </div>
             <div className="space-y-1">
@@ -467,7 +467,7 @@ export function InvoiceForm({
                 value={discount}
                 min={0}
                 step="0.01"
-                onChange={(e) => setDiscount(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => setDiscount(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
               />
             </div>
             {canRetainage && (
@@ -478,7 +478,7 @@ export function InvoiceForm({
                   type="number"
                   value={retainageRate}
                   min={0}
-                  onChange={(e) => setRetainageRate(e.target.value === "" ? "" : Number(e.target.value))}
+                  onChange={(e) => setRetainageRate(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
                 />
               </div>
             )}
@@ -487,7 +487,7 @@ export function InvoiceForm({
           <Textarea
             placeholder="Notes (payment terms, job reference, etc.)"
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(e) => setNotes(e["target"]["value"])}
           />
 
           <div className="flex justify-end gap-6 text-sm">
@@ -510,7 +510,7 @@ export function InvoiceForm({
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
+        <Button type="button" variant="outline" onClick={() => router["back"]()}>
           Cancel
         </Button>
         <Button type="submit" disabled={saving}>

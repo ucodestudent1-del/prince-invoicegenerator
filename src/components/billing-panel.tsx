@@ -16,13 +16,13 @@ export function BillingPanel({
   renewalDate: string | null;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React["useState"](false);
 
   async function openPortal() {
     setLoading(true);
     const res = await fetch("/api/stripe/portal", { method: "POST" });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
+    const data = await res["json"]();
+    if (data["url"]) window["location"]["href"] = data["url"];
     else setLoading(false);
   }
 

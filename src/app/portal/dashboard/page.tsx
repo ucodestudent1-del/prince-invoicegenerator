@@ -44,13 +44,12 @@ export default function PortalDashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("portal_token="))
-      ?.split("=")[1];
+    const token = document["cookie"]
+      ["split"]("; ")
+      ["find"]((row) => row["startsWith"]("portal_token="))?.["split"]("=")[1];
 
     if (!token) {
-      router.push("/portal/auth");
+      router["push"]("/portal/auth");
       return;
     }
 
@@ -58,14 +57,14 @@ export default function PortalDashboardPage() {
       try {
         const session = await getPortalSession(token);
         if (!session) {
-          router.push("/portal/auth");
+          router["push"]("/portal/auth");
           return;
         }
 
         const dashboard = await getPortalDashboard(token);
         setData(dashboard as any);
       } catch (err: any) {
-        setError(err.message || "Failed to load dashboard.");
+        setError(err["message"] || "Failed to load dashboard.");
       } finally {
         setLoading(false);
       }
@@ -75,18 +74,17 @@ export default function PortalDashboardPage() {
   }, [router]);
 
   const handleLogout = async () => {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("portal_token="))
-      ?.split("=")[1];
+    const token = document["cookie"]
+      ["split"]("; ")
+      ["find"]((row) => row["startsWith"]("portal_token="))?.["split"]("=")[1];
 
     if (token) {
       await revokePortalSession(token);
     }
 
     // Clear cookie
-    document.cookie = "portal_token=; path=/; max-age=0";
-    router.push("/portal/auth");
+    document["cookie"] = "portal_token=; path=/; max-age=0";
+    router["push"]("/portal/auth");
   };
 
   const getStatusBadge = (status: string) => {
@@ -133,8 +131,8 @@ export default function PortalDashboardPage() {
       <header className="bg-white border-b">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">{customer.name}</h1>
-            <p className="text-sm text-muted-foreground">{customer.email}</p>
+            <h1 className="text-xl font-bold">{customer["name"]}</h1>
+            <p className="text-sm text-muted-foreground">{customer["email"]}</p>
           </div>
           <Button variant="outline" size="sm" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" /> Sign Out
@@ -152,7 +150,7 @@ export default function PortalDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(customer.totalInvoiced)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(customer["totalInvoiced"])}</div>
             </CardContent>
           </Card>
           <Card>
@@ -162,7 +160,7 @@ export default function PortalDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(customer.totalPaid)}</div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(customer["totalPaid"])}</div>
             </CardContent>
           </Card>
           <Card>
@@ -172,8 +170,8 @@ export default function PortalDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${customer.outstandingBalance > 0 ? "text-orange-600" : ""}`}>
-                {formatCurrency(customer.outstandingBalance)}
+              <div className={`text-2xl font-bold ${customer["outstandingBalance"] > 0 ? "text-orange-600" : ""}`}>
+                {formatCurrency(customer["outstandingBalance"])}
               </div>
             </CardContent>
           </Card>
@@ -186,26 +184,26 @@ export default function PortalDashboardPage() {
             <CardDescription>Your recent billing history</CardDescription>
           </CardHeader>
           <CardContent>
-            {invoices.length === 0 ? (
+            {invoices["length"] === 0 ? (
               <p className="text-sm text-muted-foreground">No invoices yet.</p>
             ) : (
               <div className="space-y-2">
-                {invoices.slice(0, 10).map((invoice) => (
+                {invoices["slice"](0, 10)["map"]((invoice) => (
                   <div
-                    key={invoice.id}
+                    key={invoice["id"]}
                     className="flex items-center justify-between p-3 rounded-md border hover:bg-gray-50"
                   >
                     <div>
-                      <p className="font-medium text-sm">{invoice.number}</p>
+                      <p className="font-medium text-sm">{invoice["number"]}</p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(invoice.issueDate)} • Due {formatDate(invoice.dueDate)}
+                        {formatDate(invoice["issueDate"])} • Due {formatDate(invoice["dueDate"])}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge className={getStatusBadge(invoice.status)}>{invoice.status}</Badge>
-                      <span className="font-medium text-sm">{formatCurrency(invoice.total)}</span>
+                      <Badge className={getStatusBadge(invoice["status"])}>{invoice["status"]}</Badge>
+                      <span className="font-medium text-sm">{formatCurrency(invoice["total"])}</span>
                       <Button asChild variant="ghost" size="sm">
-                        <a href={`/portal/invoices/${invoice.id}`}>
+                        <a href={`/portal/invoices/${invoice["id"]}`}>
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       </Button>
@@ -224,24 +222,24 @@ export default function PortalDashboardPage() {
             <CardDescription>Your recent payments</CardDescription>
           </CardHeader>
           <CardContent>
-            {payments.length === 0 ? (
+            {payments["length"] === 0 ? (
               <p className="text-sm text-muted-foreground">No payments yet.</p>
             ) : (
               <div className="space-y-2">
-                {payments.slice(0, 10).map((payment) => (
+                {payments["slice"](0, 10)["map"]((payment) => (
                   <div
-                    key={payment.id}
+                    key={payment["id"]}
                     className="flex items-center justify-between p-3 rounded-md border"
                   >
                     <div>
-                      <p className="font-medium text-sm">{payment.invoice?.number || "Payment"}</p>
+                      <p className="font-medium text-sm">{payment["invoice"]?.["number"] || "Payment"}</p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(payment.createdAt)} • {payment.method}
+                        {formatDate(payment["createdAt"])} • {payment["method"]}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge className="bg-green-100 text-green-700">{payment.status}</Badge>
-                      <span className="font-medium text-sm">{formatCurrency(Number(payment.amount))}</span>
+                      <Badge className="bg-green-100 text-green-700">{payment["status"]}</Badge>
+                      <span className="font-medium text-sm">{formatCurrency(Number(payment["amount"]))}</span>
                     </div>
                   </div>
                 ))}

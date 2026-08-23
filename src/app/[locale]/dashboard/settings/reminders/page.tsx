@@ -20,7 +20,7 @@ export default async function ReminderSettingsPage({ params }: { params: { local
     logServerError("ReminderSettingsPage", err);
     throw err;
   }
-  if (!user || !user.organizationId) return null;
+  if (!user || !user["organizationId"]) return null;
 
   return (
     <div className="space-y-6 max-w-4xl">

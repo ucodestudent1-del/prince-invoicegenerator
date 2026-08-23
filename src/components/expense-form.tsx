@@ -26,43 +26,43 @@ export function ExpenseForm({
 }) {
   const t = useTranslations("expenses");
   const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
-  const [saving, setSaving] = React.useState(false);
-  const [uploading, setUploading] = React.useState(false);
-  const [photoId, setPhotoId] = React.useState<string | null>(null);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
+  const [uploading, setUploading] = React["useState"](false);
+  const [photoId, setPhotoId] = React["useState"]<string | null>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const file = e["target"]["files"]?.[0];
     if (!file) return;
     setUploading(true);
     const fd = new FormData();
-    fd.append("file", file);
+    fd["append"]("file", file);
     const res = await fetch("/api/photos", { method: "POST", body: fd });
-    const data = await res.json();
+    const data = await res["json"]();
     setUploading(false);
-    if (data.id) setPhotoId(data.id);
-    else setError(data.error ?? t("uploadFailed"));
+    if (data["id"]) setPhotoId(data["id"]);
+    else setError(data["error"] ?? t("uploadFailed"));
   }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e["preventDefault"]();
     setSaving(true);
     setError(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(e["currentTarget"]);
     try {
       await createExpense({
-        vendor: String(fd.get("vendor") || "") || undefined,
-        category: (String(fd.get("category") || "OTHER") as any),
-        amount: Number(fd.get("amount") || 0),
-        date: String(fd.get("date") || "") || null,
-        notes: String(fd.get("notes") || "") || undefined,
-        projectId: String(fd.get("projectId") || "") || null,
+        vendor: String(fd["get"]("vendor") || "") || undefined,
+        category: (String(fd["get"]("category") || "OTHER") as any),
+        amount: Number(fd["get"]("amount") || 0),
+        date: String(fd["get"]("date") || "") || null,
+        notes: String(fd["get"]("notes") || "") || undefined,
+        projectId: String(fd["get"]("projectId") || "") || null,
         photoId,
       });
-      router.push("/dashboard/expenses");
-      router.refresh();
+      router["push"]("/dashboard/expenses");
+      router["refresh"]();
     } catch (err: any) {
-      setError(err?.message ?? t("failed"));
+      setError(err?.["message"] ?? t("failed"));
       setSaving(false);
     }
   }
@@ -91,14 +91,14 @@ export function ExpenseForm({
             <div className="space-y-1">
               <Label htmlFor="category">{t("category")}</Label>
               <select id="category" name="category" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
-                {CATEGORIES.map((c) => (
+                {CATEGORIES["map"]((c) => (
                   <option key={c} value={c}>{t(`expenseCategories.${c}`)}</option>
                 ))}
               </select>
             </div>
             <div className="space-y-1">
               <Label htmlFor="date">{t("date")}</Label>
-              <Input id="date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+              <Input id="date" name="date" type="date" defaultValue={new Date()["toISOString"]()["slice"](0, 10)} />
             </div>
           </div>
 <div className="space-y-1">
@@ -118,7 +118,7 @@ export function ExpenseForm({
             <Input id="notes" name="notes" />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>{t("cancel")}</Button>
+            <Button type="button" variant="outline" onClick={() => router["back"]()}>{t("cancel")}</Button>
             <Button type="submit" disabled={saving || uploading}>
               {saving ? t("saving") : t("create")}
             </Button>

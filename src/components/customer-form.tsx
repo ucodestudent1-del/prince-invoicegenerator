@@ -13,27 +13,27 @@ import { useTranslations } from "next-intl";
 export function CustomerForm() {
   const t = useTranslations("customers");
   const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
-  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e["preventDefault"]();
     setSaving(true);
     setError(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(e["currentTarget"]);
     try {
       await createCustomer({
-        name: String(fd.get("name") || ""),
-        company: String(fd.get("company") || "") || undefined,
-        email: String(fd.get("email") || "") || undefined,
-        phone: String(fd.get("phone") || "") || undefined,
-        address: String(fd.get("address") || "") || undefined,
-        notes: String(fd.get("notes") || "") || undefined,
+        name: String(fd["get"]("name") || ""),
+        company: String(fd["get"]("company") || "") || undefined,
+        email: String(fd["get"]("email") || "") || undefined,
+        phone: String(fd["get"]("phone") || "") || undefined,
+        address: String(fd["get"]("address") || "") || undefined,
+        notes: String(fd["get"]("notes") || "") || undefined,
       });
-      router.push("/dashboard/customers");
-      router.refresh();
+      router["push"]("/dashboard/customers");
+      router["refresh"]();
     } catch (err: any) {
-      setError(err?.message ?? t("failedToSave"));
+      setError(err?.["message"] ?? t("failedToSave"));
       setSaving(false);
     }
   }
@@ -77,7 +77,7 @@ export function CustomerForm() {
             <Textarea id="notes" name="notes" />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
+            <Button type="button" variant="outline" onClick={() => router["back"]()}>
               {t("cancel")}
             </Button>
             <Button type="submit" disabled={saving}>

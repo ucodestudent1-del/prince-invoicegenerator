@@ -25,28 +25,28 @@ export default async function CustomersPage({
   searchParams: { q?: string; status?: string };
 }) {
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
   const t = await getTranslations("customers");
 
-  const searchQuery = searchParams.q || "";
-  const statusFilter = searchParams.status || "ACTIVE";
+  const searchQuery = searchParams["q"] || "";
+  const statusFilter = searchParams["status"] || "ACTIVE";
 
   let customers;
   try {
     const where: Record<string, any> = { orgId };
     if (searchQuery) {
-      where.OR = [
+      where["OR"] = [
         { name: { contains: searchQuery, mode: "insensitive" } },
         { company: { contains: searchQuery, mode: "insensitive" } },
         { email: { contains: searchQuery, mode: "insensitive" } },
       ];
     }
     if (statusFilter && statusFilter !== "ALL") {
-      where.status = statusFilter;
+      where["status"] = statusFilter;
     }
 
-    customers = await db.customer.findMany({
+    customers = await db["customer"]["findMany"]({
       where,
       orderBy: { name: "asc" },
       select: {
@@ -69,9 +69,9 @@ export default async function CustomersPage({
   }
 
   // Calculate summary stats
-  const totalOutstanding = customers.reduce((sum, c) => sum + (c.outstandingBalance || 0), 0);
-  const totalInvoiced = customers.reduce((sum, c) => sum + (c.totalInvoiced || 0), 0);
-  const activeCustomers = customers.filter((c) => c.status === "ACTIVE").length;
+  const totalOutstanding = customers["reduce"]((sum, c) => sum + (c["outstandingBalance"] || 0), 0);
+  const totalInvoiced = customers["reduce"]((sum, c) => sum + (c["totalInvoiced"] || 0), 0);
+  const activeCustomers = customers["filter"]((c) => c["status"] === "ACTIVE")["length"];
 
   return (
     <div className="space-y-6">
@@ -123,7 +123,7 @@ export default async function CustomersPage({
       {/* Customers Table */}
       <Card>
         <CardContent className="pt-6">
-          {customers.length === 0 ? (
+          {customers["length"] === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">{t("noCustomers")}</p>
               <Button asChild variant="outline" size="sm" className="mt-4">
@@ -143,37 +143,37 @@ export default async function CustomersPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers.map((c) => (
-                  <TableRow key={c.id}>
+                {customers["map"]((c) => (
+                  <TableRow key={c["id"]}>
                     <TableCell className="font-medium">
-                      <Link href={`/dashboard/customers/${c.id}`} className="hover:underline">
-                        {c.name}
+                      <Link href={`/dashboard/customers/${c["id"]}`} className="hover:underline">
+                        {c["name"]}
                       </Link>
-                      {c.company && (
-                        <p className="text-xs text-muted-foreground">{c.company}</p>
+                      {c["company"] && (
+                        <p className="text-xs text-muted-foreground">{c["company"]}</p>
                       )}
                     </TableCell>
-                    <TableCell>{c.email ?? "—"}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(c.totalInvoiced || 0)}</TableCell>
+                    <TableCell>{c["email"] ?? "—"}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(c["totalInvoiced"] || 0)}</TableCell>
                     <TableCell className="text-right">
-                      <span className={c.outstandingBalance > 0 ? "text-orange-600 font-medium" : ""}>
-                        {formatCurrency(c.outstandingBalance || 0)}
+                      <span className={c["outstandingBalance"] > 0 ? "text-orange-600 font-medium" : ""}>
+                        {formatCurrency(c["outstandingBalance"] || 0)}
                       </span>
                     </TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          c.status === "ACTIVE"
+                          c["status"] === "ACTIVE"
                             ? "bg-green-100 text-green-700"
-                            : c.status === "ARCHIVED"
+                            : c["status"] === "ARCHIVED"
                             ? "bg-gray-100 text-gray-700"
                             : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {c.status}
+                        {c["status"]}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right">{c._count.invoices}</TableCell>
+                    <TableCell className="text-right">{c["_count"]["invoices"]}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

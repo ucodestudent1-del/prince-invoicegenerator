@@ -7,21 +7,21 @@ import { getTranslations } from "next-intl/server";
 
 export default async function NewInvoicePage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
   const plan = await getActivePlan(user);
   const t = await getTranslations("invoices");
 
   let customers;
   let projects;
   try {
-    [customers, projects] = await Promise.all([
-      db.customer.findMany({
+    [customers, projects] = await Promise["all"]([
+      db["customer"]["findMany"]({
         where: { orgId },
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),
-      db.project.findMany({
+      db["project"]["findMany"]({
         where: { orgId },
         orderBy: { name: "asc" },
         select: { id: true, name: true },

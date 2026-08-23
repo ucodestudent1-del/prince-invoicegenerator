@@ -10,27 +10,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function SubcontractorForm() {
   const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
-  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e["preventDefault"]();
     setSaving(true);
     setError(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(e["currentTarget"]);
     try {
       await createSubcontractor({
-        name: String(fd.get("name") || ""),
-        company: String(fd.get("company") || "") || undefined,
-        trade: String(fd.get("trade") || "") || undefined,
-        email: String(fd.get("email") || "") || undefined,
-        phone: String(fd.get("phone") || "") || undefined,
-        rate: fd.get("rate") ? Number(fd.get("rate")) : undefined,
+        name: String(fd["get"]("name") || ""),
+        company: String(fd["get"]("company") || "") || undefined,
+        trade: String(fd["get"]("trade") || "") || undefined,
+        email: String(fd["get"]("email") || "") || undefined,
+        phone: String(fd["get"]("phone") || "") || undefined,
+        rate: fd["get"]("rate") ? Number(fd["get"]("rate")) : undefined,
       });
-      router.push("/dashboard/subcontractors");
-      router.refresh();
+      router["push"]("/dashboard/subcontractors");
+      router["refresh"]();
     } catch (err: any) {
-      setError(err?.message ?? "Failed.");
+      setError(err?.["message"] ?? "Failed.");
       setSaving(false);
     }
   }
@@ -74,7 +74,7 @@ export function SubcontractorForm() {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => router["back"]()}>Cancel</Button>
             <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Create"}</Button>
           </div>
         </form>

@@ -20,44 +20,44 @@ export async function createEstimate(input: {
 }) {
   return withActionError("createEstimate", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
-    const orgId = user.organizationId;
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
 
-    const validItems = input.items.filter(
-      (it) => it.description && it.quantity > 0 && it.unitPrice > 0
+    const validItems = input["items"]["filter"](
+      (it) => it["description"] && it["quantity"] > 0 && it["unitPrice"] > 0
     );
-    if (validItems.length === 0) {
+    if (validItems["length"] === 0) {
       actionError("At least one line item is required.");
     }
 
-    const subtotal = validItems.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
-    const taxAmount = (subtotal * input.taxRate) / 100;
-    const total = subtotal + taxAmount - input.discount;
+    const subtotal = validItems["reduce"]((a, i) => a + i["quantity"] * i["unitPrice"], 0);
+    const taxAmount = (subtotal * input["taxRate"]) / 100;
+    const total = subtotal + taxAmount - input["discount"];
 
     const number = await getNextEstimateNumber(db, orgId);
 
-    const estimate = await db.estimate.create({
+    const estimate = await db["estimate"]["create"]({
       data: {
         orgId,
         number,
-        customerId: input.customerId,
-        projectId: input.projectId ?? null,
-        validUntil: input.validUntil ? new Date(input.validUntil) : null,
-        taxRate: input.taxRate,
-        discount: input.discount,
+        customerId: input["customerId"],
+        projectId: input["projectId"] ?? null,
+        validUntil: input["validUntil"] ? new Date(input["validUntil"]) : null,
+        taxRate: input["taxRate"],
+        discount: input["discount"],
         subtotal,
         taxAmount,
         total,
-        notes: input.notes,
+        notes: input["notes"],
         status: "DRAFT" as EstimateStatus,
         items: {
-          create: validItems.map((it, i) => ({
-            description: it.description,
-            quantity: it.quantity,
-            unitPrice: it.unitPrice,
-            amount: it.quantity * it.unitPrice,
+          create: validItems["map"]((it, i) => ({
+            description: it["description"],
+            quantity: it["quantity"],
+            unitPrice: it["unitPrice"],
+            amount: it["quantity"] * it["unitPrice"],
             sortOrder: i,
-            sku: it.sku || null,
+            sku: it["sku"] || null,
           })),
         },
       },
@@ -78,21 +78,21 @@ export async function createChangeOrder(input: {
 }) {
   return withActionError("createChangeOrder", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
-    const orgId = user.organizationId;
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
 
-    if (!input.title) actionError("Title is required.");
+    if (!input["title"]) actionError("Title is required.");
 
     const number = await getNextChangeOrderNumber(db, orgId);
-    const co = await db.changeOrder.create({
+    const co = await db["changeOrder"]["create"]({
       data: {
         orgId,
         number,
-        title: input.title,
-        description: input.description,
-        projectId: input.projectId ?? null,
-        invoiceId: input.invoiceId ?? null,
-        amount: input.amount,
+        title: input["title"],
+        description: input["description"],
+        projectId: input["projectId"] ?? null,
+        invoiceId: input["invoiceId"] ?? null,
+        amount: input["amount"],
       },
     });
     await revalidateWithLocale("/dashboard/change-orders");
@@ -111,18 +111,18 @@ export async function createProject(input: {
 }) {
   return withActionError("createProject", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    if (!input.name) actionError("Name is required.");
+    if (!input["name"]) actionError("Name is required.");
 
-    const project = await db.project.create({
+    const project = await db["project"]["create"]({
       data: {
-        orgId: user.organizationId,
-        name: input.name,
-        customerId: input.customerId ?? null,
-        address: input.address,
-        startDate: input.startDate ? new Date(input.startDate) : null,
-        endDate: input.endDate ? new Date(input.endDate) : null,
+        orgId: user["organizationId"],
+        name: input["name"],
+        customerId: input["customerId"] ?? null,
+        address: input["address"],
+        startDate: input["startDate"] ? new Date(input["startDate"]) : null,
+        endDate: input["endDate"] ? new Date(input["endDate"]) : null,
       },
     });
     await revalidateWithLocale("/dashboard/projects");
@@ -143,17 +143,17 @@ export async function createExpense(input: {
 }) {
   return withActionError("createExpense", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
-    const expense = await db.expense.create({
+    if (!user["organizationId"]) actionError("No organization");
+    const expense = await db["expense"]["create"]({
       data: {
-        orgId: user.organizationId,
-        vendor: input.vendor,
-        category: input.category,
-        amount: input.amount,
-        date: input.date ? new Date(input.date) : new Date(),
-        notes: input.notes,
-        projectId: input.projectId ?? null,
-        photoId: input.photoId ?? null,
+        orgId: user["organizationId"],
+        vendor: input["vendor"],
+        category: input["category"],
+        amount: input["amount"],
+        date: input["date"] ? new Date(input["date"]) : new Date(),
+        notes: input["notes"],
+        projectId: input["projectId"] ?? null,
+        photoId: input["photoId"] ?? null,
       },
     });
     await revalidateWithLocale("/dashboard/expenses");
@@ -173,19 +173,19 @@ export async function createSubcontractor(input: {
 }) {
   return withActionError("createSubcontractor", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    if (!input.name) actionError("Name is required.");
+    if (!input["name"]) actionError("Name is required.");
 
-    const sub = await db.subcontractor.create({
+    const sub = await db["subcontractor"]["create"]({
       data: {
-        orgId: user.organizationId,
-        name: input.name,
-        company: input.company,
-        trade: input.trade,
-        email: input.email,
-        phone: input.phone,
-        rate: input.rate,
+        orgId: user["organizationId"],
+        name: input["name"],
+        company: input["company"],
+        trade: input["trade"],
+        email: input["email"],
+        phone: input["phone"],
+        rate: input["rate"],
       },
     });
     await revalidateWithLocale("/dashboard/subcontractors");

@@ -30,8 +30,8 @@ export function InvoiceStatusManager({
   currentStatus: string;
 }) {
   const t = useTranslations("status");
-  const [status, setStatus] = React.useState(currentStatus);
-  const [saving, setSaving] = React.useState(false);
+  const [status, setStatus] = React["useState"](currentStatus);
+  const [saving, setSaving] = React["useState"](false);
 
   async function handleChange(newStatus: string) {
     setStatus(newStatus);
@@ -40,11 +40,11 @@ export function InvoiceStatusManager({
       const res = await fetch(`/api/invoices/${invoiceId}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON["stringify"]({ status: newStatus }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || t("failedUpdate"));
+      if (!res["ok"]) {
+        const data = await res["json"]();
+        alert(data["error"] || t("failedUpdate"));
         setStatus(currentStatus);
       }
     } catch (err) {
@@ -67,7 +67,7 @@ export function InvoiceStatusManager({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(STATUS_KEYS).map(([value, key]) => (
+              {Object["entries"](STATUS_KEYS)["map"](([value, key]) => (
                 <SelectItem key={value} value={value}>
                   {t(key)}
                 </SelectItem>

@@ -6,23 +6,23 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 export const db =
-  globalForPrisma.prisma ??
+  globalForPrisma["prisma"] ??
   new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-    ...(process.env.NODE_ENV === "production" && process.env.DATABASE_URL
+    log: process["env"]["NODE_ENV"] === "development" ? ["error", "warn"] : ["error"],
+    ...(process["env"]["NODE_ENV"] === "production" && process["env"]["DATABASE_URL"]
       ? {
           datasources: {
             db: {
-              url: process.env.DATABASE_URL.includes("pgbouncer=true")
-                ? process.env.DATABASE_URL
-                : `${process.env.DATABASE_URL}${process.env.DATABASE_URL.includes("?") ? "&" : "?"}pgbouncer=true&connection_limit=5`,
+              url: process["env"]["DATABASE_URL"]["includes"]("pgbouncer=true")
+                ? process["env"]["DATABASE_URL"]
+                : `${process["env"]["DATABASE_URL"]}${process["env"]["DATABASE_URL"]["includes"]("?") ? "&" : "?"}pgbouncer=true&connection_limit=5`,
             },
           },
         }
       : {}),
   });
 
-globalForPrisma.prisma = db;
+globalForPrisma["prisma"] = db;
 
 export async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 500): Promise<T> {
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -30,10 +30,10 @@ export async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 50
       return await fn();
     } catch (err) {
       const isConnectionError =
-        err instanceof Prisma.PrismaClientKnownRequestError ||
-        err instanceof Prisma.PrismaClientInitializationError ||
+        err instanceof Prisma["PrismaClientKnownRequestError"] ||
+        err instanceof Prisma["PrismaClientInitializationError"] ||
         (err instanceof Error &&
-          /ECONNREFUSED|ETIMEDOUT|ECONNRESET|ENOTFOUND|too many connections|SSL error|unexpected eof|connection reset|P2027|P2010|P1012/i.test(err.message));
+          /ECONNREFUSED|ETIMEDOUT|ECONNRESET|ENOTFOUND|too many connections|SSL error|unexpected eof|connection reset|P2027|P2010|P1012/i["test"](err["message"]));
       if (attempt === retries || !isConnectionError) throw err;
       logError(`DB retry attempt ${attempt}/${retries}`, err);
       await new Promise((resolve) => setTimeout(resolve, delay * attempt));

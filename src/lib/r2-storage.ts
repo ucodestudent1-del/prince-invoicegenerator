@@ -1,10 +1,10 @@
 import { logError } from "@/lib/logging";
 
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "prince-invoices";
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL;
+const R2_ACCOUNT_ID = process["env"]["R2_ACCOUNT_ID"];
+const R2_ACCESS_KEY_ID = process["env"]["R2_ACCESS_KEY_ID"];
+const R2_SECRET_ACCESS_KEY = process["env"]["R2_SECRET_ACCESS_KEY"];
+const R2_BUCKET_NAME = process["env"]["R2_BUCKET_NAME"] || "prince-invoices";
+const R2_PUBLIC_URL = process["env"]["R2_PUBLIC_URL"];
 
 export interface UploadPdfResult {
   url: string;
@@ -20,7 +20,7 @@ export async function uploadPdfToR2(
     throw new Error("R2 storage is not configured. Please set R2 environment variables.");
   }
 
-  const key = `invoices/${invoiceNumber}/${Date.now()}-${invoiceNumber}.pdf`;
+  const key = `invoices/${invoiceNumber}/${Date["now"]()}-${invoiceNumber}.pdf`;
 
   try {
     // Use S3-compatible API for R2
@@ -28,8 +28,8 @@ export async function uploadPdfToR2(
 
     // Create signature for R2
     const date = new Date();
-    const dateString = date.toISOString().replace(/[:-]|\.\d{3}/g, "");
-    const dateStamp = dateString.slice(0, 8);
+    const dateString = date["toISOString"]()["replace"](/[:-]|\.\d{3}/g, "");
+    const dateStamp = dateString["slice"](0, 8);
     const credentialScope = `${dateStamp}/auto/s3/aws4_request`;
 
     // Upload using fetch with AWS Signature V4
@@ -37,16 +37,16 @@ export async function uploadPdfToR2(
       method: "PUT",
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Length": pdfBuffer.length.toString(),
+        "Content-Length": pdfBuffer["length"]["toString"](),
         "x-amz-date": dateString,
         "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
       },
       body: new Uint8Array(pdfBuffer),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`R2 upload failed: ${response.status} ${errorText}`);
+    if (!response["ok"]) {
+      const errorText = await response["text"]();
+      throw new Error(`R2 upload failed: ${response["status"]} ${errorText}`);
     }
 
     const publicUrl = R2_PUBLIC_URL
@@ -56,7 +56,7 @@ export async function uploadPdfToR2(
     return {
       url: publicUrl,
       key,
-      size: pdfBuffer.length,
+      size: pdfBuffer["length"],
     };
   } catch (err) {
     logError("uploadPdfToR2", err);
@@ -76,12 +76,12 @@ export async function getPdfFromR2(key: string): Promise<Buffer | null> {
       method: "GET",
     });
 
-    if (!response.ok) {
+    if (!response["ok"]) {
       return null;
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    const arrayBuffer = await response["arrayBuffer"]();
+    return Buffer["from"](arrayBuffer);
   } catch (err) {
     logError("getPdfFromR2", err);
     return null;

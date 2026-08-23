@@ -20,21 +20,21 @@ function getPasswordStrength(password: string): { score: number; label: string; 
   }
 
   let met = 0;
-  if (password.length >= 8) met++;
-  if (/[A-Z]/.test(password)) met++;
-  if (/[a-z]/.test(password)) met++;
-  if (/[0-9]/.test(password)) met++;
-  if (/[^A-Za-z0-9]/.test(password)) met++;
+  if (password["length"] >= 8) met++;
+  if (/[A-Z]/["test"](password)) met++;
+  if (/[a-z]/["test"](password)) met++;
+  if (/[0-9]/["test"](password)) met++;
+  if (/[^A-Za-z0-9]/["test"](password)) met++;
 
   const hasAllCategories = met === 5;
 
   if (!hasAllCategories) {
     return { score: 0, label: "Very Weak", color: "#ef4444" };
   }
-  if (password.length < 10) {
+  if (password["length"] < 10) {
     return { score: 1, label: "Weak", color: "#f97316" };
   }
-  if (password.length < 14) {
+  if (password["length"] < 14) {
     return { score: 2, label: "Fair", color: "#eab308" };
   }
   return { score: 3, label: "Strong", color: "#22c55e" };
@@ -44,23 +44,23 @@ export default function SignupPage() {
   const t = useTranslations("auth");
   const router = useRouter();
   const locale = useLocaleSafe();
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [password, setPassword] = React.useState("");
-  const [terms, setTerms] = React.useState(false);
-  const [marketing, setMarketing] = React.useState(false);
+  const [loading, setLoading] = React["useState"](false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [password, setPassword] = React["useState"]("");
+  const [terms, setTerms] = React["useState"](false);
+  const [marketing, setMarketing] = React["useState"](false);
 
   const strength = getPasswordStrength(password);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e["preventDefault"]();
     setLoading(true);
     setError(null);
 
-    const fd = new FormData(e.currentTarget);
-    const name = String(fd.get("name") || "").trim();
-    const email = String(fd.get("email") || "").trim();
-    const passwordValue = String(fd.get("password") || "");
+    const fd = new FormData(e["currentTarget"]);
+    const name = String(fd["get"]("name") || "")["trim"]();
+    const email = String(fd["get"]("email") || "")["trim"]();
+    const passwordValue = String(fd["get"]("password") || "");
 
     if (!terms) {
       setError("You must accept the terms and conditions.");
@@ -77,16 +77,16 @@ export default function SignupPage() {
         marketing,
       });
 
-      if (result.success) {
+      if (result["success"]) {
         await signIn("credentials", {
           email,
           password: passwordValue,
           redirect: false,
         });
-        router.push(getPathnameWithLocale({ href: "/onboarding", locale }));
+        router["push"](getPathnameWithLocale({ href: "/onboarding", locale }));
       }
     } catch (err: any) {
-      setError(err?.message || t("unexpectedError"));
+      setError(err?.["message"] || t("unexpectedError"));
     } finally {
       setLoading(false);
     }
@@ -129,7 +129,7 @@ export default function SignupPage() {
                 required
                 minLength={8}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e["target"]["value"])}
               />
               {password && (
                 <div className="mt-1">
@@ -138,13 +138,13 @@ export default function SignupPage() {
                       <div
                         className="h-1.5 rounded-full transition-all"
                         style={{
-                          width: `${(strength.score + 1) * 20}%`,
-                          backgroundColor: strength.color,
+                          width: `${(strength["score"] + 1) * 20}%`,
+                          backgroundColor: strength["color"],
                         }}
                       />
                     </div>
-                    <span className="text-xs" style={{ color: strength.color }}>
-                      {strength.label}
+                    <span className="text-xs" style={{ color: strength["color"] }}>
+                      {strength["label"]}
                     </span>
                   </div>
                 </div>
@@ -156,7 +156,7 @@ export default function SignupPage() {
                 id="terms"
                 name="terms"
                 checked={terms}
-                onChange={(e) => setTerms(e.target.checked)}
+                onChange={(e) => setTerms(e["target"]["checked"])}
                 className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                 required
               />
@@ -178,7 +178,7 @@ export default function SignupPage() {
                 id="marketing"
                 name="marketing"
                 checked={marketing}
-                onChange={(e) => setMarketing(e.target.checked)}
+                onChange={(e) => setMarketing(e["target"]["checked"])}
                 className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <Label htmlFor="marketing" className="text-sm font-normal">

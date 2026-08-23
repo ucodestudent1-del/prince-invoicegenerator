@@ -15,15 +15,15 @@ export default function PortalLoginPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e["preventDefault"]();
     setLoading(true);
     setMessage(null);
 
     try {
       const result = await requestPortalAccess(email);
-      setMessage({ type: "success", text: result.message || "Check your email for a login link." });
+      setMessage({ type: "success", text: result["message"] || "Check your email for a login link." });
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Something went wrong. Please try again." });
+      setMessage({ type: "error", text: err["message"] || "Something went wrong. Please try again." });
     } finally {
       setLoading(false);
     }
@@ -48,7 +48,7 @@ export default function PortalLoginPage() {
                 type="email"
                 placeholder="you@company.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e["target"]["value"])}
                 required
                 disabled={loading}
               />
@@ -67,12 +67,12 @@ export default function PortalLoginPage() {
           {message && (
             <div
               className={`mt-4 p-3 rounded-md text-sm ${
-                message.type === "success"
+                message["type"] === "success"
                   ? "bg-green-50 text-green-700 border border-green-200"
                   : "bg-red-50 text-red-700 border border-red-200"
               }`}
             >
-              {message.text}
+              {message["text"]}
             </div>
           )}
 

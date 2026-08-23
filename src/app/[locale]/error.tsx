@@ -17,22 +17,22 @@ export default function Error({
         <p className="text-sm text-muted-foreground">
           {t("unexpectedError")}
         </p>
-        {error.digest && (
+        {error["digest"] && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
             <p className="text-sm font-mono text-destructive">
-              {t("errorId", { id: error.digest })}
+              {t("errorId", { id: error["digest"] })}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {t("searchLogs")}
             </p>
           </div>
         )}
-        {process.env.NODE_ENV === "development" && (
+        {process["env"]["NODE_ENV"] === "development" && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
-            <p className="text-sm font-mono text-destructive">{error.message}</p>
-            {error.stack && (
+            <p className="text-sm font-mono text-destructive">{error["message"]}</p>
+            {error["stack"] && (
               <pre className="mt-2 overflow-auto text-xs text-destructive">
-                {error.stack}
+                {error["stack"]}
               </pre>
             )}
           </div>

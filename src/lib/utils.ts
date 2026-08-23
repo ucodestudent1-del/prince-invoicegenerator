@@ -6,16 +6,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, currency = "USD") {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl["NumberFormat"]("en-US", {
     style: "currency",
     currency,
-  }).format(amount || 0);
+  })["format"](amount || 0);
 }
 
 export function formatDate(date: Date | string | null | undefined) {
   if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("en-US", {
+  return d["toLocaleDateString"]("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -23,5 +23,5 @@ export function formatDate(date: Date | string | null | undefined) {
 }
 
 export function quoteFontFamily(font: string) {
-  return font.includes(" ") ? `"${font}"` : font;
+  return font["includes"](" ") ? `"${font}"` : font;
 }

@@ -12,19 +12,19 @@ export function ThemeClient({
   brandColor?: string | null;
   fontFamily?: string | null;
 }) {
-  React.useEffect(() => {
-    const root = document.documentElement;
+  React["useEffect"](() => {
+    const root = document["documentElement"];
     if (initialTheme === "dark") {
-      root.classList.add("dark");
+      root["classList"]["add"]("dark");
     } else {
-      root.classList.remove("dark");
+      root["classList"]["remove"]("dark");
     }
     if (brandColor) {
-      root.style.setProperty("--brand-color", brandColor);
+      root["style"]["setProperty"]("--brand-color", brandColor);
     }
     if (fontFamily) {
-      root.style.setProperty("--font-family", fontFamily);
-      root.style.fontFamily = quoteFontFamily(fontFamily);
+      root["style"]["setProperty"]("--font-family", fontFamily);
+      root["style"]["fontFamily"] = quoteFontFamily(fontFamily);
     }
   }, [initialTheme, brandColor, fontFamily]);
 

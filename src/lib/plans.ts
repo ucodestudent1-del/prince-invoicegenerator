@@ -74,7 +74,7 @@ export const PLANS: PlanDefinition[] = [
       "customBranding",
       "multilingual",
     ],
-    stripePriceId: process.env.STRIPE_PRICE_STARTER_MONTHLY,
+    stripePriceId: process["env"]["STRIPE_PRICE_STARTER_MONTHLY"],
   },
   {
     id: "PRO",
@@ -104,7 +104,7 @@ export const PLANS: PlanDefinition[] = [
       "pdfExport",
       "multilingual",
     ],
-    stripePriceId: process.env.STRIPE_PRICE_PRO_MONTHLY,
+    stripePriceId: process["env"]["STRIPE_PRICE_PRO_MONTHLY"],
   },
   {
     id: "BUSINESS",
@@ -142,7 +142,7 @@ export const PLANS: PlanDefinition[] = [
       "pdfExport",
       "multilingual",
     ],
-    stripePriceId: process.env.STRIPE_PRICE_BUSINESS_MONTHLY,
+    stripePriceId: process["env"]["STRIPE_PRICE_BUSINESS_MONTHLY"],
   },
 ];
 
@@ -190,13 +190,13 @@ export const INVOICE_LIMITS: Record<SubscriptionPlan, number | null> = {
 };
 
 export function getPlan(id: SubscriptionPlan): PlanDefinition {
-  return PLANS.find((p) => p.id === id) ?? PLANS[0];
+  return PLANS["find"]((p) => p["id"] === id) ?? PLANS[0];
 }
 
 export function hasFeature(plan: SubscriptionPlan, feature: FeatureKey): boolean {
-  if (process.env.NEXT_PUBLIC_UNLOCK_ALL_FEATURES === "true") {
+  if (process["env"]["NEXT_PUBLIC_UNLOCK_ALL_FEATURES"] === "true") {
     return true;
   }
   const planDef = getPlan(plan);
-  return planDef.features.includes(feature);
+  return planDef["features"]["includes"](feature);
 }

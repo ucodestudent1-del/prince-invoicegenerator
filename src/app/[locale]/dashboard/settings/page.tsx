@@ -37,9 +37,9 @@ interface Section {
 
 export default async function SettingsPage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
-  const canManageData = user.role === "OWNER" || user.role === "ADMIN";
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
+  const canManageData = user["role"] === "OWNER" || user["role"] === "ADMIN";
   const t = await getTranslations("settings");
 
   let counts: Record<string, number>;
@@ -52,14 +52,14 @@ export default async function SettingsPage({ params }: { params: { locale: strin
       customers,
       subcontractors,
       team,
-    ] = await Promise.all([
-      db.project.count({ where: { orgId } }),
-      db.estimate.count({ where: { orgId } }),
-      db.changeOrder.count({ where: { orgId } }),
-      db.expense.count({ where: { orgId } }),
-      db.customer.count({ where: { orgId } }),
-      db.subcontractor.count({ where: { orgId } }),
-      db.user.count({ where: { organizationId: orgId } }),
+    ] = await Promise["all"]([
+      db["project"]["count"]({ where: { orgId } }),
+      db["estimate"]["count"]({ where: { orgId } }),
+      db["changeOrder"]["count"]({ where: { orgId } }),
+      db["expense"]["count"]({ where: { orgId } }),
+      db["customer"]["count"]({ where: { orgId } }),
+      db["subcontractor"]["count"]({ where: { orgId } }),
+      db["user"]["count"]({ where: { organizationId: orgId } }),
     ]);
     counts = {
       projects,
@@ -166,28 +166,28 @@ export default async function SettingsPage({ params }: { params: { locale: strin
           </p>
         </CardHeader>
         <CardContent className="space-y-1">
-          {sections.map((s) => (
+          {sections["map"]((s) => (
             <div
-              key={s.key}
+              key={s["key"]}
               className="flex items-center justify-between rounded-md border px-4 py-3"
             >
               <div className="flex items-center gap-3">
                 <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
                   <s.icon className="h-4 w-4" />
                 </span>
-                <span className="font-medium">{s.label}</span>
+                <span className="font-medium">{s["label"]}</span>
               </div>
               <div className="flex items-center gap-3">
-                <Badge variant="secondary">{counts[s.key] ?? 0} record(s)</Badge>
+                <Badge variant="secondary">{counts[s["key"]] ?? 0} record(s)</Badge>
                 {canManageData ? (
                   <form
                     action={async () => {
                       "use server";
-                      await s.action();
+                      await s["action"]();
                     }}
                   >
                     <ConfirmSubmit
-                      message={`${t("remove")} all ${s.label.toLowerCase()}? ${t("confirm")}`}
+                      message={`${t("remove")} all ${s["label"]["toLowerCase"]()}? ${t("confirm")}`}
                     />
                   </form>
                 ) : (

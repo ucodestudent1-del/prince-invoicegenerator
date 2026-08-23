@@ -19,19 +19,19 @@ export function PaymentHistory({
   invoiceId: string;
   currency: string;
 }) {
-  const [payments, setPayments] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [payments, setPayments] = React["useState"]<any[]>([]);
+  const [loading, setLoading] = React["useState"](true);
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     async function load() {
       try {
         const res = await fetch(`/api/invoices/${invoiceId}/payments`);
-        if (res.ok) {
-          const data = await res.json();
+        if (res["ok"]) {
+          const data = await res["json"]();
           setPayments(data);
         }
       } catch (err) {
-        console.error("Failed to load payments", err);
+        console["error"]("Failed to load payments", err);
       } finally {
         setLoading(false);
       }
@@ -58,28 +58,28 @@ export function PaymentHistory({
         <CardTitle className="text-base">Payment history</CardTitle>
       </CardHeader>
       <CardContent>
-        {payments.length === 0 ? (
+        {payments["length"] === 0 ? (
           <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
         ) : (
           <div className="space-y-3">
-            {payments.map((p) => (
+            {payments["map"]((p) => (
               <div
-                key={p.id}
+                key={p["id"]}
                 className="flex items-center justify-between border-b pb-2 last:border-0"
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{formatCurrency(p.amount, currency)}</span>
-                    <Badge variant={statusVariant[p.status] ?? "secondary"}>{p.status}</Badge>
+                    <span className="font-medium">{formatCurrency(p["amount"], currency)}</span>
+                    <Badge variant={statusVariant[p["status"]] ?? "secondary"}>{p["status"]}</Badge>
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    {p.method} · {formatDate(p.createdAt)}
-                    {p.note && <span className="ml-2">— {p.note}</span>}
+                    {p["method"]} · {formatDate(p["createdAt"])}
+                    {p["note"] && <span className="ml-2">— {p["note"]}</span>}
                   </div>
-                  {(p.stripePaymentId || p.paypalTransactionId) && (
+                  {(p["stripePaymentId"] || p["paypalTransactionId"]) && (
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {p.stripePaymentId && <span>Stripe ID: {p.stripePaymentId}</span>}
-                      {p.paypalTransactionId && <span>PayPal Txn: {p.paypalTransactionId}</span>}
+                      {p["stripePaymentId"] && <span>Stripe ID: {p["stripePaymentId"]}</span>}
+                      {p["paypalTransactionId"] && <span>PayPal Txn: {p["paypalTransactionId"]}</span>}
                     </div>
                   )}
                 </div>

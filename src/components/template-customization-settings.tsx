@@ -44,14 +44,14 @@ export function TemplateCustomizationSettings({
   fontFamily?: string;
   layout?: string;
 }) {
-  const [selected, setSelected] = React.useState(current);
-  const [localBrandColor, setLocalBrandColor] = React.useState(brandColor || "#ea5804");
-  const [localAccentColor, setLocalAccentColor] = React.useState(accentColor || "#ea5804");
-  const [localFontFamily, setLocalFontFamily] = React.useState(fontFamily || "");
-  const [localLayout, setLocalLayout] = React.useState(layout || "default");
-  const [saving, setSaving] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState<string | null>(null);
+  const [selected, setSelected] = React["useState"](current);
+  const [localBrandColor, setLocalBrandColor] = React["useState"](brandColor || "#ea5804");
+  const [localAccentColor, setLocalAccentColor] = React["useState"](accentColor || "#ea5804");
+  const [localFontFamily, setLocalFontFamily] = React["useState"](fontFamily || "");
+  const [localLayout, setLocalLayout] = React["useState"](layout || "default");
+  const [saving, setSaving] = React["useState"]<string | null>(null);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [success, setSuccess] = React["useState"]<string | null>(null);
 
   async function saveColors() {
     setSaving("colors");
@@ -61,19 +61,19 @@ export function TemplateCustomizationSettings({
       const res = await fetch("/api/customization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON["stringify"]({
           key: "colors",
           brandColor: localBrandColor,
           accentColor: localAccentColor,
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save colors.");
+      if (!res["ok"]) {
+        const data = await res["json"]();
+        throw new Error(data["error"] || "Failed to save colors.");
       }
       setSuccess("Colors saved successfully.");
     } catch (err: any) {
-      setError(err.message);
+      setError(err["message"]);
     } finally {
       setSaving(null);
     }
@@ -87,15 +87,15 @@ export function TemplateCustomizationSettings({
       const res = await fetch("/api/customization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "fonts", value: localFontFamily }),
+        body: JSON["stringify"]({ key: "fonts", value: localFontFamily }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save font.");
+      if (!res["ok"]) {
+        const data = await res["json"]();
+        throw new Error(data["error"] || "Failed to save font.");
       }
       setSuccess("Font saved successfully.");
     } catch (err: any) {
-      setError(err.message);
+      setError(err["message"]);
     } finally {
       setSaving(null);
     }
@@ -109,15 +109,15 @@ export function TemplateCustomizationSettings({
       const res = await fetch("/api/customization", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "layout", value: localLayout }),
+        body: JSON["stringify"]({ key: "layout", value: localLayout }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save layout.");
+      if (!res["ok"]) {
+        const data = await res["json"]();
+        throw new Error(data["error"] || "Failed to save layout.");
       }
       setSuccess("Layout saved successfully.");
     } catch (err: any) {
-      setError(err.message);
+      setError(err["message"]);
     } finally {
       setSaving(null);
     }
@@ -157,12 +157,12 @@ export function TemplateCustomizationSettings({
                   id="brandColor"
                   type="color"
                   value={localBrandColor}
-                  onChange={(e) => setLocalBrandColor(e.target.value)}
+                  onChange={(e) => setLocalBrandColor(e["target"]["value"])}
                   className="w-12 h-8 p-0"
                 />
                 <Input
                   value={localBrandColor}
-                  onChange={(e) => setLocalBrandColor(e.target.value)}
+                  onChange={(e) => setLocalBrandColor(e["target"]["value"])}
                 />
               </div>
             </div>
@@ -173,12 +173,12 @@ export function TemplateCustomizationSettings({
                   id="accentColor"
                   type="color"
                   value={localAccentColor}
-                  onChange={(e) => setLocalAccentColor(e.target.value)}
+                  onChange={(e) => setLocalAccentColor(e["target"]["value"])}
                   className="w-12 h-8 p-0"
                 />
                 <Input
                   value={localAccentColor}
-                  onChange={(e) => setLocalAccentColor(e.target.value)}
+                  onChange={(e) => setLocalAccentColor(e["target"]["value"])}
                 />
               </div>
             </div>
@@ -201,9 +201,9 @@ export function TemplateCustomizationSettings({
                 <SelectValue placeholder="Select a font" />
               </SelectTrigger>
               <SelectContent>
-                {fonts.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
+                {fonts["map"]((f) => (
+                  <SelectItem key={f["value"]} value={f["value"]}>
+                    {f["label"]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -227,9 +227,9 @@ export function TemplateCustomizationSettings({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {layouts.map((l) => (
-                  <SelectItem key={l.value} value={l.value}>
-                    {l.label}
+                {layouts["map"]((l) => (
+                  <SelectItem key={l["value"]} value={l["value"]}>
+                    {l["label"]}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -17,10 +17,10 @@ export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
   const locale = useLocaleSafe();
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React["useState"](false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [email, setEmail] = React["useState"]("");
+  const [password, setPassword] = React["useState"]("");
 
   async function googleLogin() {
     setLoading(true);
@@ -28,13 +28,13 @@ export default function LoginPage() {
     try {
       await signIn("google", { callbackUrl: getPathnameWithLocale({ href: "/dashboard", locale }) });
     } catch (err: any) {
-      setError(err?.message || t("googleSignInFailed"));
+      setError(err?.["message"] || t("googleSignInFailed"));
       setLoading(false);
     }
   }
 
   async function emailLogin(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e["preventDefault"]();
     setLoading(true);
     setError(null);
     try {
@@ -43,14 +43,14 @@ export default function LoginPage() {
         password,
         redirect: false,
       });
-      if (result?.error) {
+      if (result?.["error"]) {
         setError(t("invalidCredentials"));
       } else {
-        router.push(getPathnameWithLocale({ href: "/dashboard", locale }));
-        router.refresh();
+        router["push"](getPathnameWithLocale({ href: "/dashboard", locale }));
+        router["refresh"]();
       }
     } catch (err: any) {
-      setError(err?.message || t("signInFailed"));
+      setError(err?.["message"] || t("signInFailed"));
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e["target"]["value"])}
               />
             </div>
             <div className="space-y-1">
@@ -95,7 +95,7 @@ export default function LoginPage() {
                 type="password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e["target"]["value"])}
               />
             </div>
             <div className="flex items-center justify-between">

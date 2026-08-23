@@ -7,12 +7,12 @@ import { CatalogManagementView } from "@/components/catalog-management-view";
 export default async function CatalogPage({ params }: { params: { locale: string } }) {
   await requireFeature("catalogItems");
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
 
   let initialItems: any[] = [];
   try {
-    initialItems = await db.catalogItem.findMany({
+    initialItems = await db["catalogItem"]["findMany"]({
       where: { orgId },
       orderBy: [
         { isFavorite: "desc" },

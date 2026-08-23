@@ -17,26 +17,26 @@ export function ChangeOrderForm({
 }) {
   const router = useRouter();
   const t = useTranslations("changeOrders");
-  const [error, setError] = React.useState<string | null>(null);
-  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e["preventDefault"]();
     setSaving(true);
     setError(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(e["currentTarget"]);
     try {
       await createChangeOrder({
-        title: String(fd.get("title") || ""),
-        description: String(fd.get("description") || "") || undefined,
-        projectId: String(fd.get("projectId") || "") || null,
-        invoiceId: String(fd.get("invoiceId") || "") || null,
-        amount: Number(fd.get("amount") || 0),
+        title: String(fd["get"]("title") || ""),
+        description: String(fd["get"]("description") || "") || undefined,
+        projectId: String(fd["get"]("projectId") || "") || null,
+        invoiceId: String(fd["get"]("invoiceId") || "") || null,
+        amount: Number(fd["get"]("amount") || 0),
       });
-      router.push("/dashboard/change-orders");
-      router.refresh();
+      router["push"]("/dashboard/change-orders");
+      router["refresh"]();
     } catch (err: any) {
-      setError(err?.message ?? t("failed"));
+      setError(err?.["message"] ?? t("failed"));
       setSaving(false);
     }
   }
@@ -66,8 +66,8 @@ export function ChangeOrderForm({
               <Label htmlFor="invoiceId">{t("linkedInvoice")}</Label>
               <select id="invoiceId" name="invoiceId" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
                 <option value="">{t("none")}</option>
-                {invoices.map((i) => (
-                  <option key={i.id} value={i.id}>{i.number}</option>
+                {invoices["map"]((i) => (
+                  <option key={i["id"]} value={i["id"]}>{i["number"]}</option>
                 ))}
               </select>
             </div>
@@ -81,7 +81,7 @@ export function ChangeOrderForm({
             <Textarea id="description" name="description" />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>{t("cancel")}</Button>
+            <Button type="button" variant="outline" onClick={() => router["back"]()}>{t("cancel")}</Button>
             <Button type="submit" disabled={saving}>{saving ? t("saving") : t("create")}</Button>
           </div>
         </form>

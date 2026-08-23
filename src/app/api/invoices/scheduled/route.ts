@@ -11,9 +11,9 @@ export async function GET(req: NextRequest) {
   }
   try {
     const results = await processScheduledInvoices();
-    return NextResponse.json({ success: true, results });
+    return NextResponse["json"]({ success: true, results });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse["json"]({ error: err["message"] }, { status: 500 });
   }
 }
 

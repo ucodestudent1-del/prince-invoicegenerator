@@ -19,7 +19,7 @@ export default async function TemplatesPage({ params }: { params: { locale: stri
         <p className="text-muted-foreground">{t("description")}</p>
       </div>
       <Suspense fallback={<p>Loading…</p>}>
-        <TemplatesContent locale={params.locale} t={t} />
+        <TemplatesContent locale={params["locale"]} t={t} />
       </Suspense>
     </div>
   );
@@ -33,7 +33,7 @@ async function TemplatesContent({ locale, t }: { locale: string; t: any }) {
     return <PricingFeature feature="customBranding" plan={plan} />;
   }
 
-  const [current, colors, fonts, layout] = await Promise.all([
+  const [current, colors, fonts, layout] = await Promise["all"]([
     getTemplateSettings(),
     getBrandColors(),
     getFontSettings(),
@@ -44,8 +44,8 @@ async function TemplatesContent({ locale, t }: { locale: string; t: any }) {
     <div className="space-y-6">
       <TemplateCustomizationSettings
         current={current}
-        brandColor={colors.brandColor}
-        accentColor={colors.accentColor}
+        brandColor={colors["brandColor"]}
+        accentColor={colors["accentColor"]}
         fontFamily={fonts}
         layout={layout}
       />

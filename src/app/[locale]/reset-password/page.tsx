@@ -19,16 +19,16 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const locale = useLocaleSafe();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const token = searchParams["get"]("token");
 
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState(false);
-  const [password, setPassword] = React.useState("");
-  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [loading, setLoading] = React["useState"](false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [success, setSuccess] = React["useState"](false);
+  const [password, setPassword] = React["useState"]("");
+  const [confirmPassword, setConfirmPassword] = React["useState"]("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e["preventDefault"]();
     setLoading(true);
     setError(null);
 
@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
       await resetPassword(token, password);
       setSuccess(true);
     } catch (err: any) {
-      setError(err?.message || t("unexpectedError"));
+      setError(err?.["message"] || t("unexpectedError"));
     } finally {
       setLoading(false);
     }
@@ -109,7 +109,7 @@ export default function ResetPasswordPage() {
               <Button
                 className="w-full"
                 onClick={() =>
-                  router.push(getPathnameWithLocale({ href: "/login", locale }))
+                  router["push"](getPathnameWithLocale({ href: "/login", locale }))
                 }
               >
                 {t("signIn")}
@@ -126,7 +126,7 @@ export default function ResetPasswordPage() {
                   required
                   minLength={8}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e["target"]["value"])}
                 />
               </div>
               <div className="space-y-1">
@@ -138,7 +138,7 @@ export default function ResetPasswordPage() {
                   required
                   minLength={8}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => setConfirmPassword(e["target"]["value"])}
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>

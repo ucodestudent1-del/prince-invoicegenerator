@@ -8,33 +8,33 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export function LateFeeSettingsForm() {
-  const [saving, setSaving] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
-  const [message, setMessage] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
+  const [loading, setLoading] = React["useState"](true);
+  const [message, setMessage] = React["useState"]<string | null>(null);
+  const [error, setError] = React["useState"]<string | null>(null);
 
-  const [enabled, setEnabled] = React.useState(false);
-  const [rate, setRate] = React.useState("");
-  const [graceDays, setGraceDays] = React.useState("0");
-  const [fixedFee, setFixedFee] = React.useState("");
-  const [maxFee, setMaxFee] = React.useState("");
+  const [enabled, setEnabled] = React["useState"](false);
+  const [rate, setRate] = React["useState"]("");
+  const [graceDays, setGraceDays] = React["useState"]("0");
+  const [fixedFee, setFixedFee] = React["useState"]("");
+  const [maxFee, setMaxFee] = React["useState"]("");
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     async function load() {
       try {
         const res = await fetch("/api/late-fees/config");
-        if (res.ok) {
-          const data = await res.json();
+        if (res["ok"]) {
+          const data = await res["json"]();
           if (data) {
-            setEnabled(data.enabled);
-            setRate(String(data.rate || 0));
-            setGraceDays(String(data.graceDays || 0));
-            setFixedFee(String(data.fixedFee || 0));
-            setMaxFee(data.maxFee ? String(data.maxFee) : "");
+            setEnabled(data["enabled"]);
+            setRate(String(data["rate"] || 0));
+            setGraceDays(String(data["graceDays"] || 0));
+            setFixedFee(String(data["fixedFee"] || 0));
+            setMaxFee(data["maxFee"] ? String(data["maxFee"]) : "");
           }
         }
       } catch (err) {
-        console.error("Failed to load late fee config", err);
+        console["error"]("Failed to load late fee config", err);
       } finally {
         setLoading(false);
       }
@@ -43,7 +43,7 @@ export function LateFeeSettingsForm() {
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+    e["preventDefault"]();
     setError(null);
     setMessage(null);
     setSaving(true);
@@ -51,7 +51,7 @@ export function LateFeeSettingsForm() {
       const res = await fetch("/api/late-fees/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON["stringify"]({
           enabled,
           rate: Number(rate) || 0,
           graceDays: Number(graceDays) || 0,
@@ -59,13 +59,13 @@ export function LateFeeSettingsForm() {
           maxFee: maxFee ? Number(maxFee) : null,
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save settings.");
+      if (!res["ok"]) {
+        const data = await res["json"]();
+        throw new Error(data["error"] || "Failed to save settings.");
       }
       setMessage("Settings saved successfully.");
     } catch (err: any) {
-      setError(err.message);
+      setError(err["message"]);
     } finally {
       setSaving(false);
     }
@@ -116,7 +116,7 @@ export function LateFeeSettingsForm() {
                 step="0.01"
                 min="0"
                 value={rate}
-                onChange={(e) => setRate(e.target.value)}
+                onChange={(e) => setRate(e["target"]["value"])}
                 disabled={!enabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -131,7 +131,7 @@ export function LateFeeSettingsForm() {
                 min="0"
                 max="30"
                 value={graceDays}
-                onChange={(e) => setGraceDays(e.target.value)}
+                onChange={(e) => setGraceDays(e["target"]["value"])}
                 disabled={!enabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -149,7 +149,7 @@ export function LateFeeSettingsForm() {
                 step="0.01"
                 min="0"
                 value={fixedFee}
-                onChange={(e) => setFixedFee(e.target.value)}
+                onChange={(e) => setFixedFee(e["target"]["value"])}
                 disabled={!enabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -164,7 +164,7 @@ export function LateFeeSettingsForm() {
                 step="0.01"
                 min="0"
                 value={maxFee}
-                onChange={(e) => setMaxFee(e.target.value)}
+                onChange={(e) => setMaxFee(e["target"]["value"])}
                 disabled={!enabled}
                 placeholder="No cap"
               />

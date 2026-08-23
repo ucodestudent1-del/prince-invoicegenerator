@@ -9,7 +9,7 @@ export function ensureEnv() {
   try {
     validateEnv();
   } catch (err: any) {
-    console.error("[env] Environment validation failed:", err.message);
+    console["error"]("[env] Environment validation failed:", err["message"]);
   } finally {
     validated = true;
   }

@@ -22,25 +22,25 @@ import { CatalogItemSelector } from "@/components/catalog-item-selector";
 export function EstimateForm({ customers, canUseCatalog }: { customers: { id: string; name: string }[]; canUseCatalog: boolean }) {
   const t = useTranslations("estimates");
   const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
-  const [saving, setSaving] = React.useState(false);
-  const [customerId, setCustomerId] = React.useState("");
-  const [validUntil, setValidUntil] = React.useState("");
-  const [taxRate, setTaxRate] = React.useState<string | number>(0);
-  const [discount, setDiscount] = React.useState<string | number>(0);
-  const [notes, setNotes] = React.useState("");
-  const [items, setItems] = React.useState([{ description: "", quantity: 1, unitPrice: 0, sku: "" }]);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
+  const [customerId, setCustomerId] = React["useState"]("");
+  const [validUntil, setValidUntil] = React["useState"]("");
+  const [taxRate, setTaxRate] = React["useState"]<string | number>(0);
+  const [discount, setDiscount] = React["useState"]<string | number>(0);
+  const [notes, setNotes] = React["useState"]("");
+  const [items, setItems] = React["useState"]([{ description: "", quantity: 1, unitPrice: 0, sku: "" }]);
 
-  const subtotal = items.reduce((a, i) => a + i.quantity * (Number(i.unitPrice) || 0), 0);
+  const subtotal = items["reduce"]((a, i) => a + i["quantity"] * (Number(i["unitPrice"]) || 0), 0);
   const taxAmount = ((subtotal * (Number(taxRate) || 0)) / 100);
   const total = subtotal + taxAmount - (Number(discount) || 0);
 
   function updateItem(idx: number, field: string, value: any) {
-    setItems((p) => p.map((it, i) => (i === idx ? { ...it, [field]: value } : it)));
+    setItems((p) => p["map"]((it, i) => (i === idx ? { ...it, [field]: value } : it)));
   }
 
   async function submit(e: React.FormEvent) {
-    e.preventDefault();
+    e["preventDefault"]();
     setError(null);
     if (!customerId) return setError(t("customerRequired"));
     setSaving(true);
@@ -52,18 +52,18 @@ export function EstimateForm({ customers, canUseCatalog }: { customers: { id: st
         discount: Number(discount) || 0,
         notes,
         items: items
-          .filter((i) => i.description)
-            .map((i) => ({
-              description: i.description,
-              quantity: Number(i.quantity) || 0,
-              unitPrice: Number(i.unitPrice) || 0,
-              sku: i.sku || null,
+          ["filter"]((i) => i["description"])
+            ["map"]((i) => ({
+              description: i["description"],
+              quantity: Number(i["quantity"]) || 0,
+              unitPrice: Number(i["unitPrice"]) || 0,
+              sku: i["sku"] || null,
             })),
       });
-      router.push("/dashboard/estimates");
-      router.refresh();
+      router["push"]("/dashboard/estimates");
+      router["refresh"]();
     } catch (err: any) {
-      setError(err?.message ?? t("failed"));
+      setError(err?.["message"] ?? t("failed"));
       setSaving(false);
     }
   }
@@ -82,7 +82,7 @@ export function EstimateForm({ customers, canUseCatalog }: { customers: { id: st
         <CardContent className="grid gap-4 sm:grid-cols-2">
            <div className="space-y-1">
              <Label htmlFor="customer">{t("customer")}</Label>
-             {customers.length === 0 ? (
+             {customers["length"] === 0 ? (
                <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                  {t("noCustomersFound")}{" "}
                  <Link
@@ -98,9 +98,9 @@ export function EstimateForm({ customers, canUseCatalog }: { customers: { id: st
                    <SelectValue placeholder={t("selectCustomer")} />
                  </SelectTrigger>
                  <SelectContent>
-                   {customers.map((c) => (
-                     <SelectItem key={c.id} value={c.id}>
-                       {c.name}
+                   {customers["map"]((c) => (
+                     <SelectItem key={c["id"]} value={c["id"]}>
+                       {c["name"]}
                      </SelectItem>
                    ))}
                  </SelectContent>
@@ -109,7 +109,7 @@ export function EstimateForm({ customers, canUseCatalog }: { customers: { id: st
            </div>
           <div className="space-y-1">
             <Label htmlFor="validUntil">{t("validUntil")}</Label>
-            <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+            <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e["target"]["value"])} />
           </div>
         </CardContent>
       </Card>
@@ -127,15 +127,15 @@ export function EstimateForm({ customers, canUseCatalog }: { customers: { id: st
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
-          {items.map((it, idx) => (
+          {items["map"]((it, idx) => (
              <div key={idx} className="flex gap-2 items-end">
                {canUseCatalog && (
                  <CatalogItemSelector
                    onSelect={(item) => {
-                     updateItem(idx, "description", item.name);
-                     updateItem(idx, "unitPrice", item.price);
-                     updateItem(idx, "sku", item.sku || "");
-                     if (item.taxRate > 0) setTaxRate(item.taxRate);
+                     updateItem(idx, "description", item["name"]);
+                     updateItem(idx, "unitPrice", item["price"]);
+                     updateItem(idx, "sku", item["sku"] || "");
+                     if (item["taxRate"] > 0) setTaxRate(item["taxRate"]);
                    }}
                    trigger={<Button type="button" variant="outline" size="sm">Browse</Button>}
                  />
@@ -143,27 +143,27 @@ export function EstimateForm({ customers, canUseCatalog }: { customers: { id: st
                <Input
                  placeholder={t("description")}
                  className="flex-1"
-                 value={it.description}
-                 onChange={(e) => updateItem(idx, "description", e.target.value)}
+                 value={it["description"]}
+                 onChange={(e) => updateItem(idx, "description", e["target"]["value"])}
                />
               <Input
                 type="number"
                 className="w-20"
-                value={it.quantity}
-                onChange={(e) => updateItem(idx, "quantity", e.target.value === "" ? "" : Number(e.target.value))}
+                value={it["quantity"]}
+                onChange={(e) => updateItem(idx, "quantity", e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
               />
               <Input
                 type="number"
                 className="w-28"
                 step="0.01"
-                value={it.unitPrice}
-                onChange={(e) => updateItem(idx, "unitPrice", e.target.value === "" ? "" : Number(e.target.value))}
+                value={it["unitPrice"]}
+                onChange={(e) => updateItem(idx, "unitPrice", e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setItems((p) => p.filter((_, i) => i !== idx))}
+                onClick={() => setItems((p) => p["filter"]((_, i) => i !== idx))}
               >
                 ✕
               </Button>
@@ -172,14 +172,14 @@ export function EstimateForm({ customers, canUseCatalog }: { customers: { id: st
           <div className="grid gap-4 pt-2 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="taxRate">{t("taxRate")}</Label>
-              <Input type="number" value={taxRate} onChange={(e) => setTaxRate(e.target.value === "" ? "" : Number(e.target.value))} />
+              <Input type="number" value={taxRate} onChange={(e) => setTaxRate(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))} />
             </div>
             <div className="space-y-1">
               <Label htmlFor="discount">{t("discount")}</Label>
-              <Input type="number" step="0.01" value={discount} onChange={(e) => setDiscount(e.target.value === "" ? "" : Number(e.target.value))} />
+              <Input type="number" step="0.01" value={discount} onChange={(e) => setDiscount(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))} />
             </div>
           </div>
-          <Textarea placeholder={t("notes")} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Textarea placeholder={t("notes")} value={notes} onChange={(e) => setNotes(e["target"]["value"])} />
           <div className="flex justify-end gap-6 text-sm">
             <div>{t("subtotal")}: <strong>{formatCurrency(subtotal)}</strong></div>
             <div>{t("tax")}: <strong>{formatCurrency(taxAmount)}</strong></div>
@@ -189,7 +189,7 @@ export function EstimateForm({ customers, canUseCatalog }: { customers: { id: st
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
+        <Button type="button" variant="outline" onClick={() => router["back"]()}>
           {t("cancel")}
         </Button>
         <Button type="submit" disabled={saving}>

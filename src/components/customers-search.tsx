@@ -19,19 +19,19 @@ export function CustomersSearch({
   const [status, setStatus] = useState(initialStatus);
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const params = new URLSearchParams(searchParams.toString());
-    if (query) params.set("q", query);
-    else params.delete("q");
-    if (status && status !== "ALL") params.set("status", status);
-    else params.delete("status");
-    router.push(`/dashboard/customers?${params.toString()}`);
+    e["preventDefault"]();
+    const params = new URLSearchParams(searchParams["toString"]());
+    if (query) params["set"]("q", query);
+    else params["delete"]("q");
+    if (status && status !== "ALL") params["set"]("status", status);
+    else params["delete"]("status");
+    router["push"](`/dashboard/customers?${params["toString"]()}`);
   };
 
   const clearFilters = () => {
     setQuery("");
     setStatus("ALL");
-    router.push("/dashboard/customers");
+    router["push"]("/dashboard/customers");
   };
 
   return (
@@ -41,13 +41,13 @@ export function CustomersSearch({
         <Input
           placeholder="Search by name, company, or email..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => setQuery(e["target"]["value"])}
           className="pl-10"
         />
       </div>
       <select
         value={status}
-        onChange={(e) => setStatus(e.target.value)}
+        onChange={(e) => setStatus(e["target"]["value"])}
         className="rounded-md border border-input bg-transparent px-3 text-sm"
       >
         <option value="ALL">All Status</option>

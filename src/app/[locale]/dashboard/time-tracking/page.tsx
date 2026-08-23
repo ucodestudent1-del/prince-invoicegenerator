@@ -9,21 +9,21 @@ import { TimeTrackerView } from "@/components/time-tracker-view";
 export default async function TimeTrackingPage({ params }: { params: { locale: string } }) {
   await requireFeature("timeTracking");
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
   const plan = await getActivePlan(user);
   const canApprove = hasFeature(plan, "timeTracking");
 
   let projects: { id: string; name: string }[];
   let initialEntries: any[];
   try {
-    projects = await db.project.findMany({
+    projects = await db["project"]["findMany"]({
       where: { orgId },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     });
 
-    initialEntries = await db.timeEntry.findMany({
+    initialEntries = await db["timeEntry"]["findMany"]({
       where: { orgId },
       orderBy: { startTime: "desc" },
       take: 100,
@@ -54,7 +54,7 @@ export default async function TimeTrackingPage({ params }: { params: { locale: s
         </p>
       </div>
       <TimerBar projects={projects} />
-      <TimeTrackerView initialEntries={initialEntries} canApprove={canApprove} userId={user.id} />
+      <TimeTrackerView initialEntries={initialEntries} canApprove={canApprove} userId={user["id"]} />
     </div>
   );
 }

@@ -12,7 +12,7 @@ export default function PortalInvoiceError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Portal invoice error:", error);
+    console["error"]("Portal invoice error:", error);
   }, [error]);
 
   return (
@@ -27,9 +27,9 @@ export default function PortalInvoiceError({
         <p className="text-sm text-gray-500">
           We couldn&apos;t load this invoice. Please try again.
         </p>
-        {error.digest && (
+        {error["digest"] && (
           <p className="text-xs text-gray-400 font-mono">
-            Error ID: {error.digest}
+            Error ID: {error["digest"]}
           </p>
         )}
         <Button onClick={reset} variant="outline">

@@ -18,10 +18,10 @@ export async function setLocalizedString(
   locale: string,
   value: string
 ) {
-  if (!routing.locales.includes(locale as any)) {
+  if (!routing["locales"]["includes"](locale as any)) {
     throw new Error(`Unsupported locale: ${locale}`);
   }
-  return db.localizedString.upsert({
+  return db["localizedString"]["upsert"]({
     where: {
       orgId_entityType_entityId_field_locale: {
         orgId,
@@ -51,7 +51,7 @@ export async function getLocalizedString(
   locale: string,
   fallbackToBase?: (field: string) => string | null
 ): Promise<string | null> {
-  const record = await db.localizedString.findUnique({
+  const record = await db["localizedString"]["findUnique"]({
     where: {
       orgId_entityType_entityId_field_locale: {
         orgId,
@@ -63,26 +63,26 @@ export async function getLocalizedString(
     },
   });
 
-  if (record?.value) return record.value;
+  if (record?.["value"]) return record["value"];
 
   if (fallbackToBase) {
     const base = fallbackToBase(field);
     if (base) return base;
   }
 
-  if (locale !== routing.defaultLocale) {
-    const fallback = await db.localizedString.findUnique({
+  if (locale !== routing["defaultLocale"]) {
+    const fallback = await db["localizedString"]["findUnique"]({
       where: {
         orgId_entityType_entityId_field_locale: {
           orgId,
           entityType,
           entityId,
           field,
-          locale: routing.defaultLocale,
+          locale: routing["defaultLocale"],
         },
       },
     });
-    if (fallback?.value) return fallback.value;
+    if (fallback?.["value"]) return fallback["value"];
   }
 
   return null;
@@ -95,7 +95,7 @@ export async function getLocalizedStrings(
   field: string,
   locales: string[]
 ): Promise<Record<string, string | null>> {
-  const records = await db.localizedString.findMany({
+  const records = await db["localizedString"]["findMany"]({
     where: {
       orgId,
       entityType,
@@ -107,7 +107,7 @@ export async function getLocalizedStrings(
 
   const result: Record<string, string | null> = {};
   for (const loc of locales) {
-    result[loc] = records.find((r) => r.locale === loc)?.value ?? null;
+    result[loc] = records["find"]((r) => r["locale"] === loc)?.["value"] ?? null;
   }
   return result;
 }
@@ -119,7 +119,7 @@ export async function deleteLocalizedString(
   field: string,
   locale: string
 ) {
-  await db.localizedString.deleteMany({
+  await db["localizedString"]["deleteMany"]({
     where: {
       orgId,
       entityType,

@@ -6,11 +6,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const year = url.searchParams.get("year") ? Number(url.searchParams.get("year")) : undefined;
+    const url = new URL(req["url"]);
+    const year = url["searchParams"]["get"]("year") ? Number(url["searchParams"]["get"]("year")) : undefined;
     const report = await getTaxesCollectedReport(year);
-    return NextResponse.json(report);
+    return NextResponse["json"](report);
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
   }
 }

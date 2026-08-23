@@ -8,28 +8,28 @@ export const dynamic = "force-dynamic";
 
 export async function POST() {
   const user = await requireUser();
-  if (!user.organizationId) {
-    return NextResponse.json({ error: "No organization" }, { status: 400 });
+  if (!user["organizationId"]) {
+    return NextResponse["json"]({ error: "No organization" }, { status: 400 });
   }
-  const org = await db.organization.findUnique({
-    where: { id: user.organizationId },
+  const org = await db["organization"]["findUnique"]({
+    where: { id: user["organizationId"] },
   });
-  if (!org?.stripeCustomerId) {
-    return NextResponse.json({ error: "No customer" }, { status: 400 });
+  if (!org?.["stripeCustomerId"]) {
+    return NextResponse["json"]({ error: "No customer" }, { status: 400 });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const appUrl = process["env"]["NEXT_PUBLIC_APP_URL"];
   if (!appUrl) {
-    return NextResponse.json(
+    return NextResponse["json"](
       { error: "Server misconfigured: NEXT_PUBLIC_APP_URL is missing" },
       { status: 500 }
     );
   }
 
-  const portal = await stripe.billingPortal.sessions.create({
-    customer: org.stripeCustomerId,
+  const portal = await stripe["billingPortal"]["sessions"]["create"]({
+    customer: org["stripeCustomerId"],
     return_url: `${appUrl}/dashboard/billing`,
   });
 
-  return NextResponse.json({ url: portal.url });
+  return NextResponse["json"]({ url: portal["url"] });
 }

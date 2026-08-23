@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 const COOKIE_CONSENT_KEY = "prince_cookie_consent";
 
 export function CookieConsent() {
-  const [visible, setVisible] = React.useState(false);
-  const [dismissed, setDismissed] = React.useState(false);
+  const [visible, setVisible] = React["useState"](false);
+  const [dismissed, setDismissed] = React["useState"](false);
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     if (typeof window === "undefined") return;
-    const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+    const consent = localStorage["getItem"](COOKIE_CONSENT_KEY);
     if (!consent) {
       setVisible(true);
     } else {
@@ -21,13 +21,13 @@ export function CookieConsent() {
   }, []);
 
   function accept() {
-    localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
+    localStorage["setItem"](COOKIE_CONSENT_KEY, "accepted");
     setDismissed(true);
     setVisible(false);
   }
 
   function decline() {
-    localStorage.setItem(COOKIE_CONSENT_KEY, "declined");
+    localStorage["setItem"](COOKIE_CONSENT_KEY, "declined");
     setDismissed(true);
     setVisible(false);
   }

@@ -9,12 +9,12 @@ export default async function NewEstimatePage({ params }: { params: { locale: st
   const t = await getTranslations("estimates");
   await requireFeature("estimates");
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
+  if (!user || !user["organizationId"]) return null;
   const plan = await getActivePlan(user);
   let customers;
   try {
-    customers = await db.customer.findMany({
-      where: { orgId: user.organizationId },
+    customers = await db["customer"]["findMany"]({
+      where: { orgId: user["organizationId"] },
       orderBy: { name: "asc" },
     });
   } catch (err) {

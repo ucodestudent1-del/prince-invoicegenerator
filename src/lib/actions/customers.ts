@@ -17,12 +17,12 @@ export interface CustomerInput {
 export async function createCustomer(input: CustomerInput) {
   return withActionError("createCustomer", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
+    if (!user["organizationId"]) actionError("No organization");
 
-    if (!input.name) actionError("Customer name is required.");
+    if (!input["name"]) actionError("Customer name is required.");
 
-    const customer = await db.customer.create({
-      data: { orgId: user.organizationId, ...input },
+    const customer = await db["customer"]["create"]({
+      data: { orgId: user["organizationId"], ...input },
     });
     await revalidateWithLocale("/dashboard/customers");
     return customer;
@@ -32,8 +32,8 @@ export async function createCustomer(input: CustomerInput) {
 export async function deleteCustomer(id: string) {
   return withActionError("deleteCustomer", async () => {
     const user = await requireUser();
-    if (!user.organizationId) actionError("No organization");
-    await db.customer.deleteMany({ where: { id, orgId: user.organizationId } });
+    if (!user["organizationId"]) actionError("No organization");
+    await db["customer"]["deleteMany"]({ where: { id, orgId: user["organizationId"] } });
     await revalidateWithLocale("/dashboard/customers");
   });
 }

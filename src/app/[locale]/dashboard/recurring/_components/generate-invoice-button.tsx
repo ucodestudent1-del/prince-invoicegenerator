@@ -12,20 +12,20 @@ export function GenerateInvoiceButton({ configId }: { configId: string }) {
   const [generating, setGenerating] = useState(false);
 
   async function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
+    e["preventDefault"]();
     setError(null);
     setGenerating(true);
     try {
       const invoice = await generateNextInvoice(configId);
-      if (invoice?.id) {
-        router.push(`/dashboard/invoices/${invoice.id}`);
+      if (invoice?.["id"]) {
+        router["push"](`/dashboard/invoices/${invoice["id"]}`);
       }
     } catch (err: any) {
-      if (err?.digest === "NEXT_REDIRECT") {
-        router.push("/login?error=session");
+      if (err?.["digest"] === "NEXT_REDIRECT") {
+        router["push"]("/login?error=session");
         return;
       }
-      setError(err?.message ?? "Failed to generate invoice.");
+      setError(err?.["message"] ?? "Failed to generate invoice.");
     } finally {
       setGenerating(false);
     }

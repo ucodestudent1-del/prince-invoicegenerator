@@ -16,15 +16,15 @@ export default function VerifyEmailPage() {
   const router = useRouter();
   const locale = useLocaleSafe();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const sent = searchParams.get("sent");
+  const token = searchParams["get"]("token");
+  const sent = searchParams["get"]("sent");
 
-  const [loading, setLoading] = React.useState(false);
-  const [resendLoading, setResendLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState(false);
+  const [loading, setLoading] = React["useState"](false);
+  const [resendLoading, setResendLoading] = React["useState"](false);
+  const [error, setError] = React["useState"]<string | null>(null);
+  const [success, setSuccess] = React["useState"](false);
 
-  React.useEffect(() => {
+  React["useEffect"](() => {
     async function verify() {
       if (!token) return;
       setLoading(true);
@@ -33,7 +33,7 @@ export default function VerifyEmailPage() {
         await verifyEmail(token);
         setSuccess(true);
       } catch (err: any) {
-        setError(err?.message || t("unexpectedError"));
+        setError(err?.["message"] || t("unexpectedError"));
       } finally {
         setLoading(false);
       }
@@ -47,7 +47,7 @@ export default function VerifyEmailPage() {
     try {
       await resendVerificationEmail();
     } catch (err: any) {
-      setError(err?.message || t("unexpectedError"));
+      setError(err?.["message"] || t("unexpectedError"));
     } finally {
       setResendLoading(false);
     }

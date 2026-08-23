@@ -119,31 +119,31 @@ export default function OnboardingForm({ initialData }: {
   const t = useTranslations("onboarding");
   const router = useRouter();
   const locale = useLocaleSafe();
-  const [saving, setSaving] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [saving, setSaving] = React["useState"](false);
+  const [error, setError] = React["useState"]<string | null>(null);
 
-  const [step, setStep] = React.useState<OnboardingStep>(initialData?.currentStep || "identity");
-  const [identity, setIdentity] = React.useState<IdentityData>(
-    initialData?.identity || { businessName: "" }
+  const [step, setStep] = React["useState"]<OnboardingStep>(initialData?.["currentStep"] || "identity");
+  const [identity, setIdentity] = React["useState"]<IdentityData>(
+    initialData?.["identity"] || { businessName: "" }
   );
-  const [contact, setContact] = React.useState<ContactData>(
-    initialData?.contact || { 
+  const [contact, setContact] = React["useState"]<ContactData>(
+    initialData?.["contact"] || { 
       addressLine1: "", 
       city: "", 
       postalCode: "", 
-      country: initialData?.autoDetected?.country || "US", 
+      country: initialData?.["autoDetected"]?.["country"] || "US", 
       email: "" 
     }
   );
-  const [compliance, setCompliance] = React.useState<ComplianceData>(
-    initialData?.compliance || {
-      ...(initialData?.autoDetected || { currency: "USD", language: "en", timezone: "America/New_York", dateFormat: "MM/DD/YYYY", numberFormat: "en-US" }),
+  const [compliance, setCompliance] = React["useState"]<ComplianceData>(
+    initialData?.["compliance"] || {
+      ...(initialData?.["autoDetected"] || { currency: "USD", language: "en", timezone: "America/New_York", dateFormat: "MM/DD/YYYY", numberFormat: "en-US" }),
       defaultTaxRate: 0,
       defaultPaymentTerms: "NET_30",
     }
   );
 
-  const currentIndex = STEPS.findIndex((s) => s.key === step);
+  const currentIndex = STEPS["findIndex"]((s) => s["key"] === step);
 
   async function handleNext() {
     setError(null);
@@ -151,11 +151,11 @@ export default function OnboardingForm({ initialData }: {
     try {
       await saveOnboardingStep(step, step === "identity" ? identity : step === "contact" ? contact : compliance);
       const nextIndex = currentIndex + 1;
-      if (nextIndex < STEPS.length) {
-        setStep(STEPS[nextIndex].key);
+      if (nextIndex < STEPS["length"]) {
+        setStep(STEPS[nextIndex]["key"]);
       }
     } catch (err: any) {
-      setError(err?.message || t("failedToSave"));
+      setError(err?.["message"] || t("failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -165,7 +165,7 @@ export default function OnboardingForm({ initialData }: {
     setError(null);
     const prevIndex = currentIndex - 1;
     if (prevIndex >= 0) {
-      setStep(STEPS[prevIndex].key);
+      setStep(STEPS[prevIndex]["key"]);
     }
   }
 
@@ -174,10 +174,10 @@ export default function OnboardingForm({ initialData }: {
     setSaving(true);
     try {
       await completeOnboarding();
-      router.push(getPathnameWithLocale({ href: "/dashboard", locale }));
-      router.refresh();
+      router["push"](getPathnameWithLocale({ href: "/dashboard", locale }));
+      router["refresh"]();
     } catch (err: any) {
-      setError(err?.message || t("failedToSave"));
+      setError(err?.["message"] || t("failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -191,8 +191,8 @@ export default function OnboardingForm({ initialData }: {
       </div>
 
       <div className="flex items-center gap-2">
-        {STEPS.map((s, i) => (
-          <React.Fragment key={s.key}>
+        {STEPS["map"]((s, i) => (
+          <React.Fragment key={s["key"]}>
             {i > 0 && <div className="h-px flex-1 bg-muted" />}
             <div className="flex items-center gap-2">
               <div
@@ -204,7 +204,7 @@ export default function OnboardingForm({ initialData }: {
               >
                 {i + 1}
               </div>
-              <span className="text-sm font-medium">{t(s.labelKey)}</span>
+              <span className="text-sm font-medium">{t(s["labelKey"])}</span>
             </div>
           </React.Fragment>
         ))}
@@ -228,22 +228,22 @@ export default function OnboardingForm({ initialData }: {
                 <Label htmlFor="businessName">{t("businessName")} *</Label>
                 <Input
                   id="businessName"
-                  value={identity.businessName}
-                  onChange={(e) => setIdentity({ ...identity, businessName: e.target.value })}
+                  value={identity["businessName"]}
+                  onChange={(e) => setIdentity({ ...identity, businessName: e["target"]["value"] })}
                   required
                 />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="industry">{t("industry")}</Label>
                 <Select
-                  value={identity.industry}
+                  value={identity["industry"]}
                   onValueChange={(value) => setIdentity({ ...identity, industry: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t("selectIndustry")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {INDUSTRIES.map((ind) => (
+                    {INDUSTRIES["map"]((ind) => (
                       <SelectItem key={ind} value={ind}>
                         {ind}
                       </SelectItem>
@@ -254,14 +254,14 @@ export default function OnboardingForm({ initialData }: {
               <div className="space-y-1">
                 <Label htmlFor="businessType">{t("businessType")}</Label>
                 <Select
-                  value={identity.businessType}
+                  value={identity["businessType"]}
                   onValueChange={(value) => setIdentity({ ...identity, businessType: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t("selectBusinessType")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {BUSINESS_TYPES.map((bt) => (
+                    {BUSINESS_TYPES["map"]((bt) => (
                       <SelectItem key={bt} value={bt}>
                         {bt}
                       </SelectItem>
@@ -273,8 +273,8 @@ export default function OnboardingForm({ initialData }: {
                 <Label htmlFor="website">{t("website")}</Label>
                 <Input
                   id="website"
-                  value={identity.website || ""}
-                  onChange={(e) => setIdentity({ ...identity, website: e.target.value })}
+                  value={identity["website"] || ""}
+                  onChange={(e) => setIdentity({ ...identity, website: e["target"]["value"] })}
                 />
               </div>
             </div>
@@ -286,8 +286,8 @@ export default function OnboardingForm({ initialData }: {
                 <Label htmlFor="addressLine1">{t("addressLine1")} *</Label>
                 <Input
                   id="addressLine1"
-                  value={contact.addressLine1}
-                  onChange={(e) => setContact({ ...contact, addressLine1: e.target.value })}
+                  value={contact["addressLine1"]}
+                  onChange={(e) => setContact({ ...contact, addressLine1: e["target"]["value"] })}
                   required
                 />
               </div>
@@ -295,8 +295,8 @@ export default function OnboardingForm({ initialData }: {
                 <Label htmlFor="addressLine2">{t("addressLine2")}</Label>
                 <Input
                   id="addressLine2"
-                  value={contact.addressLine2 || ""}
-                  onChange={(e) => setContact({ ...contact, addressLine2: e.target.value })}
+                  value={contact["addressLine2"] || ""}
+                  onChange={(e) => setContact({ ...contact, addressLine2: e["target"]["value"] })}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -304,8 +304,8 @@ export default function OnboardingForm({ initialData }: {
                   <Label htmlFor="city">{t("city")} *</Label>
                   <Input
                     id="city"
-                    value={contact.city}
-                    onChange={(e) => setContact({ ...contact, city: e.target.value })}
+                    value={contact["city"]}
+                    onChange={(e) => setContact({ ...contact, city: e["target"]["value"] })}
                     required
                   />
                 </div>
@@ -313,8 +313,8 @@ export default function OnboardingForm({ initialData }: {
                   <Label htmlFor="state">{t("state")}</Label>
                   <Input
                     id="state"
-                    value={contact.state || ""}
-                    onChange={(e) => setContact({ ...contact, state: e.target.value })}
+                    value={contact["state"] || ""}
+                    onChange={(e) => setContact({ ...contact, state: e["target"]["value"] })}
                   />
                 </div>
               </div>
@@ -323,24 +323,24 @@ export default function OnboardingForm({ initialData }: {
                   <Label htmlFor="postalCode">{t("postalCode")} *</Label>
                   <Input
                     id="postalCode"
-                    value={contact.postalCode}
-                    onChange={(e) => setContact({ ...contact, postalCode: e.target.value })}
+                    value={contact["postalCode"]}
+                    onChange={(e) => setContact({ ...contact, postalCode: e["target"]["value"] })}
                     required
                   />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="country">{t("country")} *</Label>
                   <Select
-                    value={contact.country}
+                    value={contact["country"]}
                     onValueChange={(value) => setContact({ ...contact, country: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {COUNTRIES.map((c) => (
-                        <SelectItem key={c.code} value={c.code}>
-                          {c.name}
+                      {COUNTRIES["map"]((c) => (
+                        <SelectItem key={c["code"]} value={c["code"]}>
+                          {c["name"]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -351,8 +351,8 @@ export default function OnboardingForm({ initialData }: {
                 <Label htmlFor="phone">{t("phone")}</Label>
                 <Input
                   id="phone"
-                  value={contact.phone || ""}
-                  onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                  value={contact["phone"] || ""}
+                  onChange={(e) => setContact({ ...contact, phone: e["target"]["value"] })}
                 />
               </div>
               <div className="space-y-1">
@@ -360,8 +360,8 @@ export default function OnboardingForm({ initialData }: {
                 <Input
                   id="email"
                   type="email"
-                  value={contact.email}
-                  onChange={(e) => setContact({ ...contact, email: e.target.value })}
+                  value={contact["email"]}
+                  onChange={(e) => setContact({ ...contact, email: e["target"]["value"] })}
                   required
                 />
               </div>
@@ -374,23 +374,23 @@ export default function OnboardingForm({ initialData }: {
                 <Label htmlFor="taxId">{t("taxId")}</Label>
                 <Input
                   id="taxId"
-                  value={compliance.taxId || ""}
-                  onChange={(e) => setCompliance({ ...compliance, taxId: e.target.value })}
+                  value={compliance["taxId"] || ""}
+                  onChange={(e) => setCompliance({ ...compliance, taxId: e["target"]["value"] })}
                 />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="currency">{t("currency")} *</Label>
                 <Select
-                  value={compliance.currency}
+                  value={compliance["currency"]}
                   onValueChange={(value) => setCompliance({ ...compliance, currency: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CURRENCIES.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {c.symbol} {c.name}
+                    {CURRENCIES["map"]((c) => (
+                      <SelectItem key={c["code"]} value={c["code"]}>
+                        {c["symbol"]} {c["name"]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -399,16 +399,16 @@ export default function OnboardingForm({ initialData }: {
               <div className="space-y-1">
                 <Label htmlFor="timezone">{t("timezone")} *</Label>
                 <Select
-                  value={compliance.timezone}
+                  value={compliance["timezone"]}
                   onValueChange={(value) => setCompliance({ ...compliance, timezone: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TIMEZONES.map((tz) => (
+                    {TIMEZONES["map"]((tz) => (
                       <SelectItem key={tz} value={tz}>
-                        {tz.replace("_", " ")}
+                        {tz["replace"]("_", " ")}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -418,16 +418,16 @@ export default function OnboardingForm({ initialData }: {
                 <div className="space-y-1">
                   <Label htmlFor="dateFormat">{t("dateFormat")} *</Label>
                   <Select
-                    value={compliance.dateFormat}
+                    value={compliance["dateFormat"]}
                     onValueChange={(value) => setCompliance({ ...compliance, dateFormat: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {DATE_FORMATS.map((df) => (
-                        <SelectItem key={df.value} value={df.value}>
-                          {df.label}
+                      {DATE_FORMATS["map"]((df) => (
+                        <SelectItem key={df["value"]} value={df["value"]}>
+                          {df["label"]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -436,16 +436,16 @@ export default function OnboardingForm({ initialData }: {
                 <div className="space-y-1">
                   <Label htmlFor="numberFormat">{t("numberFormat")} *</Label>
                   <Select
-                    value={compliance.numberFormat}
+                    value={compliance["numberFormat"]}
                     onValueChange={(value) => setCompliance({ ...compliance, numberFormat: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {NUMBER_FORMATS.map((nf) => (
-                        <SelectItem key={nf.value} value={nf.value}>
-                          {nf.label}
+                      {NUMBER_FORMATS["map"]((nf) => (
+                        <SelectItem key={nf["value"]} value={nf["value"]}>
+                          {nf["label"]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -460,23 +460,23 @@ export default function OnboardingForm({ initialData }: {
                     type="number"
                     min="0"
                     max="100"
-                    value={compliance.defaultTaxRate}
-                    onChange={(e) => setCompliance({ ...compliance, defaultTaxRate: parseFloat(e.target.value) || 0 })}
+                    value={compliance["defaultTaxRate"]}
+                    onChange={(e) => setCompliance({ ...compliance, defaultTaxRate: parseFloat(e["target"]["value"]) || 0 })}
                   />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="defaultPaymentTerms">{t("defaultPaymentTerms")}</Label>
                   <Select
-                    value={compliance.defaultPaymentTerms}
+                    value={compliance["defaultPaymentTerms"]}
                     onValueChange={(value) => setCompliance({ ...compliance, defaultPaymentTerms: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {PAYMENT_TERMS.map((pt) => (
-                        <SelectItem key={pt.value} value={pt.value}>
-                          {pt.label}
+                      {PAYMENT_TERMS["map"]((pt) => (
+                        <SelectItem key={pt["value"]} value={pt["value"]}>
+                          {pt["label"]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -490,40 +490,40 @@ export default function OnboardingForm({ initialData }: {
             <div className="space-y-4">
               <div className="rounded-md border p-4">
                 <h3 className="font-semibold">{t("businessIdentity")}</h3>
-                <p className="text-sm text-muted-foreground">{identity.businessName}</p>
-                {identity.industry && <p className="text-sm text-muted-foreground">{identity.industry}</p>}
-                {identity.website && <p className="text-sm text-muted-foreground">{identity.website}</p>}
+                <p className="text-sm text-muted-foreground">{identity["businessName"]}</p>
+                {identity["industry"] && <p className="text-sm text-muted-foreground">{identity["industry"]}</p>}
+                {identity["website"] && <p className="text-sm text-muted-foreground">{identity["website"]}</p>}
               </div>
               <div className="rounded-md border p-4">
                 <h3 className="font-semibold">{t("contactInformation")}</h3>
-                <p className="text-sm text-muted-foreground">{contact.addressLine1}</p>
-                {contact.addressLine2 && <p className="text-sm text-muted-foreground">{contact.addressLine2}</p>}
+                <p className="text-sm text-muted-foreground">{contact["addressLine1"]}</p>
+                {contact["addressLine2"] && <p className="text-sm text-muted-foreground">{contact["addressLine2"]}</p>}
                 <p className="text-sm text-muted-foreground">
-                  {contact.city}
-                  {contact.state ? `, ${contact.state}` : ""} {contact.postalCode}
+                  {contact["city"]}
+                  {contact["state"] ? `, ${contact["state"]}` : ""} {contact["postalCode"]}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {COUNTRIES.find((c) => c.code === contact.country)?.name || contact.country}
+                  {COUNTRIES["find"]((c) => c["code"] === contact["country"])?.["name"] || contact["country"]}
                 </p>
-                {contact.phone && <p className="text-sm text-muted-foreground">{contact.phone}</p>}
-                <p className="text-sm text-muted-foreground">{contact.email}</p>
+                {contact["phone"] && <p className="text-sm text-muted-foreground">{contact["phone"]}</p>}
+                <p className="text-sm text-muted-foreground">{contact["email"]}</p>
               </div>
               <div className="rounded-md border p-4">
                 <h3 className="font-semibold">{t("complianceLocalization")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {t("currency")}: {compliance.currency}
+                  {t("currency")}: {compliance["currency"]}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {t("timezone")}: {compliance.timezone.replace("_", " ")}
+                  {t("timezone")}: {compliance["timezone"]["replace"]("_", " ")}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {t("dateFormat")}: {compliance.dateFormat}
+                  {t("dateFormat")}: {compliance["dateFormat"]}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {t("defaultTaxRate")}: {compliance.defaultTaxRate}%
+                  {t("defaultTaxRate")}: {compliance["defaultTaxRate"]}%
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {t("defaultPaymentTerms")}: {compliance.defaultPaymentTerms.replace("NET_", "Net ")}
+                  {t("defaultPaymentTerms")}: {compliance["defaultPaymentTerms"]["replace"]("NET_", "Net ")}
                 </p>
               </div>
             </div>

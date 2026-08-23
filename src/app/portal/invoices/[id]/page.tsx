@@ -43,13 +43,12 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("portal_token="))
-      ?.split("=")[1];
+    const token = document["cookie"]
+      ["split"]("; ")
+      ["find"]((row) => row["startsWith"]("portal_token="))?.["split"]("=")[1];
 
     if (!token) {
-      router.push("/portal/auth");
+      router["push"]("/portal/auth");
       return;
     }
 
@@ -57,26 +56,26 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
       try {
         const session = await getPortalSession(token);
         if (!session) {
-          router.push("/portal/auth");
+          router["push"]("/portal/auth");
           return;
         }
 
         // Fetch invoice details
-        const res = await fetch(`/api/portal/invoices/${params.id}?token=${token}`);
-        if (!res.ok) {
+        const res = await fetch(`/api/portal/invoices/${params["id"]}?token=${token}`);
+        if (!res["ok"]) {
           throw new Error("Failed to load invoice.");
         }
-        const data = await res.json();
+        const data = await res["json"]();
         setInvoice(data);
       } catch (err: any) {
-        setError(err.message || "Failed to load invoice.");
+        setError(err["message"] || "Failed to load invoice.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchInvoice();
-  }, [params.id, router]);
+  }, [params["id"], router]);
 
   if (loading) {
     return (
@@ -92,7 +91,7 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <p className="text-red-600">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => router.push("/portal/dashboard")}>
+            <Button variant="outline" className="mt-4" onClick={() => router["push"]("/portal/dashboard")}>
               Back to Dashboard
             </Button>
           </CardContent>
@@ -103,14 +102,14 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
 
   if (!invoice) return null;
 
-  const balanceDue = invoice.total - invoice.amountPaid;
+  const balanceDue = invoice["total"] - invoice["amountPaid"];
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/portal/dashboard")}>
+          <Button variant="ghost" size="sm" onClick={() => router["push"]("/portal/dashboard")}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Invoices
           </Button>
         </div>
@@ -120,20 +119,20 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
         {/* Invoice Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Invoice {invoice.number}</h1>
-            <p className="text-sm text-muted-foreground">Issued {formatDate(invoice.issueDate)}</p>
+            <h1 className="text-2xl font-bold">Invoice {invoice["number"]}</h1>
+            <p className="text-sm text-muted-foreground">Issued {formatDate(invoice["issueDate"])}</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge
               className={
-                invoice.status === "PAID"
+                invoice["status"] === "PAID"
                   ? "bg-green-100 text-green-700"
-                  : invoice.status === "OVERDUE"
+                  : invoice["status"] === "OVERDUE"
                   ? "bg-red-100 text-red-700"
                   : "bg-blue-100 text-blue-700"
               }
             >
-              {invoice.status}
+              {invoice["status"]}
             </Badge>
           </div>
         </div>
@@ -141,11 +140,11 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
         {/* Actions */}
         <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild>
-            <a href={`/api/invoices/${invoice.id}/pdf`} target="_blank">
+            <a href={`/api/invoices/${invoice["id"]}/pdf`} target="_blank">
               <Download className="mr-2 h-4 w-4" /> Download PDF
             </a>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <Button variant="outline" size="sm" onClick={() => window["print"]()}>
             <Printer className="mr-2 h-4 w-4" /> Print
           </Button>
           {balanceDue > 0 && (
@@ -172,13 +171,13 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
                 </tr>
               </thead>
               <tbody>
-                {invoice.items.map((item, idx) => (
-                  <tr key={item.id} className="border-b">
+                {invoice["items"]["map"]((item, idx) => (
+                  <tr key={item["id"]} className="border-b">
                     <td className="py-2 text-muted-foreground">{idx + 1}</td>
-                    <td className="py-2">{item.description}</td>
-                    <td className="py-2 text-right">{item.quantity}</td>
-                    <td className="py-2 text-right">{formatCurrency(item.unitPrice)}</td>
-                    <td className="py-2 text-right font-medium">{formatCurrency(item.amount)}</td>
+                    <td className="py-2">{item["description"]}</td>
+                    <td className="py-2 text-right">{item["quantity"]}</td>
+                    <td className="py-2 text-right">{formatCurrency(item["unitPrice"])}</td>
+                    <td className="py-2 text-right font-medium">{formatCurrency(item["amount"])}</td>
                   </tr>
                 ))}
               </tbody>
@@ -193,33 +192,33 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
               <div className="w-72 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>{formatCurrency(invoice.subtotal)}</span>
+                  <span>{formatCurrency(invoice["subtotal"])}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax ({invoice.taxRate}%)</span>
-                  <span>{formatCurrency(invoice.taxAmount)}</span>
+                  <span className="text-muted-foreground">Tax ({invoice["taxRate"]}%)</span>
+                  <span>{formatCurrency(invoice["taxAmount"])}</span>
                 </div>
-                {invoice.discount > 0 && (
+                {invoice["discount"] > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Discount</span>
-                    <span>-{formatCurrency(invoice.discount)}</span>
+                    <span>-{formatCurrency(invoice["discount"])}</span>
                   </div>
                 )}
-                {invoice.retainageAmount > 0 && (
+                {invoice["retainageAmount"] > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Retainage</span>
-                    <span>{formatCurrency(invoice.retainageAmount)}</span>
+                    <span>{formatCurrency(invoice["retainageAmount"])}</span>
                   </div>
                 )}
                 <div className="border-t pt-2 flex justify-between text-base font-bold">
                   <span>Total</span>
-                  <span>{formatCurrency(invoice.total)}</span>
+                  <span>{formatCurrency(invoice["total"])}</span>
                 </div>
-                {invoice.amountPaid > 0 && (
+                {invoice["amountPaid"] > 0 && (
                   <>
                     <div className="flex justify-between text-green-600">
                       <span>Amount Paid</span>
-                      <span>-{formatCurrency(invoice.amountPaid)}</span>
+                      <span>-{formatCurrency(invoice["amountPaid"])}</span>
                     </div>
                     <div className="border-t pt-2 flex justify-between font-bold">
                       <span>Balance Due</span>
@@ -233,13 +232,13 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
         </Card>
 
         {/* Notes */}
-        {invoice.notes && (
+        {invoice["notes"] && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground whitespace-pre-line">{invoice.notes}</p>
+              <p className="text-sm text-muted-foreground whitespace-pre-line">{invoice["notes"]}</p>
             </CardContent>
           </Card>
         )}

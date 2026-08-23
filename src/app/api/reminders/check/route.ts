@@ -17,7 +17,7 @@ interface ContextResult {
 }
 
 function getBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+  return process["env"]["NEXT_PUBLIC_APP_URL"] || process["env"]["NEXTAUTH_URL"] || "http://localhost:3000";
 }
 
 function eligibleInvoiceStatuses(): any[] {
@@ -25,7 +25,7 @@ function eligibleInvoiceStatuses(): any[] {
 }
 
 function getDayDifference(now: Date, dueDate: Date): number {
-  return Math.floor((now.getTime() - dueDate.getTime()) / 86400000);
+  return Math["floor"]((now["getTime"]() - dueDate["getTime"]()) / 86400000);
 }
 
 function shouldTriggerStage(
@@ -33,7 +33,7 @@ function shouldTriggerStage(
   daysDiff: number,
   invoice: any
 ): boolean {
-  if (!stage.enabled) return false;
+  if (!stage["enabled"]) return false;
 
   const { type, daysOffset } = stage;
 
@@ -54,7 +54,7 @@ function shouldTriggerStage(
   if (type === "POST_DUE") {
     // daysOffset is positive (e.g., 1, 7, 14, 30)
     // Trigger exactly when daysDiff matches the offset
-    return daysDiff === daysOffset && invoice.status !== "PAID";
+    return daysDiff === daysOffset && invoice["status"] !== "PAID";
   }
 
   return false;
@@ -65,7 +65,7 @@ async function checkSuppression(orgId: string, invoiceId: string): Promise<{
   snoozedUntil: Date | null;
 } | null> {
   try {
-    const suppression = await db.invoiceReminderSuppression.findUnique({
+    const suppression = await db["invoiceReminderSuppression"]["findUnique"]({
       where: { orgId_invoiceId: { orgId, invoiceId } },
       select: { suppressedAll: true, snoozedUntil: true },
     });
@@ -78,7 +78,7 @@ async function checkSuppression(orgId: string, invoiceId: string): Promise<{
 
 async function loadStages(configId: string): Promise<any[]> {
   try {
-    return await db.reminderStage.findMany({
+    return await db["reminderStage"]["findMany"]({
       where: { configId, enabled: true },
       orderBy: { daysOffset: "asc" },
     });
@@ -94,13 +94,13 @@ async function alreadySentForStage(invoiceId: string, stageId: string | null, ty
     status: { in: ["SENT", "DELIVERED", "QUEUED"] },
   };
   if (stageId) {
-    where.stageId = stageId;
+    where["stageId"] = stageId;
   } else {
-    where.type = type;
+    where["type"] = type;
   }
 
   try {
-    const count = await db.reminder.count({ where });
+    const count = await db["reminder"]["count"]({ where });
     return count > 0;
   } catch (err) {
     if (isMissingColumnError(err)) {
@@ -111,36 +111,36 @@ async function alreadySentForStage(invoiceId: string, stageId: string | null, ty
 }
 
 async function checkGlobalFrequencyCap(invoiceId: string, config: any): Promise<boolean> {
-  const since = new Date(Date.now() - config.frequencyHours * 60 * 60 * 1000);
-  const count = await db.reminder.count({
+  const since = new Date(Date["now"]() - config["frequencyHours"] * 60 * 60 * 1000);
+  const count = await db["reminder"]["count"]({
     where: {
       invoiceId,
       status: { in: ["SENT", "DELIVERED", "QUEUED"] },
       createdAt: { gte: since },
     },
   });
-  return count >= config.maxReminders;
+  return count >= config["maxReminders"];
 }
 
 function buildSendContext(invoice: any, customer: any, orgName: string): ContextResult {
   const baseUrl = getBaseUrl();
-  const invoiceUrl = `${baseUrl}/invoices/${invoice.id}`;
+  const invoiceUrl = `${baseUrl}/invoices/${invoice["id"]}`;
 
   return {
     invoice: {
-      id: invoice.id,
-      number: invoice.number,
-      total: invoice.total,
-      amountPaid: invoice.amountPaid,
-      currency: invoice.currency,
-      issueDate: invoice.issueDate,
-      dueDate: invoice.dueDate,
-      status: invoice.status,
+      id: invoice["id"],
+      number: invoice["number"],
+      total: invoice["total"],
+      amountPaid: invoice["amountPaid"],
+      currency: invoice["currency"],
+      issueDate: invoice["issueDate"],
+      dueDate: invoice["dueDate"],
+      status: invoice["status"],
     },
     customer: {
-      name: customer?.name,
-      email: customer?.email,
-      company: customer?.company,
+      name: customer?.["name"],
+      email: customer?.["email"],
+      company: customer?.["company"],
     },
     organization: { name: orgName },
     invoiceUrl,
@@ -154,7 +154,7 @@ async function deliverReminder(
   orgId: string,
   ctx: ContextResult
 ) {
-  const recipient = ctx.customer.email;
+  const recipient = ctx["customer"]["email"];
   if (!recipient) {
     return {
       status: "SKIPPED" as const,
@@ -162,9 +162,9 @@ async function deliverReminder(
     };
   }
 
-  const subject = renderTemplate(stage.subjectTemplate || config.emailSubject || "Payment reminder", ctx);
-  const bodyHtml = buildHtmlBody(stage.bodyTemplate || config.emailTemplate || "", ctx);
-  const bodyText = renderTemplate(stage.bodyTemplate || config.emailTemplate || "", ctx);
+  const subject = renderTemplate(stage["subjectTemplate"] || config["emailSubject"] || "Payment reminder", ctx);
+  const bodyHtml = buildHtmlBody(stage["bodyTemplate"] || config["emailTemplate"] || "", ctx);
+  const bodyText = renderTemplate(stage["bodyTemplate"] || config["emailTemplate"] || "", ctx);
 
   const emailResult = await sendEmail({
     to: recipient,
@@ -172,56 +172,56 @@ async function deliverReminder(
     html: bodyHtml,
     text: bodyText,
     metadata: {
-      invoiceId: invoice.id,
-      stageId: stage.id ?? "",
+      invoiceId: invoice["id"],
+      stageId: stage["id"] ?? "",
     },
   });
 
   const now = new Date();
-  const reminderStatus = emailResult.success
-    ? (emailResult.status === "QUEUED" ? "QUEUED" : "DELIVERED")
+  const reminderStatus = emailResult["success"]
+    ? (emailResult["status"] === "QUEUED" ? "QUEUED" : "DELIVERED")
     : "FAILED";
 
-  const type = stage.type === "PRE_DUE"
+  const type = stage["type"] === "PRE_DUE"
     ? "PRE_DUE"
-    : stage.type === "DUE_DATE"
+    : stage["type"] === "DUE_DATE"
       ? "DUE_DATE"
-      : `POST_DUE_${stage.daysOffset}`;
+      : `POST_DUE_${stage["daysOffset"]}`;
 
   try {
-    await db.reminder.create({
+    await db["reminder"]["create"]({
       data: {
         orgId,
-        invoiceId: invoice.id,
-        stageId: stage.id ?? undefined,
+        invoiceId: invoice["id"],
+        stageId: stage["id"] ?? undefined,
         type,
         scheduledAt: now,
-        sentAt: emailResult.success ? now : null,
-        deliveredAt: emailResult.success && emailResult.status === "DELIVERED" ? now : null,
+        sentAt: emailResult["success"] ? now : null,
+        deliveredAt: emailResult["success"] && emailResult["status"] === "DELIVERED" ? now : null,
         status: reminderStatus,
         channel: "EMAIL",
         recipient,
         subject,
-        errorMessage: emailResult.error,
-        metadata: emailResult.metadata
-          ? { provider: emailResult.metadata.provider, messageId: emailResult.messageId }
+        errorMessage: emailResult["error"],
+        metadata: emailResult["metadata"]
+          ? { provider: emailResult["metadata"]["provider"], messageId: emailResult["messageId"] }
           : undefined,
-        note: `Automated ${stage.name} reminder sent for invoice ${invoice.number}`,
+        note: `Automated ${stage["name"]} reminder sent for invoice ${invoice["number"]}`,
       },
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
       // Schema drift fallback — record with minimal fields
-      await db.reminder.create({
+      await db["reminder"]["create"]({
         data: {
           orgId,
-          invoiceId: invoice.id,
+          invoiceId: invoice["id"],
           type,
           scheduledAt: now,
-          sentAt: emailResult.success ? now : null,
+          sentAt: emailResult["success"] ? now : null,
           status: reminderStatus,
           channel: "EMAIL",
-          note: `Automated ${stage.name} reminder sent for invoice ${invoice.number}`,
+          note: `Automated ${stage["name"]} reminder sent for invoice ${invoice["number"]}`,
         },
       });
     } else {
@@ -230,13 +230,13 @@ async function deliverReminder(
   }
 
   try {
-    await db.invoiceAudit.create({
+    await db["invoiceAudit"]["create"]({
       data: {
-        invoiceId: invoice.id,
+        invoiceId: invoice["id"],
         orgId,
         action: "REMINDER_SENT",
-        toStatus: invoice.status,
-        note: `Automated ${stage.name} reminder sent to ${recipient}`,
+        toStatus: invoice["status"],
+        note: `Automated ${stage["name"]} reminder sent to ${recipient}`,
       },
     });
   } catch (err) {
@@ -245,8 +245,8 @@ async function deliverReminder(
 
   return {
     status: reminderStatus,
-    messageId: emailResult.messageId,
-    error: emailResult.error,
+    messageId: emailResult["messageId"],
+    error: emailResult["error"],
   };
 }
 
@@ -259,7 +259,7 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const results: any[] = [];
 
-    const configs = await db.reminderConfig.findMany({
+    const configs = await db["reminderConfig"]["findMany"]({
       where: { enabled: true },
       include: {
         org: { select: { id: true, name: true } },
@@ -267,31 +267,31 @@ export async function GET(req: NextRequest) {
     });
 
     for (const config of configs) {
-      const orgId = config.orgId;
+      const orgId = config["orgId"];
 
       // Load stages (falls back to legacy derived stages if table is missing)
-      let stages = await loadStages(config.id);
+      let stages = await loadStages(config["id"]);
 
-      if (stages.length === 0) {
+      if (stages["length"] === 0) {
         // Legacy mode: derive stages from remindBeforeDue / remindAfterDue
         stages = buildDefaultStages(config);
         // Mark them as "legacy" — we use the legacy fields directly
-        stages = stages.map((s) => ({
+        stages = stages["map"]((s) => ({
           ...s,
           id: null,
-          type: s.type,
+          type: s["type"],
           enabled: true,
-          daysOffset: s.daysOffset,
-          subjectTemplate: config.emailSubject,
-          bodyTemplate: config.emailTemplate,
+          daysOffset: s["daysOffset"],
+          subjectTemplate: config["emailSubject"],
+          bodyTemplate: config["emailTemplate"],
         }));
       }
 
-      if (stages.length === 0) continue;
+      if (stages["length"] === 0) continue;
 
       let invoices: any[];
       try {
-        invoices = await db.invoice.findMany({
+        invoices = await db["invoice"]["findMany"]({
           where: {
             orgId,
             status: { in: eligibleInvoiceStatuses() },
@@ -300,7 +300,7 @@ export async function GET(req: NextRequest) {
         });
       } catch (err) {
         if (isInvalidEnumValueError(err)) {
-          invoices = await db.invoice.findMany({
+          invoices = await db["invoice"]["findMany"]({
             where: {
               orgId,
               status: { in: ["SENT", "OVERDUE", "VIEWED"] },
@@ -313,73 +313,73 @@ export async function GET(req: NextRequest) {
       }
 
       for (const invoice of invoices) {
-        if (!invoice.dueDate) continue;
+        if (!invoice["dueDate"]) continue;
 
         // Skip invoices with no remaining balance
-        if (invoice.amountPaid >= invoice.total) continue;
+        if (invoice["amountPaid"] >= invoice["total"]) continue;
 
         // Check per-invoice suppression
-        const suppression = await checkSuppression(orgId, invoice.id);
+        const suppression = await checkSuppression(orgId, invoice["id"]);
         if (suppression) {
-          if (suppression.suppressedAll) continue;
-          if (suppression.snoozedUntil && now.getTime() < new Date(suppression.snoozedUntil).getTime()) continue;
+          if (suppression["suppressedAll"]) continue;
+          if (suppression["snoozedUntil"] && now["getTime"]() < new Date(suppression["snoozedUntil"])["getTime"]()) continue;
         }
 
-        const dueDate = new Date(invoice.dueDate);
+        const dueDate = new Date(invoice["dueDate"]);
         const daysDiff = getDayDifference(now, dueDate);
-        const ctx = buildSendContext(invoice, invoice.customer, config.org.name);
+        const ctx = buildSendContext(invoice, invoice["customer"], config["org"]["name"]);
 
         for (const stage of stages) {
-          if (!stage.enabled) continue;
+          if (!stage["enabled"]) continue;
 
           const shouldTrigger = shouldTriggerStage(stage, daysDiff, invoice);
           if (!shouldTrigger) continue;
 
           // Deduplication: has this stage already been sent for this invoice?
-          const stageId = stage.id ?? null;
-          const dupCheck = stage.id
-            ? { stageId: stage.id }
-            : { type: stage.type === "PRE_DUE" ? "PRE_DUE" : stage.type === "DUE_DATE" ? "DUE_DATE" : `POST_DUE_${stage.daysOffset}` };
+          const stageId = stage["id"] ?? null;
+          const dupCheck = stage["id"]
+            ? { stageId: stage["id"] }
+            : { type: stage["type"] === "PRE_DUE" ? "PRE_DUE" : stage["type"] === "DUE_DATE" ? "DUE_DATE" : `POST_DUE_${stage["daysOffset"]}` };
 
           const alreadySent = await alreadySentForStage(
-            invoice.id,
+            invoice["id"],
             stageId,
-            stage.type === "PRE_DUE" ? "PRE_DUE"
-              : stage.type === "DUE_DATE" ? "DUE_DATE"
-              : `POST_DUE_${stage.daysOffset}`
+            stage["type"] === "PRE_DUE" ? "PRE_DUE"
+              : stage["type"] === "DUE_DATE" ? "DUE_DATE"
+              : `POST_DUE_${stage["daysOffset"]}`
           );
           if (alreadySent) continue;
 
           // Global frequency cap check
-          const atCap = await checkGlobalFrequencyCap(invoice.id, config);
+          const atCap = await checkGlobalFrequencyCap(invoice["id"], config);
           if (atCap) continue;
 
           const delivery = await deliverReminder(invoice, stage, config, orgId, ctx);
 
-          results.push({
-            org: config.org.name,
-            invoice: invoice.number,
-            stage: stage.name,
-            type: delivery.status,
-            recipient: ctx.customer.email,
-            messageId: delivery.messageId,
+          results["push"]({
+            org: config["org"]["name"],
+            invoice: invoice["number"],
+            stage: stage["name"],
+            type: delivery["status"],
+            recipient: ctx["customer"]["email"],
+            messageId: delivery["messageId"],
           });
 
-          if (delivery.error) {
-            results[results.length - 1].error = delivery.error;
+          if (delivery["error"]) {
+            results[results["length"] - 1]["error"] = delivery["error"];
           }
         }
       }
     }
 
-    return NextResponse.json({
+    return NextResponse["json"]({
       success: true,
-      remindersSent: results.length,
+      remindersSent: results["length"],
       details: results,
     });
   } catch (err) {
     logError("reminders-check", err);
-    return NextResponse.json({ error: "Failed to process reminders." }, { status: 500 });
+    return NextResponse["json"]({ error: "Failed to process reminders." }, { status: 500 });
   }
 }
 

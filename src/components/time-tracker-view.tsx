@@ -45,10 +45,10 @@ export function TimeTrackerView({
   canApprove: boolean;
   userId: string;
 }) {
-  const [entries, setEntries] = React.useState<TimeEntryWithRelations[]>(initialEntries);
-  const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [editData, setEditData] = React.useState<Partial<TimeEntryWithRelations>>({});
-  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [entries, setEntries] = React["useState"]<TimeEntryWithRelations[]>(initialEntries);
+  const [editingId, setEditingId] = React["useState"]<string | null>(null);
+  const [editData, setEditData] = React["useState"]<Partial<TimeEntryWithRelations>>({});
+  const [selected, setSelected] = React["useState"]<Set<string>>(new Set());
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -58,23 +58,23 @@ export function TimeTrackerView({
       REJECTED: "destructive",
       DRAFT: "secondary",
     };
-    return <Badge variant={variants[status] || "secondary"} className="text-xs">{status.replace("_", " ")}</Badge>;
+    return <Badge variant={variants[status] || "secondary"} className="text-xs">{status["replace"]("_", " ")}</Badge>;
   };
 
   const formatDuration = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    const h = Math["floor"](seconds / 3600);
+    const m = Math["floor"]((seconds % 3600) / 60);
+    const s = Math["floor"](seconds % 60);
+    return `${h["toString"]()["padStart"](2, "0")}:${m["toString"]()["padStart"](2, "0")}:${s["toString"]()["padStart"](2, "0")}`;
   };
 
   const startEdit = (entry: TimeEntryWithRelations) => {
-    setEditingId(entry.id);
+    setEditingId(entry["id"]);
     setEditData({
-      description: entry.description,
-      billable: entry.billable,
-      hourlyRate: entry.hourlyRate,
-      status: entry.status,
+      description: entry["description"],
+      billable: entry["billable"],
+      hourlyRate: entry["hourlyRate"],
+      status: entry["status"],
     });
   };
 
@@ -82,14 +82,14 @@ export function TimeTrackerView({
     if (!editingId) return;
     try {
       await updateTimeEntry(editingId, {
-        description: editData.description,
-        billable: editData.billable,
-        hourlyRate: editData.hourlyRate,
-        status: editData.status as any,
+        description: editData["description"],
+        billable: editData["billable"],
+        hourlyRate: editData["hourlyRate"],
+        status: editData["status"] as any,
       });
       setEntries(
-        entries.map((e) =>
-          e.id === editingId
+        entries["map"]((e) =>
+          e["id"] === editingId
             ? { ...e, ...editData }
             : e
         ) as TimeEntryWithRelations[]
@@ -97,7 +97,7 @@ export function TimeTrackerView({
       setEditingId(null);
       setEditData({});
     } catch (err: any) {
-      console.error("Failed to update entry:", err);
+      console["error"]("Failed to update entry:", err);
     }
   };
 
@@ -105,46 +105,46 @@ export function TimeTrackerView({
     if (!confirm("Delete this time entry?")) return;
     try {
       await deleteTimeEntry(id);
-      setEntries(entries.filter((e) => e.id !== id));
+      setEntries(entries["filter"]((e) => e["id"] !== id));
     } catch (err: any) {
-      console.error("Failed to delete:", err);
+      console["error"]("Failed to delete:", err);
     }
   };
 
   const handleApproveSelected = async () => {
-    const ids = Array.from(selected);
-    if (ids.length === 0) return;
+    const ids = Array["from"](selected);
+    if (ids["length"] === 0) return;
     try {
       await approveTimeEntries(ids);
       setEntries(
-        entries.map((e) =>
-          selected.has(e.id) ? { ...e, status: "APPROVED" } : e
+        entries["map"]((e) =>
+          selected["has"](e["id"]) ? { ...e, status: "APPROVED" } : e
         )
       );
       setSelected(new Set());
     } catch (err: any) {
-      console.error("Failed to approve:", err);
+      console["error"]("Failed to approve:", err);
     }
   };
 
   const toggleSelected = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next["has"](id)) next["delete"](id);
+      else next["add"](id);
       return next;
     });
   };
 
   const totalBillable = entries
-    .filter((e) => e.billable)
-    .reduce((sum, e) => sum + e.amount, 0);
+    ["filter"]((e) => e["billable"])
+    ["reduce"]((sum, e) => sum + e["amount"], 0);
 
   return (
     <div className="space-y-4">
-      {canApprove && selected.size > 0 && (
+      {canApprove && selected["size"] > 0 && (
         <div className="flex items-center justify-between bg-blue-50 p-3 rounded-md">
-          <span className="text-sm">{selected.size} selected</span>
+          <span className="text-sm">{selected["size"]} selected</span>
           <Button size="sm" onClick={handleApproveSelected}>
             Approve Selected
           </Button>
@@ -176,60 +176,60 @@ export function TimeTrackerView({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {entries.length === 0 ? (
+              {entries["length"] === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center text-muted-foreground">
                     No time entries yet.
                   </TableCell>
                 </TableRow>
               ) : (
-                entries.map((entry) => (
-                  <TableRow key={entry.id}>
+                entries["map"]((entry) => (
+                  <TableRow key={entry["id"]}>
                     {canApprove && (
                       <TableCell>
                         <input
                           type="checkbox"
-                          checked={selected.has(entry.id)}
-                          onChange={() => toggleSelected(entry.id)}
-                          disabled={entry.status === "INVOICED"}
+                          checked={selected["has"](entry["id"])}
+                          onChange={() => toggleSelected(entry["id"])}
+                          disabled={entry["status"] === "INVOICED"}
                         />
                       </TableCell>
                     )}
                     <TableCell>
-                      {new Date(entry.startTime).toLocaleDateString()}
+                      {new Date(entry["startTime"])["toLocaleDateString"]()}
                     </TableCell>
                     <TableCell>
-                      <code className="text-sm">{formatDuration(entry.duration)}</code>
+                      <code className="text-sm">{formatDuration(entry["duration"])}</code>
                     </TableCell>
-                    <TableCell>{entry.project?.name || "—"}</TableCell>
+                    <TableCell>{entry["project"]?.["name"] || "—"}</TableCell>
                     <TableCell>
-                      {editingId === entry.id ? (
+                      {editingId === entry["id"] ? (
                         <Input
-                          value={editData.description ?? ""}
-                          onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                          value={editData["description"] ?? ""}
+                          onChange={(e) => setEditData({ ...editData, description: e["target"]["value"] })}
                           className="text-sm"
                         />
                       ) : (
-                        entry.description
+                        entry["description"]
                       )}
                     </TableCell>
                     <TableCell>
-                      {editingId === entry.id ? (
+                      {editingId === entry["id"] ? (
                         <Input
                           type="number"
-                          value={editData.hourlyRate ?? ""}
-                          onChange={(e) => setEditData({ ...editData, hourlyRate: Number(e.target.value) })}
+                          value={editData["hourlyRate"] ?? ""}
+                          onChange={(e) => setEditData({ ...editData, hourlyRate: Number(e["target"]["value"]) })}
                           className="w-20 text-sm"
                         />
                       ) : (
-                        formatCurrency(entry.hourlyRate)
+                        formatCurrency(entry["hourlyRate"])
                       )}
                     </TableCell>
-                    <TableCell>{formatCurrency(entry.amount)}</TableCell>
+                    <TableCell>{formatCurrency(entry["amount"])}</TableCell>
                     <TableCell>
-                      {editingId === entry.id ? (
+                      {editingId === entry["id"] ? (
                         <Select
-                          value={String(editData.billable)}
+                          value={String(editData["billable"])}
                           onValueChange={(v) => setEditData({ ...editData, billable: v === "true" })}
                         >
                           <SelectTrigger className="w-20">
@@ -241,13 +241,13 @@ export function TimeTrackerView({
                           </SelectContent>
                         </Select>
                       ) : (
-                        entry.billable ? "Yes" : "No"
+                        entry["billable"] ? "Yes" : "No"
                       )}
                     </TableCell>
                     <TableCell>
-                      {editingId === entry.id ? (
+                      {editingId === entry["id"] ? (
                         <Select
-                          value={editData.status ?? entry.status}
+                          value={editData["status"] ?? entry["status"]}
                           onValueChange={(v) => setEditData({ ...editData, status: v as any })}
                         >
                           <SelectTrigger className="w-32">
@@ -261,11 +261,11 @@ export function TimeTrackerView({
                           </SelectContent>
                         </Select>
                       ) : (
-                        getStatusBadge(entry.status)
+                        getStatusBadge(entry["status"])
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {editingId === entry.id ? (
+                      {editingId === entry["id"] ? (
                         <>
                           <Button size="sm" variant="ghost" onClick={saveEdit}>
                             <Check className="h-4 w-4" />
@@ -283,7 +283,7 @@ export function TimeTrackerView({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleDelete(entry.id)}
+                        onClick={() => handleDelete(entry["id"])}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

@@ -46,17 +46,17 @@ export function ClientDetailView({ customerId }: ClientDetailViewProps) {
     <div className="space-y-4">
       {/* Tab Navigation */}
       <div className="flex gap-2 border-b">
-        {tabs.map((tab) => (
+        {tabs["map"]((tab) => (
           <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            key={tab["key"]}
+            onClick={() => setActiveTab(tab["key"])}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.key
+              activeTab === tab["key"]
                 ? "border-b-2 border-primary text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {tab.label}
+            {tab["label"]}
           </button>
         ))}
       </div>

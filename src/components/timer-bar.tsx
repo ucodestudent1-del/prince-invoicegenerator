@@ -32,40 +32,40 @@ interface TimerState {
 }
 
 export function TimerBar({ projects }: { projects: Project[] }) {
-  const [timer, setTimer] = React.useState<TimerState>({
+  const [timer, setTimer] = React["useState"]<TimerState>({
     isRunning: false,
     startTime: null,
     elapsed: 0,
-    selectedProject: projects[0]?.id || "",
+    selectedProject: projects[0]?.["id"] || "",
     description: "",
     billable: true,
     hourlyRate: "",
   });
-  const [showManualForm, setShowManualForm] = React.useState(false);
-  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [showManualForm, setShowManualForm] = React["useState"](false);
+  const intervalRef = React["useRef"]<NodeJS.Timeout | null>(null);
 
-  React.useEffect(() => {
-    if (timer.isRunning) {
-      intervalRef.current = setInterval(() => {
+  React["useEffect"](() => {
+    if (timer["isRunning"]) {
+      intervalRef["current"] = setInterval(() => {
         setTimer((prev) => ({
           ...prev,
-          elapsed: Date.now() - prev.startTime!.getTime(),
+          elapsed: Date["now"]() - prev["startTime"]!["getTime"](),
         }));
       }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    } else if (intervalRef["current"]) {
+      clearInterval(intervalRef["current"]);
     }
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef["current"]) clearInterval(intervalRef["current"]);
     };
-  }, [timer.isRunning]);
+  }, [timer["isRunning"]]);
 
   const formatElapsed = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const totalSeconds = Math["floor"](ms / 1000);
+    const hours = Math["floor"](totalSeconds / 3600);
+    const minutes = Math["floor"]((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    return `${hours["toString"]()["padStart"](2, "0")}:${minutes["toString"]()["padStart"](2, "0")}:${seconds["toString"]()["padStart"](2, "0")}`;
   };
 
   const startTimer = () => {
@@ -95,53 +95,53 @@ export function TimerBar({ projects }: { projects: Project[] }) {
     setTimer((prev) => ({
       ...prev,
       isRunning: true,
-      startTime: new Date(Date.now() - prev.elapsed),
+      startTime: new Date(Date["now"]() - prev["elapsed"]),
     }));
   };
 
   const saveEntry = async () => {
     try {
-      const duration = timer.isRunning ? timer.elapsed : timer.elapsed;
+      const duration = timer["isRunning"] ? timer["elapsed"] : timer["elapsed"];
       await createManualTimeEntry({
-        projectId: timer.selectedProject,
-        startTime: new Date().toISOString(),
-        duration: Math.floor(duration / 1000),
-        description: timer.description,
-        billable: timer.billable,
-        hourlyRate: Number(timer.hourlyRate) || 0,
+        projectId: timer["selectedProject"],
+        startTime: new Date()["toISOString"](),
+        duration: Math["floor"](duration / 1000),
+        description: timer["description"],
+        billable: timer["billable"],
+        hourlyRate: Number(timer["hourlyRate"]) || 0,
       });
       setTimer({
         isRunning: false,
         startTime: null,
         elapsed: 0,
-        selectedProject: projects[0]?.id || "",
+        selectedProject: projects[0]?.["id"] || "",
         description: "",
         billable: true,
         hourlyRate: "",
       });
     } catch (err: any) {
-      console.error("Failed to save time entry:", err);
+      console["error"]("Failed to save time entry:", err);
     }
   };
 
   const handleManualSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    e["preventDefault"]();
+    const formData = new FormData(e["currentTarget"]);
     try {
       await createManualTimeEntry({
-        projectId: formData.get("projectId") as string,
-        startTime: formData.get("startTime") as string,
-        endTime: (formData.get("endTime") as string) || null,
-        duration: formData.get("duration") ? Number(formData.get("duration")) * 3600 : undefined,
-        description: (formData.get("description") as string) || null,
-        billable: formData.get("billable") === "true",
-        hourlyRate: Number(formData.get("hourlyRate")) || 0,
+        projectId: formData["get"]("projectId") as string,
+        startTime: formData["get"]("startTime") as string,
+        endTime: (formData["get"]("endTime") as string) || null,
+        duration: formData["get"]("duration") ? Number(formData["get"]("duration")) * 3600 : undefined,
+        description: (formData["get"]("description") as string) || null,
+        billable: formData["get"]("billable") === "true",
+        hourlyRate: Number(formData["get"]("hourlyRate")) || 0,
         isManual: true,
       });
       setShowManualForm(false);
-      e.currentTarget.reset();
+      e["currentTarget"]["reset"]();
     } catch (err: any) {
-      console.error("Failed to save manual entry:", err);
+      console["error"]("Failed to save manual entry:", err);
     }
   };
 
@@ -162,8 +162,8 @@ export function TimerBar({ projects }: { projects: Project[] }) {
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
               <SelectContent>
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                {projects["map"]((p) => (
+                  <SelectItem key={p["id"]} value={p["id"]}>{p["name"]}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -211,9 +211,9 @@ export function TimerBar({ projects }: { projects: Project[] }) {
     <Card className="p-3 mb-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <Clock className="h-5 w-5 text-muted-foreground" />
-        <span className="font-mono text-lg">{formatElapsed(timer.elapsed)}</span>
+        <span className="font-mono text-lg">{formatElapsed(timer["elapsed"])}</span>
 
-        {timer.isRunning ? (
+        {timer["isRunning"] ? (
           <>
             <Button variant="outline" size="sm" onClick={pauseTimer}>
               <Pause className="h-4 w-4" />
@@ -224,7 +224,7 @@ export function TimerBar({ projects }: { projects: Project[] }) {
           </>
         ) : (
           <>
-            {timer.elapsed > 0 ? (
+            {timer["elapsed"] > 0 ? (
               <Button size="sm" onClick={resumeTimer}>
                 <Play className="h-4 w-4" />
               </Button>
@@ -236,44 +236,44 @@ export function TimerBar({ projects }: { projects: Project[] }) {
           </>
         )}
 
-        {timer.isRunning && (
+        {timer["isRunning"] && (
           <>
             <Select
-              value={timer.selectedProject}
+              value={timer["selectedProject"]}
               onValueChange={(val) => setTimer((p) => ({ ...p, selectedProject: val }))}
             >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Project" />
               </SelectTrigger>
               <SelectContent>
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                {projects["map"]((p) => (
+                  <SelectItem key={p["id"]} value={p["id"]}>{p["name"]}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Input
               placeholder="Description"
-              value={timer.description}
-              onChange={(e) => setTimer((p) => ({ ...p, description: e.target.value }))}
+              value={timer["description"]}
+              onChange={(e) => setTimer((p) => ({ ...p, description: e["target"]["value"] }))}
               className="w-48 text-sm"
             />
             <Input
               type="number"
               placeholder="Rate ($/hr)"
-              value={timer.hourlyRate}
-              onChange={(e) => setTimer((p) => ({ ...p, hourlyRate: e.target.value }))}
+              value={timer["hourlyRate"]}
+              onChange={(e) => setTimer((p) => ({ ...p, hourlyRate: e["target"]["value"] }))}
               className="w-24 text-sm"
             />
             <label className="flex items-center gap-1 text-sm">
               <input
                 type="checkbox"
-                checked={timer.billable}
-                onChange={(e) => setTimer((p) => ({ ...p, billable: e.target.checked }))}
+                checked={timer["billable"]}
+                onChange={(e) => setTimer((p) => ({ ...p, billable: e["target"]["checked"] }))}
               />
               Billable
             </label>
             <span className="text-sm font-medium">
-              = {formatCurrency((timer.elapsed / 3600000) * (Number(timer.hourlyRate) || 0))}
+              = {formatCurrency((timer["elapsed"] / 3600000) * (Number(timer["hourlyRate"]) || 0))}
             </span>
             <Button size="sm" onClick={saveEntry}>
               <Save className="h-4 w-4" />
@@ -282,7 +282,7 @@ export function TimerBar({ projects }: { projects: Project[] }) {
         )}
       </div>
 
-      {!timer.isRunning && timer.elapsed === 0 && (
+      {!timer["isRunning"] && timer["elapsed"] === 0 && (
         <Button variant="outline" size="sm" onClick={() => setShowManualForm(true)}>
           <Clock className="h-4 w-4 mr-1" /> Manual Entry
         </Button>

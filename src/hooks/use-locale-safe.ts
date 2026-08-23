@@ -6,5 +6,5 @@ import { routing } from "@/i18n/routing";
 // which can happen if NextIntlClientProvider auto-detection fails in edge cases.
 export function useLocaleSafe(): string {
   const locale = useLocale();
-  return locale || routing.defaultLocale;
+  return locale || routing["defaultLocale"];
 }

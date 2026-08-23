@@ -3,8 +3,8 @@
 import Script from "next/script";
 
 export function Analytics() {
-  const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
-  const ga4Id = process.env.NEXT_PUBLIC_GA4_ID;
+  const plausibleDomain = process["env"]["NEXT_PUBLIC_PLAUSIBLE_DOMAIN"];
+  const ga4Id = process["env"]["NEXT_PUBLIC_GA4_ID"];
 
   if (!plausibleDomain && !ga4Id) return null;
 

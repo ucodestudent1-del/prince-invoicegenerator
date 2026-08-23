@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const result = await checkExpiredEstimates();
-    return NextResponse.json(result);
+    return NextResponse["json"](result);
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
   }
 }

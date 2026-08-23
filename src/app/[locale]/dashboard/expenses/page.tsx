@@ -20,12 +20,12 @@ import { getTranslations } from "next-intl/server";
 export default async function ExpensesPage({ params }: { params: { locale: string } }) {
   await requireFeature("expenseTracking");
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
+  if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("expenses");
   let expenses;
   try {
-    expenses = await db.expense.findMany({
-      where: { orgId: user.organizationId },
+    expenses = await db["expense"]["findMany"]({
+      where: { orgId: user["organizationId"] },
       orderBy: { date: "desc" },
       include: { project: true, photo: true },
     });
@@ -33,7 +33,7 @@ export default async function ExpensesPage({ params }: { params: { locale: strin
     logServerError("ExpensesPage", err);
     throw err;
   }
-  const total = expenses.reduce((a, e) => a + e.amount, 0);
+  const total = expenses["reduce"]((a, e) => a + e["amount"], 0);
 
   return (
     <div className="space-y-6">
@@ -52,7 +52,7 @@ export default async function ExpensesPage({ params }: { params: { locale: strin
       </div>
       <Card>
         <CardContent className="pt-6">
-          {expenses.length === 0 ? (
+          {expenses["length"] === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noExpenses")}</p>
           ) : (
             <Table>
@@ -67,16 +67,16 @@ export default async function ExpensesPage({ params }: { params: { locale: strin
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell>{formatDate(e.date)}</TableCell>
-                    <TableCell>{e.vendor ?? "—"}</TableCell>
+                {expenses["map"]((e) => (
+                  <TableRow key={e["id"]}>
+                    <TableCell>{formatDate(e["date"])}</TableCell>
+                    <TableCell>{e["vendor"] ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{e.category}</Badge>
+                      <Badge variant="secondary">{e["category"]}</Badge>
                     </TableCell>
-                    <TableCell>{e.project?.name ?? "—"}</TableCell>
-                    <TableCell>{e.photo ? "📎" : "—"}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(e.amount)}</TableCell>
+                    <TableCell>{e["project"]?.["name"] ?? "—"}</TableCell>
+                    <TableCell>{e["photo"] ? "📎" : "—"}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(e["amount"])}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

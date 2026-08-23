@@ -27,12 +27,12 @@ const variant: Record<string, any> = {
 export default async function ChangeOrdersPage({ params }: { params: { locale: string } }) {
   await requireFeature("changeOrders");
   const user = await requireUser();
-  if (!user || !user.organizationId) return null;
+  if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("changeOrders");
   let cos;
   try {
-    cos = await db.changeOrder.findMany({
-      where: { orgId: user.organizationId },
+    cos = await db["changeOrder"]["findMany"]({
+      where: { orgId: user["organizationId"] },
       orderBy: { createdAt: "desc" },
       include: { project: true },
     });
@@ -53,7 +53,7 @@ export default async function ChangeOrdersPage({ params }: { params: { locale: s
       </div>
       <Card>
         <CardContent className="pt-6">
-          {cos.length === 0 ? (
+          {cos["length"] === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noChangeOrders")}</p>
           ) : (
             <Table>
@@ -67,15 +67,15 @@ export default async function ChangeOrdersPage({ params }: { params: { locale: s
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cos.map((co) => (
-                  <TableRow key={co.id}>
-                    <TableCell className="font-medium">{co.number}</TableCell>
-                    <TableCell>{co.title}</TableCell>
-                    <TableCell>{co.project?.name ?? "—"}</TableCell>
+                {cos["map"]((co) => (
+                  <TableRow key={co["id"]}>
+                    <TableCell className="font-medium">{co["number"]}</TableCell>
+                    <TableCell>{co["title"]}</TableCell>
+                    <TableCell>{co["project"]?.["name"] ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant={variant[co.status] ?? "secondary"}>{co.status}</Badge>
+                      <Badge variant={variant[co["status"]] ?? "secondary"}>{co["status"]}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(co.amount)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(co["amount"])}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

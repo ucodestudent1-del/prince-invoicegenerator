@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: NextRequest) {
   try {
     const data = await getFinancialDashboardData();
-    return NextResponse.json(data);
+    return NextResponse["json"](data);
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
   }
 }

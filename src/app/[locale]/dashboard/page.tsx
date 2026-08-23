@@ -45,21 +45,21 @@ export default async function DashboardPage({ params }: { params: { locale: stri
   const locale = await getLocaleSafe();
 
   const onboarding = await getOnboardingState();
-  if (onboarding.shouldOnboard) {
+  if (onboarding["shouldOnboard"]) {
     redirect({ href: "/onboarding", locale });
   }
 
-  if (!user || !user.organizationId) return null;
-  const orgId = user.organizationId;
+  if (!user || !user["organizationId"]) return null;
+  const orgId = user["organizationId"];
   const t = await getTranslations("dashboard");
   const tReports = await getTranslations("reports");
 
   let financialData;
   let customerCount;
   try {
-    [financialData, customerCount] = await Promise.all([
+    [financialData, customerCount] = await Promise["all"]([
       getFinancialDashboardData(),
-      db.customer.count({ where: { orgId } }),
+      db["customer"]["count"]({ where: { orgId } }),
     ]);
   } catch (err) {
     logServerError("DashboardPage", err);
@@ -68,29 +68,29 @@ export default async function DashboardPage({ params }: { params: { locale: stri
 
   const { kpis, revenueOverTime, paidVsOutstanding, overdueBreakdown, revenueByCustomer, invoices } = financialData;
 
-  const maxRevenueValue = Math.max(0, ...revenueOverTime.map((d) => d.total), 1);
-  const maxBarValue = Math.max(paidVsOutstanding.paid, paidVsOutstanding.outstanding, 1);
-  const maxOverdueValue = Math.max(0, ...overdueBreakdown.map((d) => d.amount), 1);
+  const maxRevenueValue = Math["max"](0, ...revenueOverTime["map"]((d) => d["total"]), 1);
+  const maxBarValue = Math["max"](paidVsOutstanding["paid"], paidVsOutstanding["outstanding"], 1);
+  const maxOverdueValue = Math["max"](0, ...overdueBreakdown["map"]((d) => d["amount"]), 1);
 
   const stats = [
     {
       label: t("totalInvoiced"),
-      value: formatCurrency(kpis.totalRevenue),
+      value: formatCurrency(kpis["totalRevenue"]),
       icon: FileText,
     },
     {
       label: t("outstanding"),
-      value: formatCurrency(kpis.outstandingBalance),
+      value: formatCurrency(kpis["outstandingBalance"]),
       icon: Receipt,
     },
     {
       label: t("invoices"),
-      value: invoices.length.toString(),
+      value: invoices["length"]["toString"](),
       icon: FileText,
     },
     {
       label: t("customers"),
-      value: customerCount.toString(),
+      value: customerCount["toString"](),
       icon: Users,
     },
   ];
@@ -101,7 +101,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
         <div>
           <h1 className="text-2xl font-bold">{t("overview")}</h1>
           <p className="text-sm text-muted-foreground">
-            {t("welcomeBack", { name: user.name ?? "" })}
+            {t("welcomeBack", { name: user["name"] ?? "" })}
           </p>
         </div>
         <Button asChild>
@@ -112,15 +112,15 @@ export default async function DashboardPage({ params }: { params: { locale: stri
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <Card key={s.label}>
+        {stats["map"]((s) => (
+          <Card key={s["label"]}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {s.label}
+                {s["label"]}
               </CardTitle>
               <s.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="text-2xl font-bold">{s.value}</CardContent>
+            <CardContent className="text-2xl font-bold">{s["value"]}</CardContent>
           </Card>
         ))}
       </div>
@@ -133,10 +133,10 @@ export default async function DashboardPage({ params }: { params: { locale: stri
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(kpis.overdueAmount)}
+              {formatCurrency(kpis["overdueAmount"])}
             </div>
             <p className="text-xs text-muted-foreground">
-              {overdueBreakdown.length} overdue invoice(s)
+              {overdueBreakdown["length"]} overdue invoice(s)
             </p>
           </CardContent>
         </Card>
@@ -148,7 +148,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(kpis.paidThisMonth)}
+              {formatCurrency(kpis["paidThisMonth"])}
             </div>
             <p className="text-xs text-muted-foreground">
               Payments received this month
@@ -163,7 +163,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">
-              {formatCurrency(kpis.totalRevenue)}
+              {formatCurrency(kpis["totalRevenue"])}
             </div>
             <p className="text-xs text-muted-foreground">
               Total invoiced across all customers
@@ -178,7 +178,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-600">
-              {formatCurrency(kpis.outstandingBalance)}
+              {formatCurrency(kpis["outstandingBalance"])}
             </div>
             <p className="text-xs text-muted-foreground">
               Currently owed by customers
@@ -195,21 +195,21 @@ export default async function DashboardPage({ params }: { params: { locale: stri
           </CardHeader>
           <CardContent>
             <div className="h-48">
-              {revenueOverTime.length > 0 ? (
+              {revenueOverTime["length"] > 0 ? (
                 <div className="h-full w-full flex items-end gap-1">
-                  {revenueOverTime.map((d, i) => {
+                  {revenueOverTime["map"]((d, i) => {
                     const heightPct = maxRevenueValue > 0
-                      ? Math.max((d.total / maxRevenueValue) * 100, d.total > 0 ? 2 : 0)
+                      ? Math["max"]((d["total"] / maxRevenueValue) * 100, d["total"] > 0 ? 2 : 0)
                       : 0;
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center h-full justify-end">
                         <div
                           className="w-full bg-indigo-500 rounded-t hover:bg-indigo-600 transition-colors"
-                          style={{ height: `${heightPct}%`, minHeight: d.total > 0 ? "4px" : "0" }}
-                          title={`${d.date}: ${formatCurrency(d.total)}`}
+                          style={{ height: `${heightPct}%`, minHeight: d["total"] > 0 ? "4px" : "0" }}
+                          title={`${d["date"]}: ${formatCurrency(d["total"])}`}
                         />
                         <span className="text-[8px] text-muted-foreground rotate-[-45deg] mt-1">
-                          {d.date}
+                          {d["date"]}
                         </span>
                       </div>
                     );
@@ -235,13 +235,13 @@ export default async function DashboardPage({ params }: { params: { locale: stri
                   <div
                     className="h-full bg-emerald-500 rounded transition-all duration-500"
                     style={{
-                      width: `${(paidVsOutstanding.paid / maxBarValue) * 100}%`,
+                      width: `${(paidVsOutstanding["paid"] / maxBarValue) * 100}%`,
                       minWidth: "2px",
                     }}
                   />
                 </div>
                 <span className="w-32 text-sm font-medium text-right">
-                  {formatCurrency(paidVsOutstanding.paid)}
+                  {formatCurrency(paidVsOutstanding["paid"])}
                 </span>
               </div>
               <div className="flex items-center gap-4">
@@ -250,13 +250,13 @@ export default async function DashboardPage({ params }: { params: { locale: stri
                   <div
                     className="h-full bg-amber-500 rounded transition-all duration-500"
                     style={{
-                      width: `${(paidVsOutstanding.outstanding / maxBarValue) * 100}%`,
+                      width: `${(paidVsOutstanding["outstanding"] / maxBarValue) * 100}%`,
                       minWidth: "2px",
                     }}
                   />
                 </div>
                 <span className="w-32 text-sm font-medium text-right">
-                  {formatCurrency(paidVsOutstanding.outstanding)}
+                  {formatCurrency(paidVsOutstanding["outstanding"])}
                 </span>
               </div>
             </div>
@@ -271,18 +271,18 @@ export default async function DashboardPage({ params }: { params: { locale: stri
             <CardDescription>Sorted by days overdue</CardDescription>
           </CardHeader>
           <CardContent>
-            {overdueBreakdown.length === 0 ? (
+            {overdueBreakdown["length"] === 0 ? (
               <p className="text-sm text-muted-foreground">{tReports("noOverdue")}</p>
             ) : (
               <div className="space-y-3 pt-2">
-                {overdueBreakdown.slice(0, 8).map((item, i) => {
-                  const barWidth = (item.amount / maxOverdueValue) * 100;
+                {overdueBreakdown["slice"](0, 8)["map"]((item, i) => {
+                  const barWidth = (item["amount"] / maxOverdueValue) * 100;
                   return (
-                    <div key={`${item.invoiceNumber}-${i}`} className="space-y-1">
+                    <div key={`${item["invoiceNumber"]}-${i}`} className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{item.customerName}</span>
+                        <span className="text-sm font-medium">{item["customerName"]}</span>
                         <span className="text-sm text-muted-foreground">
-                          {formatCurrency(item.amount)} · {item.daysOverdue}d overdue
+                          {formatCurrency(item["amount"])} · {item["daysOverdue"]}d overdue
                         </span>
                       </div>
                       <div className="w-full h-3 bg-gray-100 rounded overflow-hidden">
@@ -294,9 +294,9 @@ export default async function DashboardPage({ params }: { params: { locale: stri
                     </div>
                   );
                 })}
-                {overdueBreakdown.length > 8 && (
+                {overdueBreakdown["length"] > 8 && (
                   <p className="text-xs text-muted-foreground">
-                    +{overdueBreakdown.length - 8} more overdue invoices
+                    +{overdueBreakdown["length"] - 8} more overdue invoices
                   </p>
                 )}
               </div>
@@ -312,17 +312,17 @@ export default async function DashboardPage({ params }: { params: { locale: stri
           <CardContent>
             <div className="flex items-center gap-6">
               <div className="relative w-28 h-28">
-                {revenueByCustomer.length > 0 ? (
+                {revenueByCustomer["length"] > 0 ? (
                   <div
                     className="w-full h-full rounded-full"
                     style={{
                       background: revenueByCustomer
-                        .map(
+                        ["map"](
                           (c, i, arr) =>
-                            `${c.color} ${i === 0 ? "0%" : `${(arr.slice(0, i).reduce((s, x) => s + x.amount, 0) / (revenueByCustomer.reduce((s, x) => s + x.amount, 0) || 1)) * 100}%`} ` +
-                            `${((arr.slice(0, i + 1).reduce((s, x) => s + x.amount, 0)) / (revenueByCustomer.reduce((s, x) => s + x.amount, 0) || 1)) * 100}%`
+                            `${c["color"]} ${i === 0 ? "0%" : `${(arr["slice"](0, i)["reduce"]((s, x) => s + x["amount"], 0) / (revenueByCustomer["reduce"]((s, x) => s + x["amount"], 0) || 1)) * 100}%`} ` +
+                            `${((arr["slice"](0, i + 1)["reduce"]((s, x) => s + x["amount"], 0)) / (revenueByCustomer["reduce"]((s, x) => s + x["amount"], 0) || 1)) * 100}%`
                         )
-                        .join(", "),
+                        ["join"](", "),
                     }}
                   />
                 ) : (
@@ -330,15 +330,15 @@ export default async function DashboardPage({ params }: { params: { locale: stri
                 )}
               </div>
               <div className="space-y-1.5">
-                {revenueByCustomer.map((c, i) => (
-                  <div key={c.name} className="flex items-center gap-2">
+                {revenueByCustomer["map"]((c, i) => (
+                  <div key={c["name"]} className="flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: c.color }}
+                      style={{ backgroundColor: c["color"] }}
                     />
-                    <span className="text-sm">{c.name}</span>
+                    <span className="text-sm">{c["name"]}</span>
                     <span className="text-sm font-medium text-muted-foreground">
-                      {formatCurrency(c.amount)}
+                      {formatCurrency(c["amount"])}
                     </span>
                   </div>
                 ))}
@@ -354,7 +354,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
             <div>
               <CardTitle className="text-base">{tReports("invoiceManagement")}</CardTitle>
               <CardDescription>
-                {invoices.length} invoices
+                {invoices["length"]} invoices
               </CardDescription>
             </div>
             <Button variant="outline" size="sm" asChild>
@@ -376,37 +376,37 @@ export default async function DashboardPage({ params }: { params: { locale: stri
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.length === 0 ? (
+              {invoices["length"] === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
                     <p className="text-sm text-muted-foreground">{tReports("noInvoices")}</p>
                   </TableCell>
                 </TableRow>
               ) : (
-                invoices.slice(0, 15).map((inv) => (
-                  <TableRow key={inv.id}>
+                invoices["slice"](0, 15)["map"]((inv) => (
+                  <TableRow key={inv["id"]}>
                     <TableCell className="font-medium">
-                      <Link href={`/dashboard/invoices/${inv.id}`} className="hover:underline">
-                        {inv.number}
+                      <Link href={`/dashboard/invoices/${inv["id"]}`} className="hover:underline">
+                        {inv["number"]}
                       </Link>
                     </TableCell>
-                    <TableCell>{inv.customerName}</TableCell>
+                    <TableCell>{inv["customerName"]}</TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(inv.amount)}
+                      {formatCurrency(inv["amount"])}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span>{formatDate(inv.dueDate)}</span>
-                        {inv.daysOverdue > 0 && (
+                        <span>{formatDate(inv["dueDate"])}</span>
+                        {inv["daysOverdue"] > 0 && (
                           <Badge variant="destructive" className="text-xs">
-                            {inv.daysOverdue}d
+                            {inv["daysOverdue"]}d
                           </Badge>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusVariant[inv.status] ?? "secondary"}>
-                        {inv.status}
+                      <Badge variant={statusVariant[inv["status"]] ?? "secondary"}>
+                        {inv["status"]}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -414,9 +414,9 @@ export default async function DashboardPage({ params }: { params: { locale: stri
               )}
             </TableBody>
           </Table>
-          {invoices.length > 15 && (
+          {invoices["length"] > 15 && (
             <div className="text-center py-4 text-sm text-muted-foreground">
-              {invoices.length - 15} more invoices not shown
+              {invoices["length"] - 15} more invoices not shown
             </div>
           )}
         </CardContent>

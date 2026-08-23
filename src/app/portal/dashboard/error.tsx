@@ -12,7 +12,7 @@ export default function PortalDashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Portal dashboard error:", error);
+    console["error"]("Portal dashboard error:", error);
   }, [error]);
 
   return (
@@ -27,9 +27,9 @@ export default function PortalDashboardError({
         <p className="text-sm text-gray-500">
           We couldn&apos;t load your dashboard. Please try again.
         </p>
-        {error.digest && (
+        {error["digest"] && (
           <p className="text-xs text-gray-400 font-mono">
-            Error ID: {error.digest}
+            Error ID: {error["digest"]}
           </p>
         )}
         <Button onClick={reset} variant="outline">

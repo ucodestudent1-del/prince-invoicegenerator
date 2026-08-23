@@ -21,7 +21,7 @@ export function TemplatePreview({
   fontFamily?: string;
   layout?: string;
 }) {
-  const templateClass = `template-${template?.toLowerCase?.() ?? "standard"}`;
+  const templateClass = `template-${template?.["toLowerCase"]?.() ?? "standard"}`;
   const layoutClass = `layout-${layout ?? "default"}`;
 
   return (
@@ -71,11 +71,11 @@ export function TemplatePreview({
               </tr>
             </thead>
             <tbody>
-              {sampleItems.map((it, idx) => (
+              {sampleItems["map"]((it, idx) => (
                 <tr key={idx} className="border-b border-gray-100">
-                  <td className="py-1 text-xs">{it.description}</td>
-                  <td className="py-1 text-xs text-right">{it.quantity}</td>
-                  <td className="py-1 text-xs text-right font-medium">${it.amount.toLocaleString()}</td>
+                  <td className="py-1 text-xs">{it["description"]}</td>
+                  <td className="py-1 text-xs text-right">{it["quantity"]}</td>
+                  <td className="py-1 text-xs text-right font-medium">${it["amount"]["toLocaleString"]()}</td>
                 </tr>
               ))}
             </tbody>

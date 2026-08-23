@@ -43,14 +43,14 @@ const FALLBACK: GeoSettings = {
 };
 
 export function getAutoDetectedSettings(ipAddress?: string | null, browserLocale?: string | null): GeoSettings {
-  let country = FALLBACK.country;
+  let country = FALLBACK["country"];
 
   if (ipAddress) {
     const geoipModule = getGeoIp();
     if (geoipModule) {
-      const geo = geoipModule.lookup(ipAddress);
-      if (geo?.country) {
-        country = geo.country;
+      const geo = geoipModule["lookup"](ipAddress);
+      if (geo?.["country"]) {
+        country = geo["country"];
       }
     }
   }
@@ -59,10 +59,10 @@ export function getAutoDetectedSettings(ipAddress?: string | null, browserLocale
 
   return {
     country,
-    currency: defaults.currency || FALLBACK.currency,
-    timezone: defaults.timezone || FALLBACK.timezone,
-    language: browserLocale?.split(",")[0]?.split("-")[0] || FALLBACK.language,
-    dateFormat: defaults.dateFormat || FALLBACK.dateFormat,
-    numberFormat: defaults.numberFormat || FALLBACK.numberFormat,
+    currency: defaults["currency"] || FALLBACK["currency"],
+    timezone: defaults["timezone"] || FALLBACK["timezone"],
+    language: browserLocale?.["split"](",")[0]?.["split"]("-")[0] || FALLBACK["language"],
+    dateFormat: defaults["dateFormat"] || FALLBACK["dateFormat"],
+    numberFormat: defaults["numberFormat"] || FALLBACK["numberFormat"],
   };
 }

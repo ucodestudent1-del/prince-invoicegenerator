@@ -12,7 +12,7 @@ export function UserMenu({ email, name }: { email?: string | null; name?: string
     <div className="flex items-center gap-3">
       <span className="text-sm text-muted-foreground">{email}</span>
       <Avatar>
-        <AvatarFallback>{(name ?? "U").slice(0, 2).toUpperCase()}</AvatarFallback>
+        <AvatarFallback>{(name ?? "U")["slice"](0, 2)["toUpperCase"]()}</AvatarFallback>
       </Avatar>
       <button
         onClick={() => signOut({ callbackUrl: `/${locale}/login` })}

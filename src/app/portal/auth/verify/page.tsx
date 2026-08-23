@@ -10,7 +10,7 @@ import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const token = searchParams["get"]("token");
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
@@ -27,11 +27,11 @@ function VerifyContent() {
         const result = await verifyPortalToken(token);
         if (result) {
           // Store token in cookie
-          document.cookie = `portal_token=${result.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+          document["cookie"] = `portal_token=${result["token"]}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
           setStatus("success");
           // Redirect to dashboard after short delay
           setTimeout(() => {
-            router.push("/portal/dashboard");
+            router["push"]("/portal/dashboard");
           }, 2000);
         } else {
           setStatus("error");
@@ -39,7 +39,7 @@ function VerifyContent() {
         }
       } catch (err: any) {
         setStatus("error");
-        setErrorMessage(err.message || "Verification failed.");
+        setErrorMessage(err["message"] || "Verification failed.");
       }
     };
 
