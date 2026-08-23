@@ -18,12 +18,14 @@ if [ -z "$DATABASE_URL" ]; then
 else
   echo "Running database migrations..."
 
-  # Resolve the failed TemplateStyle migration if it is still recorded
-  # in the production _prisma_migrations table. The migration folder was
-  # removed from the repo, so recreate it temporarily just for resolution.
+  # -------------------------------------------------------------------------
+  # Resolve the failed TemplateStyle migration.
+  # This migration was reverted from the schema but may still be recorded
+  # as failed in production _prisma_migrations. Mark it as rolled back.
+  # -------------------------------------------------------------------------
   RESOLVE_CREATED=0
   if [ ! -d "prisma/migrations/20260816223700_replace_template_styles" ]; then
-    echo "Creating temporary migration folder for resolve..."
+    echo "Creating temporary migration folder for TemplateStyle resolve..."
     mkdir -p prisma/migrations/20260816223700_replace_template_styles
     echo "-- placeholder" > prisma/migrations/20260816223700_replace_template_styles/migration.sql
     RESOLVE_CREATED=1
@@ -33,8 +35,30 @@ else
   npx prisma migrate resolve --rolled-back 20260816223700_replace_template_styles || true
 
   if [ "$RESOLVE_CREATED" = "1" ]; then
-    echo "Removing temporary migration folder..."
+    echo "Removing temporary TemplateStyle migration folder..."
     rm -rf prisma/migrations/20260816223700_replace_template_styles
+  fi
+
+  # -------------------------------------------------------------------------
+  # Resolve the failed client portal migration.
+  # The schema already contains these changes (verified in schema.prisma),
+  # so the database changes were likely applied before the migration failed.
+  # Mark it as applied to sync Prisma's migration history.
+  # -------------------------------------------------------------------------
+  PORTAL_RESOLVE_CREATED=0
+  if [ ! -d "prisma/migrations/20260820083000_add_client_portal" ]; then
+    echo "Creating temporary migration folder for client portal resolve..."
+    mkdir -p prisma/migrations/20260820083000_add_client_portal
+    echo "-- placeholder" > prisma/migrations/20260820083000_add_client_portal/migration.sql
+    PORTAL_RESOLVE_CREATED=1
+  fi
+
+  echo "Resolving failed migration 20260820083000_add_client_portal..."
+  npx prisma migrate resolve --applied 20260820083000_add_client_portal || true
+
+  if [ "$PORTAL_RESOLVE_CREATED" = "1" ]; then
+    echo "Removing temporary client portal migration folder..."
+    rm -rf prisma/migrations/20260820083000_add_client_portal
   fi
 
   # Retry migrations up to 5 times in case database is not ready yet
