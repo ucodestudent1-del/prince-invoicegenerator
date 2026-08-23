@@ -82,7 +82,30 @@ else
     echo "Removing temporary reminder stages migration folder..."
     rm -rf prisma/migrations/20260820190000_add_reminder_stages
   fi
+  # -------------------------------------------------------------------------
+  # Resolve the failed estimate enhancements migration.
+  # The schema already contains these changes (verified in schema.prisma):
+  # EstimateStatus enum values VIEWED/INVOICED/REJECTED, Estimate columns
+  # shareToken/viewedAt/acceptedAt/rejectedAt/rejectionReason/convertedAt/sentAt,
+  # Invoice.estimateId FK, and EstimateAudit table. The database changes were
+  # likely applied before the migration failed. Mark it as applied to sync
+  # Prisma migration history.
+  # -------------------------------------------------------------------------
+  ESTIMATE_RESOLVE_CREATED=0
+  if [ ! -d "prisma/migrations/20260820_add_estimate_enhancements" ]; then
+    echo "Creating temporary migration folder for estimate enhancements resolve..."
+    mkdir -p prisma/migrations/20260820_add_estimate_enhancements
+    echo "-- placeholder" > prisma/migrations/20260820_add_estimate_enhancements/migration.sql
+    ESTIMATE_RESOLVE_CREATED=1
+  fi
 
+  echo "Resolving failed migration 20260820_add_estimate_enhancements..."
+  npx prisma migrate resolve --applied 20260820_add_estimate_enhancements || true
+
+  if [ "$ESTIMATE_RESOLVE_CREATED" = "1" ]; then
+    echo "Removing temporary estimate enhancements migration folder..."
+    rm -rf prisma/migrations/20260820_add_estimate_enhancements
+  fi
   # Retry migrations up to 5 times in case database is not ready yet
   max_retries=5
   retry=1
