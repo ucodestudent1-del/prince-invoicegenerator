@@ -171,7 +171,30 @@ export async function createCustomer(input: CreateCustomerInput) {
       if (err instanceof Error && err["message"]["includes"]("Unique constraint failed")) {
         actionError("A customer with this email already exists.");
       }
-      throw err;
+      if (isMissingColumnError(err)) {
+        customer = await db["customer"]["create"]({
+          data: {
+            orgId,
+            name: input["name"],
+            company: input["company"] || null,
+            email: input["email"] || null,
+            phone: input["phone"] || null,
+            notes: input["notes"] || null,
+          },
+          select: {
+            id: true,
+            name: true,
+            company: true,
+            email: true,
+            phone: true,
+            address: true,
+            notes: true,
+            createdAt: true,
+          },
+        });
+      } else {
+        throw err;
+      }
     }
 
     await revalidateWithLocale("/dashboard/customers");

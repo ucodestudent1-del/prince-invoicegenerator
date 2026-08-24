@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
 
@@ -21,9 +21,30 @@ export async function createCustomer(input: CustomerInput) {
 
     if (!input["name"]) actionError("Customer name is required.");
 
-    const customer = await db["customer"]["create"]({
-      data: { orgId: user["organizationId"], ...input },
-    });
+    let customer;
+    try {
+      customer = await db["customer"]["create"]({
+        data: { orgId: user["organizationId"], ...input },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        customer = await db["customer"]["create"]({
+          data: { orgId: user["organizationId"], ...input },
+          select: {
+            id: true,
+            name: true,
+            company: true,
+            email: true,
+            phone: true,
+            address: true,
+            notes: true,
+            createdAt: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
     await revalidateWithLocale("/dashboard/customers");
     return customer;
   });
