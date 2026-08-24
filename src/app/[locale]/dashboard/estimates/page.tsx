@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser, requireFeature } from "@/lib/org";
+import { requireUser, requireFeature, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,7 +35,7 @@ export default async function EstimatesPage({ params }: { params: { locale: stri
   const orgId = user["organizationId"];
   const t = await getTranslations("estimates");
 
-  let estimates;
+  let estimates: any;
   try {
     estimates = await db["estimate"]["findMany"]({
       where: { orgId },
@@ -43,8 +43,23 @@ export default async function EstimatesPage({ params }: { params: { locale: stri
       include: { customer: true },
     });
   } catch (err) {
-    logServerError("EstimatesPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      estimates = await db["estimate"]["findMany"]({
+        where: { orgId },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          number: true,
+          status: true,
+          validUntil: true,
+          total: true,
+          customer: { select: { name: true } },
+        },
+      }) as any;
+    } else {
+      logServerError("EstimatesPage", err);
+      throw err;
+    }
   }
 
   return (
@@ -73,7 +88,7 @@ export default async function EstimatesPage({ params }: { params: { locale: stri
                 </TableRow>
               </TableHeader>
               <TableBody>
-                 {estimates["map"]((e) => (
+                  {estimates["map"]((e: any) => (
                    <TableRow key={e["id"]}>
                      <TableCell className="font-medium">
                        <Link

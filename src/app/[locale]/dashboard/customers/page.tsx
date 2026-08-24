@@ -63,7 +63,7 @@ export default async function CustomersPage({
         _count: { select: { invoices: true } },
       },
     });
-  } catch (err) {
+   } catch (err) {
     if (isMissingColumnError(err)) {
       const where: Record<string, any> = { orgId };
       if (searchQuery) {
@@ -72,9 +72,6 @@ export default async function CustomersPage({
           { company: { contains: searchQuery, mode: "insensitive" } },
           { email: { contains: searchQuery, mode: "insensitive" } },
         ];
-      }
-      if (statusFilter && statusFilter !== "ALL") {
-        where["status"] = statusFilter;
       }
       customers = await db.customer.findMany({
         where,
@@ -85,7 +82,6 @@ export default async function CustomersPage({
           company: true,
           email: true,
           phone: true,
-          status: true,
           createdAt: true,
           _count: { select: { invoices: true } },
         },
@@ -99,7 +95,7 @@ export default async function CustomersPage({
   // Calculate summary stats
   const totalOutstanding = customers.reduce((sum: number, c: any) => sum + (c.outstandingBalance || 0), 0);
   const totalInvoiced = customers.reduce((sum: number, c: any) => sum + (c.totalInvoiced || 0), 0);
-  const activeCustomers = customers.filter((c: any) => c.status === "ACTIVE").length;
+  const activeCustomers = customers.filter((c: any) => (c["status"] || "ACTIVE") === "ACTIVE").length;
 
   return (
     <div className="space-y-6">
@@ -188,19 +184,19 @@ export default async function CustomersPage({
                         {formatCurrency(c["outstandingBalance"] || 0)}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          c["status"] === "ACTIVE"
-                            ? "bg-green-100 text-green-700"
-                            : c["status"] === "ARCHIVED"
-                            ? "bg-gray-100 text-gray-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {c["status"]}
-                      </span>
-                    </TableCell>
+                     <TableCell>
+                       <span
+                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                           (c["status"] || "ACTIVE") === "ACTIVE"
+                             ? "bg-green-100 text-green-700"
+                             : (c["status"] || "ACTIVE") === "ARCHIVED"
+                             ? "bg-gray-100 text-gray-700"
+                             : "bg-red-100 text-red-700"
+                         }`}
+                       >
+                         {c["status"] || "ACTIVE"}
+                       </span>
+                     </TableCell>
                     <TableCell className="text-right">{c["_count"]["invoices"]}</TableCell>
                   </TableRow>
                 ))}
