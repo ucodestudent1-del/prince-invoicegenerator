@@ -500,6 +500,7 @@
     "member": "Mitglied",
     "email": "E-Mail",
     "role": "Rolle",
+    "invite": "Teammitglied einladen",
     "invitePlaceholder": "Teammitglieder einladen…"
   },
   "billing": {

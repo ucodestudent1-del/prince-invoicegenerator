@@ -319,9 +319,14 @@ export function InvoiceForm({
               id="scheduledFor"
               type="date"
               value={scheduledFor}
-              onChange={(e) => setScheduledFor(e["target"]["value"])}
+              onChange={(e) => setScheduledFor(e.target.value)}
               min={issueDate}
             />
+            {scheduledFor && (
+              <p className="text-xs text-muted-foreground">
+                This invoice will be scheduled for {scheduledFor}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               Leave empty to create the invoice immediately. When set, the
               invoice will be saved as a draft and automatically marked as SENT
@@ -509,14 +514,14 @@ export function InvoiceForm({
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => router["back"]()}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={saving}>
-          {saving ? "Saving&#x2026;" : "Create invoice"}
-        </Button>
-      </div>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Saving…" : scheduledFor ? "Schedule Invoice" : "Create Invoice"}
+          </Button>
+        </div>
     </form>
   );
 }

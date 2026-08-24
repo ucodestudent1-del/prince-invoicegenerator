@@ -508,6 +508,7 @@
     "member": "Membre",
     "email": "E-mail",
     "role": "Rôle",
+    "invite": "Inviter un collaborateur",
     "invitePlaceholder": "Inviter des collaborateurs…"
   },
   "billing": {

@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser, requireFeature } from "@/lib/org";
+import { requireUser, requireFeature, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,14 +31,21 @@ export default async function ChangeOrdersPage({ params }: { params: { locale: s
   const t = await getTranslations("changeOrders");
   let cos;
   try {
-    cos = await db["changeOrder"]["findMany"]({
+    cos = await db.changeOrder.findMany({
       where: { orgId: user["organizationId"] },
       orderBy: { createdAt: "desc" },
       include: { project: true },
     });
   } catch (err) {
-    logServerError("ChangeOrdersPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      cos = await db.changeOrder.findMany({
+        where: { orgId: user["organizationId"] },
+        orderBy: { createdAt: "desc" },
+      });
+    } else {
+      logServerError("ChangeOrdersPage", err);
+      throw err;
+    }
   }
 
   return (
@@ -71,7 +78,7 @@ export default async function ChangeOrdersPage({ params }: { params: { locale: s
                   <TableRow key={co["id"]}>
                     <TableCell className="font-medium">{co["number"]}</TableCell>
                     <TableCell>{co["title"]}</TableCell>
-                    <TableCell>{co["project"]?.["name"] ?? "—"}</TableCell>
+                    <TableCell>{(co as any).project?.name ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant={variant[co["status"]] ?? "secondary"}>{co["status"]}</Badge>
                     </TableCell>

@@ -298,13 +298,13 @@ export function FinancialDashboard() {
                   <div
                     className="w-full h-full rounded-full"
                     style={{
-                      background: data["revenueByCustomer"]
+                      background: `conic-gradient(${data["revenueByCustomer"]
                         ["map"](
                           (c, i, arr) =>
                             `${c["color"]} ${i === 0 ? "0%" : `${(arr["slice"](0, i)["reduce"]((s, x) => s + x["amount"], 0) / (data["revenueByCustomer"]["reduce"]((s, x) => s + x["amount"], 0) || 1)) * 100}%`} ` +
                             `${((arr["slice"](0, i + 1)["reduce"]((s, x) => s + x["amount"], 0)) / (data["revenueByCustomer"]["reduce"]((s, x) => s + x["amount"], 0) || 1)) * 100}%`
                         )
-                        ["join"](", "),
+                        ["join"](", ")})`
                     }}
                   />
                 ) : (

@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +32,7 @@ export default async function CustomersPage({
   const searchQuery = searchParams["q"] || "";
   const statusFilter = searchParams["status"] || "ACTIVE";
 
-  let customers;
+  let customers: any;
   try {
     const where: Record<string, any> = { orgId };
     if (searchQuery) {
@@ -46,7 +46,7 @@ export default async function CustomersPage({
       where["status"] = statusFilter;
     }
 
-    customers = await db["customer"]["findMany"]({
+    customers = await db.customer.findMany({
       where,
       orderBy: { name: "asc" },
       select: {
@@ -64,14 +64,42 @@ export default async function CustomersPage({
       },
     });
   } catch (err) {
-    logServerError("CustomersPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      const where: Record<string, any> = { orgId };
+      if (searchQuery) {
+        where["OR"] = [
+          { name: { contains: searchQuery, mode: "insensitive" } },
+          { company: { contains: searchQuery, mode: "insensitive" } },
+          { email: { contains: searchQuery, mode: "insensitive" } },
+        ];
+      }
+      if (statusFilter && statusFilter !== "ALL") {
+        where["status"] = statusFilter;
+      }
+      customers = await db.customer.findMany({
+        where,
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          company: true,
+          email: true,
+          phone: true,
+          status: true,
+          createdAt: true,
+          _count: { select: { invoices: true } },
+        },
+      }) as any;
+    } else {
+      logServerError("CustomersPage", err);
+      throw err;
+    }
   }
 
   // Calculate summary stats
-  const totalOutstanding = customers["reduce"]((sum, c) => sum + (c["outstandingBalance"] || 0), 0);
-  const totalInvoiced = customers["reduce"]((sum, c) => sum + (c["totalInvoiced"] || 0), 0);
-  const activeCustomers = customers["filter"]((c) => c["status"] === "ACTIVE")["length"];
+  const totalOutstanding = customers.reduce((sum: number, c: any) => sum + (c.outstandingBalance || 0), 0);
+  const totalInvoiced = customers.reduce((sum: number, c: any) => sum + (c.totalInvoiced || 0), 0);
+  const activeCustomers = customers.filter((c: any) => c.status === "ACTIVE").length;
 
   return (
     <div className="space-y-6">
@@ -143,14 +171,14 @@ export default async function CustomersPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers["map"]((c) => (
-                  <TableRow key={c["id"]}>
+                {customers.map((c: any) => (
+                  <TableRow key={c.id}>
                     <TableCell className="font-medium">
-                      <Link href={`/dashboard/customers/${c["id"]}`} className="hover:underline">
-                        {c["name"]}
+                      <Link href={`/dashboard/customers/${c.id}`} className="hover:underline">
+                        {c.name}
                       </Link>
-                      {c["company"] && (
-                        <p className="text-xs text-muted-foreground">{c["company"]}</p>
+                      {c.company && (
+                        <p className="text-xs text-muted-foreground">{c.company}</p>
                       )}
                     </TableCell>
                     <TableCell>{c["email"] ?? "—"}</TableCell>

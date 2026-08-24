@@ -1,6 +1,6 @@
 import { requireUser, requireFeature } from "@/lib/org";
 import { db } from "@/lib/db";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
+import { InviteTeamMemberForm } from "@/components/team/invite-team-member-form";
 
 export default async function TeamPage({ params }: { params: { locale: string } }) {
   await requireFeature("multipleUsers");
@@ -23,7 +24,7 @@ export default async function TeamPage({ params }: { params: { locale: string } 
 
   let members;
   try {
-    members = await db["user"]["findMany"]({
+    members = await db.user.findMany({
       where: { organizationId: orgId },
       orderBy: { createdAt: "asc" },
     });
@@ -40,6 +41,16 @@ export default async function TeamPage({ params }: { params: { locale: string } 
           {t("description")}
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("invite")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <InviteTeamMemberForm />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="pt-6">
           <Table>
@@ -51,20 +62,20 @@ export default async function TeamPage({ params }: { params: { locale: string } 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {members["map"]((m) => (
-                <TableRow key={m["id"]}>
+              {members.map((m) => (
+                <TableRow key={m.id}>
                   <TableCell className="flex items-center gap-2">
                     <Avatar className="h-7 w-7">
                       <AvatarFallback className="text-xs">
-                        {(m["name"] ?? "U")["slice"](0, 2)["toUpperCase"]()}
+                        {(m.name ?? "U").slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{m["name"] ?? "—"}</span>
+                    <span className="font-medium">{m.name ?? "—"}</span>
                   </TableCell>
-                  <TableCell>{m["email"] ?? "—"}</TableCell>
+                  <TableCell>{m.email ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={m["id"] === user["id"] ? "default" : "secondary"}>
-                      {m["role"]}
+                    <Badge variant={m.id === user.id ? "default" : "secondary"}>
+                      {m.role}
                     </Badge>
                   </TableCell>
                 </TableRow>
@@ -73,9 +84,6 @@ export default async function TeamPage({ params }: { params: { locale: string } 
           </Table>
         </CardContent>
       </Card>
-      <p className="text-sm text-muted-foreground">
-        {t("invitePlaceholder")}
-      </p>
     </div>
   );
 }

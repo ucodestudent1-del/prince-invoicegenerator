@@ -139,19 +139,72 @@
 
 /* Template variations */
 .template-standard {
-  /* Default clean template */
+  --invoice-accent: #3b82f6;
+  --invoice-header-bg: #f8fafc;
+  --invoice-header-border: #e5e7eb;
+  --invoice-table-border: #e5e7eb;
+  --invoice-muted-text: #6b7280;
 }
 
 .template-modern {
-  --invoice-accent: #3b82f6;
+  --invoice-accent: #0f172a;
+  --invoice-header-bg: #0f172a;
+  --invoice-header-border: transparent;
+  --invoice-header-fg: #ffffff;
+  --invoice-table-border: #e2e8f0;
+  --invoice-muted-text: #64748b;
+}
+
+.template-modern .invoice-header {
+  color: var(--invoice-header-fg);
+}
+
+.template-modern .invoice-header h2,
+.template-modern .invoice-header p {
+  color: var(--invoice-header-fg);
+}
+
+.template-modern .invoice-header .company-name {
+  color: var(--invoice-header-fg);
+  font-weight: 700;
 }
 
 .template-minimal {
   --invoice-accent: #111827;
+  --invoice-header-bg: transparent;
+  --invoice-header-border: transparent;
+  --invoice-table-border: #d1d5db;
+  --invoice-muted-text: #9ca3af;
+}
+
+.template-minimal .invoice-header {
+  border: none;
+  padding-bottom: 0.75rem;
+}
+
+.template-minimal .invoice-totals {
+  border: none;
+  border-top: 1px solid var(--invoice-table-border);
+  padding-top: 0.75rem;
 }
 
 .template-classic {
   --invoice-accent: #1e40af;
+  --invoice-header-bg: #fefce8;
+  --invoice-header-border: #fef08a;
+  --invoice-table-border: #fecfee;
+  --invoice-muted-text: #6b7280;
+}
+
+.template-classic .invoice-header {
+  border-left: 4px solid var(--invoice-accent);
+  padding-left: 1rem;
+  border-bottom: 2px solid var(--invoice-header-border);
+}
+
+.template-classic .invoice-totals {
+  border-left: 4px solid var(--invoice-accent);
+  padding-left: 0.5rem;
 }
 
 /* Layout variations */

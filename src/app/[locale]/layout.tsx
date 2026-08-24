@@ -5,6 +5,7 @@ import { LocaleRedirectGuard } from "@/components/locale-redirect-guard";
 import { setRequestLocale } from "next-intl/server";
 import { cookies } from "next/headers";
 import "./globals.css";
+import "@/styles/invoice-print.css";
 import { ThemeClient } from "@/components/theme-client";
 import { CookieConsent } from "@/components/cookie-consent";
 import { Analytics } from "@/components/analytics";
@@ -107,7 +108,7 @@ export default async function RootLayout({
 }) {
   const messages = await getMessages();
   ensureEnv();
-  const { theme, brandColor, fontFamily } = await getInitialTheme();
+  const { theme, brandColor } = await getInitialTheme();
 
   return (
     <html lang={params["locale"]}>
@@ -117,7 +118,6 @@ export default async function RootLayout({
           <ThemeClient
             initialTheme={theme}
             brandColor={brandColor}
-            fontFamily={fontFamily}
           />
           <CookieConsent />
           <Analytics />
