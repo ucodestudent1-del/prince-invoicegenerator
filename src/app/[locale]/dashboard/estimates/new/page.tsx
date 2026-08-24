@@ -1,4 +1,4 @@
-import { requireUser, requireFeature, getActivePlan } from "@/lib/org";
+import { requireUser, requireFeature, getActivePlan, isMissingColumnError } from "@/lib/org";
 import { hasFeature } from "@/lib/plans";
 import { db } from "@/lib/db";
 import { logServerError } from "@/lib/errors";
@@ -18,8 +18,19 @@ export default async function NewEstimatePage({ params }: { params: { locale: st
       orderBy: { name: "asc" },
     });
   } catch (err) {
-    logServerError("NewEstimatePage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      customers = await db["customer"]["findMany"]({
+        where: { orgId: user["organizationId"] },
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+        },
+      }) as any;
+    } else {
+      logServerError("NewEstimatePage", err);
+      throw err;
+    }
   }
   return (
     <div className="space-y-6">

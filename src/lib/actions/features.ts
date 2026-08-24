@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextEstimateNumber, getNextChangeOrderNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
@@ -36,32 +36,72 @@ export async function createEstimate(input: {
 
     const number = await getNextEstimateNumber(db, orgId);
 
-    const estimate = await db["estimate"]["create"]({
-      data: {
-        orgId,
-        number,
-        customerId: input["customerId"],
-        projectId: input["projectId"] ?? null,
-        validUntil: input["validUntil"] ? new Date(input["validUntil"]) : null,
-        taxRate: input["taxRate"],
-        discount: input["discount"],
-        subtotal,
-        taxAmount,
-        total,
-        notes: input["notes"],
-        status: "DRAFT" as EstimateStatus,
-        items: {
-          create: validItems["map"]((it, i) => ({
-            description: it["description"],
-            quantity: it["quantity"],
-            unitPrice: it["unitPrice"],
-            amount: it["quantity"] * it["unitPrice"],
-            sortOrder: i,
-            sku: it["sku"] || null,
-          })),
+    let estimate;
+    try {
+      estimate = await db["estimate"]["create"]({
+        data: {
+          orgId,
+          number,
+          customerId: input["customerId"],
+          projectId: input["projectId"] ?? null,
+          validUntil: input["validUntil"] ? new Date(input["validUntil"]) : null,
+          taxRate: input["taxRate"],
+          discount: input["discount"],
+          subtotal,
+          taxAmount,
+          total,
+          notes: input["notes"],
+          status: "DRAFT" as EstimateStatus,
+          items: {
+            create: validItems["map"]((it, i) => ({
+              description: it["description"],
+              quantity: it["quantity"],
+              unitPrice: it["unitPrice"],
+              amount: it["quantity"] * it["unitPrice"],
+              sortOrder: i,
+              sku: it["sku"] || null,
+            })),
+          },
         },
-      },
-    });
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        estimate = await db["estimate"]["create"]({
+          data: {
+            orgId,
+            number,
+            customerId: input["customerId"],
+            projectId: input["projectId"] ?? null,
+            validUntil: input["validUntil"] ? new Date(input["validUntil"]) : null,
+            taxRate: input["taxRate"],
+            discount: input["discount"],
+            subtotal,
+            taxAmount,
+            total,
+            notes: input["notes"],
+            status: "DRAFT" as EstimateStatus,
+            items: {
+              create: validItems["map"]((it, i) => ({
+                description: it["description"],
+                quantity: it["quantity"],
+                unitPrice: it["unitPrice"],
+                amount: it["quantity"] * it["unitPrice"],
+                sortOrder: i,
+              })),
+            },
+          },
+          select: {
+            id: true,
+            number: true,
+            customerId: true,
+            status: true,
+            total: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
     await revalidateWithLocale("/dashboard/estimates");
     return estimate;
   });
