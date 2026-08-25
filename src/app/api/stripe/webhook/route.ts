@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
           await db["organization"]["update"]({
             where: { id: sub["metadata"]["orgId"] },
             data: { plan: "FREE", subscriptionStatus: "CANCELED", stripeSubscriptionId: null },
+            select: { id: true },
           });
         }
         break;
@@ -82,5 +83,6 @@ async function updateSubscription(sub: any, orgIdOverride?: string) {
         ? new Date(sub["current_period_end"] * 1000)
         : null,
     },
+    select: { id: true },
   });
 }

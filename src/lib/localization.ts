@@ -40,6 +40,7 @@ export async function setLocalizedString(
       locale,
       value,
     },
+    select: { id: true },
   });
 }
 
@@ -61,6 +62,7 @@ export async function getLocalizedString(
         locale,
       },
     },
+    select: { value: true },
   });
 
   if (record?.["value"]) return record["value"];
@@ -81,6 +83,7 @@ export async function getLocalizedString(
           locale: routing["defaultLocale"],
         },
       },
+      select: { value: true },
     });
     if (fallback?.["value"]) return fallback["value"];
   }
@@ -103,6 +106,7 @@ export async function getLocalizedStrings(
       field,
       locale: { in: locales },
     },
+    select: { locale: true, value: true },
   });
 
   const result: Record<string, string | null> = {};

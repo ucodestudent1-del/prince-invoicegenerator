@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
 
     const org = await db["organization"]["findUnique"]({
       where: { id: user["organizationId"] },
+      select: { id: true, name: true, stripeCustomerId: true },
     });
 
     if (!org) {
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
       await db["organization"]["update"]({
         where: { id: org["id"] },
         data: { stripeCustomerId: customerId },
+        select: { id: true },
       });
     }
 

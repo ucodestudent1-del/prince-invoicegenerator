@@ -144,9 +144,9 @@ model User {
   organization   Organization? @relation(fields: [organizationId], references: [id])
   role           OrgRole       @default(OWNER)
 
-  accounts Account[]
-  sessions Session[]
-  timeEntries TimeEntry[]
+  accounts        Account[]
+  sessions        Session[]
+  timeEntries     TimeEntry[]
   onboardingState OnboardingState?
 }
 
@@ -192,84 +192,84 @@ model VerificationToken {
 // ---------------------------------------------------------------------------
 
 model Organization {
-  id              String             @id @default(cuid())
-  name            String
-  slug            String             @unique
-  plan            SubscriptionPlan   @default(FREE)
-  ownerId         String             @unique
-  stripeCustomerId String?
+  id                   String              @id @default(cuid())
+  name                 String
+  slug                 String              @unique
+  plan                 SubscriptionPlan    @default(FREE)
+  ownerId              String              @unique
+  stripeCustomerId     String?
   stripeSubscriptionId String?
-  stripePriceId    String?
-  subscriptionStatus SubscriptionStatus?
-  currentPeriodEnd DateTime?
-  defaultLocale   String?            @default("en")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  stripePriceId        String?
+  subscriptionStatus   SubscriptionStatus?
+  currentPeriodEnd     DateTime?
+  defaultLocale        String?             @default("en")
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
 
-  theme          String @default("light")
-  brandColor     String? 
-  accentColor    String?
-  fontFamily     String? 
-  layout         String @default("default")
-  template       TemplateStyle @default(STANDARD)
+  theme       String        @default("light")
+  brandColor  String?
+  accentColor String?
+  fontFamily  String?
+  layout      String        @default("default")
+  template    TemplateStyle @default(STANDARD)
 
   localizedStrings LocalizedString[]
 
   // Identity
-  logoUrl               String?
-  industry              String?
-  businessType          String?
-  registrationNumber    String?
-  website               String?
+  logoUrl            String?
+  industry           String?
+  businessType       String?
+  registrationNumber String?
+  website            String?
 
   // Contact
-  addressLine1          String?
-  addressLine2          String?
-  city                  String?
-  state                 String?
-  postalCode            String?
-  country               String   @default("US")
-  phone                 String?
-  email                 String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String  @default("US")
+  phone        String?
+  email        String?
 
   // Compliance
-  taxId                 String?
-  taxIdType             String?
+  taxId     String?
+  taxIdType String?
 
   // Localization
-  currency              String   @default("USD")
-  language              String   @default("en")
-  timezone              String   @default("America/New_York")
-  dateFormat            String   @default("MM/DD/YYYY")
-  numberFormat          String   @default("en-US")
+  currency     String @default("USD")
+  language     String @default("en")
+  timezone     String @default("America/New_York")
+  dateFormat   String @default("MM/DD/YYYY")
+  numberFormat String @default("en-US")
 
   // Billing Defaults
-  defaultTaxRate        Float    @default(0)
-  defaultPaymentTerms   String   @default("NET_30")
+  defaultTaxRate      Float  @default(0)
+  defaultPaymentTerms String @default("NET_30")
 
-  users          User[]
-  customers      Customer[]
-  addresses      CustomerAddress[]
-  projects       Project[]
-  invoices       Invoice[]
-  estimates      Estimate[]
-  catalogItems   CatalogItem[]
-  estimateAuditLogs  EstimateAudit[]
-  changeOrders   ChangeOrder[]
-  expenses       Expense[]
-  subcontractors Subcontractor[]
-  photoAttachments PhotoAttachment[]
-  timeEntries  TimeEntry[]
-  invoicePdfs  InvoicePdf[]
-  recurringConfigs RecurringInvoiceConfig[]
-  payments       Payment[]
-  auditLogs      InvoiceAudit[]
-  reminderConfigs ReminderConfig[]
-  reminders      Reminder[]
+  users                User[]
+  customers            Customer[]
+  addresses            CustomerAddress[]
+  projects             Project[]
+  invoices             Invoice[]
+  estimates            Estimate[]
+  catalogItems         CatalogItem[]
+  estimateAuditLogs    EstimateAudit[]
+  changeOrders         ChangeOrder[]
+  expenses             Expense[]
+  subcontractors       Subcontractor[]
+  photoAttachments     PhotoAttachment[]
+  timeEntries          TimeEntry[]
+  invoicePdfs          InvoicePdf[]
+  recurringConfigs     RecurringInvoiceConfig[]
+  payments             Payment[]
+  auditLogs            InvoiceAudit[]
+  reminderConfigs      ReminderConfig[]
+  reminders            Reminder[]
   reminderSuppressions InvoiceReminderSuppression[]
-  lateFeeConfig  LateFeeConfig?
-   settings       OrganizationSettings?
-   paymentInfo    PaymentInfo?
+  lateFeeConfig        LateFeeConfig?
+  settings             OrganizationSettings?
+  paymentInfo          PaymentInfo?
 }
 
 // ---------------------------------------------------------------------------
@@ -277,9 +277,9 @@ model Organization {
 // ---------------------------------------------------------------------------
 
 model OnboardingState {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   currentStep    String   @default("identity")
   completedSteps String[] // ["identity", "contact", ...]
@@ -288,11 +288,11 @@ model OnboardingState {
   contactData    Json?
   complianceData Json?
 
-  isComplete     Boolean  @default(false)
-  completedAt    DateTime?
+  isComplete  Boolean   @default(false)
+  completedAt DateTime?
 
-  startedAt      DateTime @default(now())
-  lastActiveAt   DateTime @updatedAt
+  startedAt    DateTime @default(now())
+  lastActiveAt DateTime @updatedAt
 
   @@index([userId])
   @@index([isComplete])
@@ -303,14 +303,14 @@ model OnboardingState {
 // ---------------------------------------------------------------------------
 
 model OrganizationSettings {
-  id                   String   @id @default(cuid())
-  orgId                String   @unique
+  id                   String       @id @default(cuid())
+  orgId                String       @unique
   org                  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   emailSubjectTemplate String?
   emailBodyTemplate    String?
-  autoReminders        Boolean  @default(false)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  autoReminders        Boolean      @default(false)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 }
 
 // ---------------------------------------------------------------------------
@@ -318,13 +318,13 @@ model OrganizationSettings {
 // ---------------------------------------------------------------------------
 
 model PaymentInfo {
-  id                 String   @id @default(cuid())
-  orgId              String   @unique
-  org                Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  showOnInvoice      Boolean  @default(true)
+  id                  String       @id @default(cuid())
+  orgId               String       @unique
+  org                 Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  showOnInvoice       Boolean      @default(true)
   paymentInstructions String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 }
 
 // ---------------------------------------------------------------------------
@@ -332,7 +332,7 @@ model PaymentInfo {
 // ---------------------------------------------------------------------------
 
 model Customer {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   orgId     String
   org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   name      String
@@ -341,13 +341,13 @@ model Customer {
   phone     String?
   website   String?
   taxId     String?
-  address   String?  // Legacy field - use addresses relation for structured address
+  address   String? // Legacy field - use addresses relation for structured address
   notes     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   // Portal Access
-  portalAccess Boolean  @default(false)
+  portalAccess Boolean @default(false)
   portalPin    String?
 
   // Financial Summary (denormalized for performance, recalculated on invoice/payment events)
@@ -360,16 +360,16 @@ model Customer {
   archivedAt DateTime?
 
   // Relations
-  invoices       Invoice[]
-  estimates      Estimate[]
-  projects       Project[]
+  invoices         Invoice[]
+  estimates        Estimate[]
+  projects         Project[]
   recurringConfigs RecurringInvoiceConfig[]
-  addresses      CustomerAddress[]
-  portalSessions PortalSession[]
+  addresses        CustomerAddress[]
+  portalSessions   PortalSession[]
 
+  @@unique([orgId, email])
   @@index([orgId])
   @@index([orgId, status])
-  @@unique([orgId, email])
 }
 
 enum CustomerStatus {
@@ -383,16 +383,16 @@ enum CustomerStatus {
 // ---------------------------------------------------------------------------
 
 model PortalSession {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   customerId     String
-  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  token          String   @unique
+  customer       Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  token          String    @unique
   expiresAt      DateTime
-  lastAccessedAt DateTime @default(now())
+  lastAccessedAt DateTime  @default(now())
   ipAddress      String?
   userAgent      String?
   revokedAt      DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   @@index([customerId])
   @@index([token])
@@ -403,22 +403,22 @@ model PortalSession {
 // ---------------------------------------------------------------------------
 
 model CustomerAddress {
-  id          String        @id @default(cuid())
-  orgId       String
-  org         Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  customerId  String
-  customer    Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  label       String?
-  type        AddressType   @default(BILLING)
-  line1       String
-  line2       String?
-  city        String
-  state       String?
-  postalCode  String?
-  country     String?
-  isDefault   Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id         String       @id @default(cuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label      String?
+  type       AddressType  @default(BILLING)
+  line1      String
+  line2      String?
+  city       String
+  state      String?
+  postalCode String?
+  country    String?
+  isDefault  Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
   @@index([orgId])
   @@index([customerId])
@@ -429,26 +429,26 @@ model CustomerAddress {
 // ---------------------------------------------------------------------------
 
 model Project {
-  id        String   @id @default(cuid())
-  orgId     String
-  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id         String       @id @default(cuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   customerId String?
-  customer  Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  name      String
-  address   String?
-  startDate DateTime?
-  endDate   DateTime?
-  status    String   @default("ACTIVE")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  customer   Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  name       String
+  address    String?
+  startDate  DateTime?
+  endDate    DateTime?
+  status     String       @default("ACTIVE")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
-  invoices       Invoice[]
-  estimates      Estimate[]
-  changeOrders   ChangeOrder[]
-  expenses       Expense[]
+  invoices                 Invoice[]
+  estimates                Estimate[]
+  changeOrders             ChangeOrder[]
+  expenses                 Expense[]
   subcontractorAssignments SubcontractorProject[]
-  recurringConfigs RecurringInvoiceConfig[]
-  timeEntries  TimeEntry[]
+  recurringConfigs         RecurringInvoiceConfig[]
+  timeEntries              TimeEntry[]
 
   @@index([orgId])
 }
@@ -458,58 +458,58 @@ model Project {
 // ---------------------------------------------------------------------------
 
 model Invoice {
-  id            String       @id @default(cuid())
-  orgId         String
-  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  number        String
-  customerId    String
-  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  projectId     String?
-  project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  id         String       @id @default(cuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  number     String
+  customerId String
+  customer   Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  projectId  String?
+  project    Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
-  type          InvoiceType  @default(STANDARD)
-  status        InvoiceStatus @default(DRAFT)
-  issueDate     DateTime     @default(now())
-  dueDate       DateTime?
-  currency      String       @default("USD")
+  type      InvoiceType   @default(STANDARD)
+  status    InvoiceStatus @default(DRAFT)
+  issueDate DateTime      @default(now())
+  dueDate   DateTime?
+  currency  String        @default("USD")
 
-  subtotal      Float        @default(0)
-  taxRate       Float        @default(0)
-  taxAmount     Float        @default(0)
-  discount      Float        @default(0)
+  subtotal  Float @default(0)
+  taxRate   Float @default(0)
+  taxAmount Float @default(0)
+  discount  Float @default(0)
 
   // Retainage (Pro tier): percentage of contract withheld until completion
-  retainageRate Float        @default(0)
-  retainageAmount Float      @default(0)
+  retainageRate   Float @default(0)
+  retainageAmount Float @default(0)
 
-  total         Float        @default(0)
-  amountPaid    Float        @default(0)
-  lateFeeAmount Float        @default(0)
-  scheduledFor  DateTime?
-  notes         String?
-  stripeInvoiceId String?
+  total             Float                   @default(0)
+  amountPaid        Float                   @default(0)
+  lateFeeAmount     Float                   @default(0)
+  scheduledFor      DateTime?
+  notes             String?
+  stripeInvoiceId   String?
   recurringConfigId String?
-  recurringConfig RecurringInvoiceConfig? @relation("RecurringInvoices", fields: [recurringConfigId], references: [id])
-  logoUrl String?
-  billToAddress String?
-  shipToAddress String?
+  recurringConfig   RecurringInvoiceConfig? @relation("RecurringInvoices", fields: [recurringConfigId], references: [id])
+  logoUrl           String?
+  billToAddress     String?
+  shipToAddress     String?
 
-   // Link to source estimate (v2 enhancement)
-   estimateId    String? @unique
-   estimate      Estimate?  @relation("EstimateToInvoice", fields: [estimateId], references: [id], onDelete: SetNull)
+  // Link to source estimate (v2 enhancement)
+  estimateId String?   @unique
+  estimate   Estimate? @relation("EstimateToInvoice", fields: [estimateId], references: [id], onDelete: SetNull)
 
-  createdById   String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-   items         InvoiceItem[]
-   changeOrders  ChangeOrder[]
-   payments      Payment[]
-   auditLogs     InvoiceAudit[]
-   reminders     Reminder[]
-   reminderSuppressions InvoiceReminderSuppression[]
-   timeEntries   TimeEntry[]
-   invoicePdfs   InvoicePdf[]
+  items                InvoiceItem[]
+  changeOrders         ChangeOrder[]
+  payments             Payment[]
+  auditLogs            InvoiceAudit[]
+  reminders            Reminder[]
+  reminderSuppressions InvoiceReminderSuppression[]
+  timeEntries          TimeEntry[]
+  invoicePdfs          InvoicePdf[]
 
   @@unique([orgId, number])
   @@index([orgId])
@@ -535,57 +535,57 @@ model InvoiceItem {
 // ---------------------------------------------------------------------------
 
 model Estimate {
-  id          String        @id @default(cuid())
-  orgId       String
-  org         Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  number      String
-  customerId  String
-  customer    Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  projectId   String?
-  project     Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  status      EstimateStatus @default(DRAFT)
-  issueDate   DateTime      @default(now())
-  validUntil  DateTime?
-  currency    String        @default("USD")
-  subtotal    Float         @default(0)
-  taxRate     Float         @default(0)
-  taxAmount   Float         @default(0)
-  discount    Float         @default(0)
-  total       Float         @default(0)
-  notes       String?
+  id         String         @id @default(cuid())
+  orgId      String
+  org        Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  number     String
+  customerId String
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  projectId  String?
+  project    Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  status     EstimateStatus @default(DRAFT)
+  issueDate  DateTime       @default(now())
+  validUntil DateTime?
+  currency   String         @default("USD")
+  subtotal   Float          @default(0)
+  taxRate    Float          @default(0)
+  taxAmount  Float          @default(0)
+  discount   Float          @default(0)
+  total      Float          @default(0)
+  notes      String?
 
   // Engagement tracking (v2 enhancement)
-  shareToken      String?    // cryptographically random UUID for secure link
-  viewedAt        DateTime?  // when customer first viewed
-  acceptedAt      DateTime?  // when customer accepted
-  rejectedAt      DateTime?  // when customer rejected
-  rejectionReason String?    // free-text or predefined code
-  convertedAt     DateTime?  // when converted to invoice
-  sentAt          DateTime?  // when estimate was sent to customer
+  shareToken      String? // cryptographically random UUID for secure link
+  viewedAt        DateTime? // when customer first viewed
+  acceptedAt      DateTime? // when customer accepted
+  rejectedAt      DateTime? // when customer rejected
+  rejectionReason String? // free-text or predefined code
+  convertedAt     DateTime? // when converted to invoice
+  sentAt          DateTime? // when estimate was sent to customer
 
-   // Conversion to invoice
-   linkedInvoiceId String?
-   linkedInvoice   Invoice?   @relation("EstimateToInvoice")
+  // Conversion to invoice
+  linkedInvoiceId String?
+  linkedInvoice   Invoice? @relation("EstimateToInvoice")
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  items       EstimateItem[]
-  auditLogs   EstimateAudit[]
+  items     EstimateItem[]
+  auditLogs EstimateAudit[]
 
   @@unique([orgId, number])
   @@index([orgId])
 }
 
 model EstimateItem {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   estimateId  String
-  estimate    Estimate  @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  estimate    Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
   description String
-  quantity    Float     @default(1)
-  unitPrice   Float     @default(0)
-  amount      Float     @default(0)
-  sortOrder   Int       @default(0)
+  quantity    Float    @default(1)
+  unitPrice   Float    @default(0)
+  amount      Float    @default(0)
+  sortOrder   Int      @default(0)
   sku         String?
 
   @@index([estimateId])
@@ -596,17 +596,17 @@ model EstimateItem {
 // ---------------------------------------------------------------------------
 
 model EstimateAudit {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   estimateId  String
-  estimate    Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  estimate    Estimate     @relation(fields: [estimateId], references: [id], onDelete: Cascade)
   orgId       String
   org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  action      String   // VIEWED, SENT, ACCEPTED, REJECTED, EXPIRED, CONVERTED_TO_INVOICE, COMMENT_ADDED
+  action      String // VIEWED, SENT, ACCEPTED, REJECTED, EXPIRED, CONVERTED_TO_INVOICE, COMMENT_ADDED
   fromStatus  String?
   toStatus    String?
   note        String?
   createdById String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime     @default(now())
 
   @@index([estimateId])
   @@index([orgId])
@@ -648,25 +648,25 @@ enum CatalogUnit {
 }
 
 model CatalogItem {
-  id        String        @id @default(cuid())
-  orgId     String
-  org       Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  name      String
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name        String
   description String?
-  price     Float
-  unit      CatalogUnit   @default(UNITS)
-  taxRate   Float         @default(0)
+  price       Float
+  unit        CatalogUnit  @default(UNITS)
+  taxRate     Float        @default(0)
   taxCategory String?
-  sku       String?
-  discount  Float         @default(0)
-  sortOrder Int           @default(0)
-  isFavorite Boolean      @default(false)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  sku         String?
+  discount    Float        @default(0)
+  sortOrder   Int          @default(0)
+  isFavorite  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
+  @@unique([orgId, sku])
   @@index([orgId])
   @@index([orgId, name])
-  @@unique([orgId, sku])
 }
 
 // ---------------------------------------------------------------------------
@@ -674,20 +674,20 @@ model CatalogItem {
 // ---------------------------------------------------------------------------
 
 model Expense {
-  id          String           @id @default(cuid())
-  orgId       String
-  org         Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  projectId   String?
-  project     Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  vendor      String?
-  category    ExpenseCategory  @default(OTHER)
-  amount      Float            @default(0)
-  date        DateTime         @default(now())
-  notes       String?
-  photoId     String?   @unique
-  photo       PhotoAttachment? @relation(fields: [photoId], references: [id], onDelete: SetNull)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id        String           @id @default(cuid())
+  orgId     String
+  org       Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  vendor    String?
+  category  ExpenseCategory  @default(OTHER)
+  amount    Float            @default(0)
+  date      DateTime         @default(now())
+  notes     String?
+  photoId   String?          @unique
+  photo     PhotoAttachment? @relation(fields: [photoId], references: [id], onDelete: SetNull)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   @@index([orgId])
 }
@@ -697,7 +697,7 @@ model Expense {
 // ---------------------------------------------------------------------------
 
 model Subcontractor {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   orgId     String
   org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   name      String
@@ -706,11 +706,11 @@ model Subcontractor {
   email     String?
   phone     String?
   rate      Decimal?
-  status    String    @default("ACTIVE")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    String       @default("ACTIVE")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
-  projects  SubcontractorProject[]
+  projects SubcontractorProject[]
 
   @@index([orgId])
 }
@@ -739,27 +739,27 @@ enum TimeEntryStatus {
 }
 
 model TimeEntry {
-  id          String    @id @default(cuid())
-  orgId       String
-  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projectId   String
-  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  invoiceId   String?
-  invoice     Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invoiceId String?
+  invoice   Invoice?     @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
   startTime   DateTime
   endTime     DateTime?
-  duration    Float     @default(0) // Duration in seconds
+  duration    Float           @default(0) // Duration in seconds
   description String?
-  billable    Boolean   @default(true)
-  hourlyRate  Float     @default(0)
-  amount      Float     @default(0) // (duration/3600) * hourlyRate
-  isManual    Boolean   @default(false)
+  billable    Boolean         @default(true)
+  hourlyRate  Float           @default(0)
+  amount      Float           @default(0) // (duration/3600) * hourlyRate
+  isManual    Boolean         @default(false)
   status      TimeEntryStatus @default(APPROVED)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   @@index([orgId])
   @@index([orgId, userId])
@@ -775,20 +775,20 @@ model TimeEntry {
 // ---------------------------------------------------------------------------
 
 model PhotoAttachment {
-  id        String     @id @default(cuid())
-  orgId     String
-  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  key       String // R2 object key
-  url       String
-  filename  String
-  contentType String?
-  size      Int?
-  entityType EntityType?
-  entityId  String?
+  id           String       @id @default(cuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  key          String // R2 object key
+  url          String
+  filename     String
+  contentType  String?
+  size         Int?
+  entityType   EntityType?
+  entityId     String?
   uploadedById String?
-  createdAt DateTime   @default(now())
+  createdAt    DateTime     @default(now())
 
-  expense   Expense?
+  expense Expense?
 
   @@index([orgId])
 }
@@ -821,18 +821,18 @@ model Payment {
 // ---------------------------------------------------------------------------
 
 model InvoiceAudit {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice     Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   orgId       String
   org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  action      String   // STATUS_CHANGE, PAYMENT_RECORDED, PAYMENT_LINK_SENT, etc.
+  action      String // STATUS_CHANGE, PAYMENT_RECORDED, PAYMENT_LINK_SENT, etc.
   fromStatus  String?
   toStatus    String?
   amount      Float?
   note        String?
   createdById String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime     @default(now())
 
   @@index([invoiceId])
   @@index([orgId])
@@ -843,15 +843,15 @@ model InvoiceAudit {
 // ---------------------------------------------------------------------------
 
 model InvoicePdf {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   orgId     String
   org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   invoiceId String
-  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice   Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-  url       String   // R2 download URL
+  url       String // R2 download URL
   paperSize String   @default("A4")
-  fileSize  Int?     // bytes
+  fileSize  Int? // bytes
   createdAt DateTime @default(now())
 
   @@index([invoiceId])
@@ -863,75 +863,75 @@ model InvoicePdf {
 // ---------------------------------------------------------------------------
 
 enum ReminderStageType {
-  PRE_DUE    // daysOffset < 0 — fires before the due date
-  DUE_DATE   // daysOffset == 0 — fires on the due date
-  POST_DUE   // daysOffset > 0 — fires after the due date (escalation ladder)
+  PRE_DUE // daysOffset < 0 — fires before the due date
+  DUE_DATE // daysOffset == 0 — fires on the due date
+  POST_DUE // daysOffset > 0 — fires after the due date (escalation ladder)
 }
 
 model ReminderConfig {
-  id               String   @id @default(cuid())
-  orgId            String
-  org              Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  enabled          Boolean  @default(true)
-  remindBeforeDue  Int      @default(3) // legacy: days before due date
-  remindAfterDue   Int      @default(1) // legacy: days after due date
-  frequencyHours   Int      @default(24) // minimum hours between reminders
-  maxReminders     Int      @default(3) // max reminders per invoice
-  emailSubject     String?  @default("Payment reminder for invoice {{invoiceNumber}}")
-  emailTemplate    String?  @default("Dear {{customerName}}, this is a reminder that invoice {{invoiceNumber}} for {{amount}} is due on {{dueDate}}.")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String       @id @default(cuid())
+  orgId           String
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  enabled         Boolean      @default(true)
+  remindBeforeDue Int          @default(3) // legacy: days before due date
+  remindAfterDue  Int          @default(1) // legacy: days after due date
+  frequencyHours  Int          @default(24) // minimum hours between reminders
+  maxReminders    Int          @default(3) // max reminders per invoice
+  emailSubject    String?      @default("Payment reminder for invoice {{invoiceNumber}}")
+  emailTemplate   String?      @default("Dear {{customerName}}, this is a reminder that invoice {{invoiceNumber}} for {{amount}} is due on {{dueDate}}.")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  stages          ReminderStage[]
+  stages ReminderStage[]
 
   @@unique([orgId])
   @@index([orgId])
 }
 
 model ReminderStage {
-  id              String      @id @default(cuid())
-  configId        String
-  config          ReminderConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  id       String         @id @default(cuid())
+  configId String
+  config   ReminderConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
-  name            String      // e.g. "Friendly reminder", "1 day overdue"
+  name            String // e.g. "Friendly reminder", "1 day overdue"
   type            ReminderStageType
-  enabled         Boolean     @default(true)
-  daysOffset      Int         // negative = before due, 0 = on, positive = after due
-  timeOfDay       String?     // optional "HH:mm" in org timezone
-  subjectTemplate String?     // rendered with template variables
-  bodyTemplate    String?     // rendered with template variables
-  channel         String      @default("EMAIL")
+  enabled         Boolean           @default(true)
+  daysOffset      Int // negative = before due, 0 = on, positive = after due
+  timeOfDay       String? // optional "HH:mm" in org timezone
+  subjectTemplate String? // rendered with template variables
+  bodyTemplate    String? // rendered with template variables
+  channel         String            @default("EMAIL")
 
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  reminders       Reminder[]
+  reminders Reminder[]
 
   @@index([configId])
   @@index([type])
 }
 
 model Reminder {
-  id            String    @id @default(cuid())
-  orgId         String
-  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  invoiceId     String?
-  invoice       Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  stageId       String?
-  stage         ReminderStage? @relation(fields: [stageId], references: [id], onDelete: SetNull)
-  type          String    // PRE_DUE | DUE_DATE | POST_DUE_1 | POST_DUE_7 | POST_DUE_14 | POST_DUE_30
-  scheduledAt   DateTime
-  sentAt        DateTime?
-  deliveredAt   DateTime?
-  status        String    @default("PENDING") // PENDING, SENT, QUEUED, DELIVERED, FAILED, BOUNCED, SKIPPED
-  channel       String    @default("EMAIL")   // EMAIL, SMS (future)
-  recipient     String?   // email address the reminder was sent to
-  subject       String?   // rendered subject at time of send (for audit)
-  note          String?
-  errorMessage  String?
-  metadata      Json?     // delivery provider response, message ID, etc.
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String         @id @default(cuid())
+  orgId        String
+  org          Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invoiceId    String?
+  invoice      Invoice?       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  stageId      String?
+  stage        ReminderStage? @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  type         String // PRE_DUE | DUE_DATE | POST_DUE_1 | POST_DUE_7 | POST_DUE_14 | POST_DUE_30
+  scheduledAt  DateTime
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  status       String         @default("PENDING") // PENDING, SENT, QUEUED, DELIVERED, FAILED, BOUNCED, SKIPPED
+  channel      String         @default("EMAIL") // EMAIL, SMS (future)
+  recipient    String? // email address the reminder was sent to
+  subject      String? // rendered subject at time of send (for audit)
+  note         String?
+  errorMessage String?
+  metadata     Json? // delivery provider response, message ID, etc.
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@index([orgId])
   @@index([invoiceId])
@@ -940,17 +940,17 @@ model Reminder {
 }
 
 model InvoiceReminderSuppression {
-  id          String   @id @default(cuid())
-  orgId       String
-  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invoiceId String
+  invoice   Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-  suppressedAll Boolean  @default(false) // skip all automated reminders for this invoice
+  suppressedAll Boolean   @default(false) // skip all automated reminders for this invoice
   snoozedUntil  DateTime? // skip reminders until this date
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([orgId, invoiceId])
   @@index([orgId])
@@ -958,31 +958,31 @@ model InvoiceReminderSuppression {
 }
 
 model RecurringInvoiceConfig {
-  id          String   @id @default(cuid())
-  orgId       String
-  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  customerId  String
-  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  projectId   String?
-  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  frequency       String   @default("MONTHLY") // MONTHLY, QUARTERLY, etc.
-  startDate       DateTime?              // don't generate before this date
-  endDate         DateTime?              // stop generating after this date
-  occurrences     Int?                   // stop after N generated invoices
-  generatedCount  Int        @default(0) // invoices generated so far
-  paymentTerms    String     @default("NET_30") // NET_7|NET_15|NET_30|NET_60|DUE_ON_RECEIPT
+  id              String       @id @default(cuid())
+  orgId           String
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customerId      String
+  customer        Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  projectId       String?
+  project         Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  frequency       String       @default("MONTHLY") // MONTHLY, QUARTERLY, etc.
+  startDate       DateTime? // don't generate before this date
+  endDate         DateTime? // stop generating after this date
+  occurrences     Int? // stop after N generated invoices
+  generatedCount  Int          @default(0) // invoices generated so far
+  paymentTerms    String       @default("NET_30") // NET_7|NET_15|NET_30|NET_60|DUE_ON_RECEIPT
   nextRunDate     DateTime
-  autoSend        Boolean    @default(true)
-  autoCharge      Boolean    @default(false)
-  defaultTaxRate   Float?                 // overrides the template's taxRate when set
-  defaultDiscount  Float?                 // overrides the template's discount when set
-  defaultItems     Json?                  // [{ description, quantity, unitPrice, amount }]
-  active          Boolean  @default(true)
+  autoSend        Boolean      @default(true)
+  autoCharge      Boolean      @default(false)
+  defaultTaxRate  Float? // overrides the template's taxRate when set
+  defaultDiscount Float? // overrides the template's discount when set
+  defaultItems    Json? // [{ description, quantity, unitPrice, amount }]
+  active          Boolean      @default(true)
   lastInvoiceId   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  invoices    Invoice[] @relation("RecurringInvoices")
+  invoices Invoice[] @relation("RecurringInvoices")
 
   @@index([orgId])
 }
@@ -992,16 +992,16 @@ model RecurringInvoiceConfig {
 // ---------------------------------------------------------------------------
 
 model LateFeeConfig {
-  id          String   @id @default(cuid())
-  orgId       String   @unique
-  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  enabled     Boolean  @default(false)
-  rate        Float    @default(0) // percentage of total amount
-  graceDays   Int      @default(0) // days after due date before fees apply
-  fixedFee    Float    @default(0) // fixed fee added on top of percentage
-  maxFee      Float?   // cap on total late fee
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String       @id @default(cuid())
+  orgId     String       @unique
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  enabled   Boolean      @default(false)
+  rate      Float        @default(0) // percentage of total amount
+  graceDays Int          @default(0) // days after due date before fees apply
+  fixedFee  Float        @default(0) // fixed fee added on top of percentage
+  maxFee    Float? // cap on total late fee
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   @@index([orgId])
 }
@@ -1011,16 +1011,16 @@ model LateFeeConfig {
 // ---------------------------------------------------------------------------
 
 model LocalizedString {
-  id         String   @id @default(cuid())
+  id         String       @id @default(cuid())
   orgId      String
   org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  entityType String   // e.g. "Customer", "Project", "Invoice"
+  entityType String // e.g. "Customer", "Project", "Invoice"
   entityId   String
-  field      String   // e.g. "name", "description", "notes"
-  locale     String   // "en", "fr", "es", "de"
-  value      String   @db.Text
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  field      String // e.g. "name", "description", "notes"
+  locale     String // "en", "fr", "es", "de"
+  value      String       @db.Text
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
   @@unique([orgId, entityType, entityId, field, locale])
   @@index([orgId, entityType, entityId])

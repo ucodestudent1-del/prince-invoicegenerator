@@ -46,6 +46,7 @@ export async function createAddress(input: AddressInput) {
         country: input["country"],
         isDefault: input["isDefault"] ?? false,
       },
+      select: { id: true },
     });
 
     await revalidateWithLocale("/dashboard/customers");
@@ -67,6 +68,7 @@ export async function getCustomerAddresses(customerId: string) {
     const addresses = await db["customerAddress"]["findMany"]({
       where: { customerId },
       orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+      select: { id: true, label: true, type: true, line1: true, line2: true, city: true, state: true, postalCode: true, country: true, isDefault: true },
     });
 
     return addresses;
@@ -85,6 +87,7 @@ export async function getDefaultAddress(customerId: string, type: AddressType) {
         isDefault: true,
         orgId: user["organizationId"],
       },
+      select: { id: true, customerId: true, type: true },
     });
 
     return address;
@@ -125,6 +128,7 @@ export async function updateAddress(id: string, input: Partial<AddressInput>) {
         country: input["country"],
         isDefault: input["isDefault"] ?? false,
       },
+      select: { id: true },
     });
 
     await revalidateWithLocale("/dashboard/customers");

@@ -13,6 +13,7 @@ export async function POST() {
   }
   const org = await db["organization"]["findUnique"]({
     where: { id: user["organizationId"] },
+    select: { stripeCustomerId: true },
   });
   if (!org?.["stripeCustomerId"]) {
     return NextResponse["json"]({ error: "No customer" }, { status: 400 });

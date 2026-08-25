@@ -37,6 +37,7 @@ export async function saveLateFeeConfig(input: LateFeeConfigInput) {
         fixedFee: input["fixedFee"],
         maxFee: input["maxFee"],
       },
+      select: { id: true },
     });
 
     await revalidateWithLocale("/dashboard/settings/late-fees");
@@ -51,6 +52,7 @@ export async function getLateFeeConfig() {
 
     const config = await db["lateFeeConfig"]["findUnique"]({
       where: { orgId: user["organizationId"] },
+      select: { id: true, enabled: true, rate: true, graceDays: true, fixedFee: true, maxFee: true },
     });
 
     return config;
@@ -79,6 +81,7 @@ export async function applyLateFees() {
             status: { in: ["UNPAID", "OVERDUE", "SENT", "VIEWED"] },
             dueDate: { lte: addDays(now, -cfg["graceDays"]) },
           },
+          select: { id: true, number: true, total: true, amountPaid: true, status: true, lateFeeAmount: true },
         });
       } catch (err) {
         if (isInvalidEnumValueError(err)) {
@@ -88,6 +91,7 @@ export async function applyLateFees() {
               status: { in: ["OVERDUE", "SENT", "VIEWED"] },
               dueDate: { lte: addDays(now, -cfg["graceDays"]) },
             },
+            select: { id: true, number: true, total: true, amountPaid: true, status: true, lateFeeAmount: true },
           });
         } else {
           throw err;
@@ -111,6 +115,7 @@ export async function applyLateFees() {
             total: invoice["total"] + lateFee,
             status: "OVERDUE",
           },
+          select: { id: true },
         });
 
         await db["invoiceAudit"]["create"]({
@@ -123,6 +128,7 @@ export async function applyLateFees() {
             amount: lateFee,
             note: `Late fee of ${lateFee["toFixed"](2)} applied (${cfg["rate"]}% + ${cfg["fixedFee"]} fixed)`,
           },
+          select: { id: true },
         });
 
         results["push"]({

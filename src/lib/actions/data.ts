@@ -236,7 +236,7 @@ export async function deleteOrganization(): Promise<ActionResult> {
         where: { organizationId: orgId, id: { not: userId } },
         data: { organizationId: null },
       });
-      await tx["organization"]["delete"]({ where: { id: orgId } });
+      await tx["organization"]["delete"]({ where: { id: orgId }, select: { id: true } });
     });
 
     await revalidateOrg();

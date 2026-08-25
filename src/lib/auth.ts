@@ -114,11 +114,10 @@ export const authOptions: NextAuthOptions = {
             try {
               const dbUser = await db["user"]["findUnique"]({
                 where: { id: user["id"] },
-                select: { organizationId: true, role: true, locale: true },
+                select: { organizationId: true, role: true },
               });
               organizationId = dbUser?.["organizationId"] ?? null;
               role = dbUser?.["role"] ?? "OWNER";
-              userLocale = dbUser?.["locale"] ?? null;
             } catch {
               // Fall through to defaults
             }

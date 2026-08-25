@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { checkRateLimit } from "@/lib/action-rate-limit";
+import { isMissingColumnError } from "@/lib/org";
 
 const VERIFICATION_TOKEN_EXPIRY_MINUTES = 24 * 60;
 const VERIFICATION_RESEND_COOLDOWN_SECONDS = 60;
@@ -46,6 +47,7 @@ export async function signup(data: {
 
     const existing = await db["user"]["findUnique"]({
       where: { email: normalizedEmail },
+      select: { id: true },
     });
 
     if (existing) {
@@ -60,6 +62,7 @@ export async function signup(data: {
         name: data["name"]["trim"](),
         password: hashedPassword,
       },
+      select: { id: true },
     });
 
     const token = randomBytes(32)["toString"]("hex");
@@ -107,21 +110,36 @@ export async function verifyEmail(token: string) {
       actionError("Too many attempts. Please try again later.");
     }
 
-    const record = await db["verificationToken"]["findUnique"]({
-      where: { token },
-    });
+    let record;
+    try {
+      record = await db["verificationToken"]["findUnique"]({
+        where: { token },
+        select: { type: true, expires: true, identifier: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        record = await db["verificationToken"]["findUnique"]({
+          where: { token },
+          select: { expires: true, identifier: true },
+        });
+        (record as any)["type"] = "EMAIL_VERIFY";
+      } else {
+        throw err;
+      }
+    }
 
-    if (!record || record["type"] !== "EMAIL_VERIFY") {
+    if (!record || !(record as any)?.["type"] || (record as any)["type"] !== "EMAIL_VERIFY") {
       actionError("Invalid or expired token");
     }
 
-    if (record["expires"] < new Date()) {
+    if (record && (record as any)["expires"] < new Date()) {
       await db["verificationToken"]["delete"]({ where: { token } });
       actionError("Token has expired. Please request a new one.");
     }
 
     const user = await db["user"]["findUnique"]({
       where: { email: record["identifier"] },
+      select: { id: true },
     });
 
     if (!user) {
@@ -131,6 +149,7 @@ export async function verifyEmail(token: string) {
     await db["user"]["update"]({
       where: { id: user["id"] },
       data: { emailVerified: new Date() },
+      select: { id: true },
     });
 
     await db["verificationToken"]["delete"]({ where: { token } });
@@ -149,6 +168,7 @@ export async function requestPasswordReset(email: string) {
 
     const user = await db["user"]["findUnique"]({
       where: { email: normalizedEmail },
+      select: { id: true, password: true },
     });
 
     if (!user || !user["password"]) {
@@ -198,15 +218,29 @@ export async function resetPassword(token: string, newPassword: string) {
       actionError("Too many attempts. Please try again later.");
     }
 
-    const record = await db["verificationToken"]["findUnique"]({
-      where: { token },
-    });
+    let record;
+    try {
+      record = await db["verificationToken"]["findUnique"]({
+        where: { token },
+        select: { type: true, expires: true, identifier: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        record = await db["verificationToken"]["findUnique"]({
+          where: { token },
+          select: { expires: true, identifier: true },
+        });
+        (record as any)["type"] = "PASSWORD_RESET";
+      } else {
+        throw err;
+      }
+    }
 
-    if (!record || record["type"] !== "PASSWORD_RESET") {
+    if (!record || !(record as any)?.["type"] || (record as any)["type"] !== "PASSWORD_RESET") {
       actionError("Invalid or expired token");
     }
 
-    if (record["expires"] < new Date()) {
+    if (record && (record as any)["expires"] < new Date()) {
       await db["verificationToken"]["delete"]({ where: { token } });
       actionError("Token has expired. Please request a new one.");
     }
@@ -216,6 +250,7 @@ export async function resetPassword(token: string, newPassword: string) {
     await db["user"]["update"]({
       where: { email: record["identifier"] },
       data: { password: hashedPassword },
+      select: { id: true },
     });
 
     await db["verificationToken"]["delete"]({ where: { token } });
@@ -239,6 +274,7 @@ export async function resendVerificationEmail() {
     const existingToken = await db["verificationToken"]["findFirst"]({
       where: { identifier: session["user"]["email"] },
       orderBy: { expires: "desc" },
+      select: { expires: true, type: true, identifier: true },
     });
 
     if (existingToken && existingToken["expires"] > new Date(Date["now"]() + VERIFICATION_RESEND_COOLDOWN_SECONDS * 1000)) {

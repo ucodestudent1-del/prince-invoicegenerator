@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       size: buffer["length"],
       uploadedById: user["id"],
     },
+    select: { id: true, url: true },
   });
 
   return NextResponse["json"]({ id: photo["id"], url: photo["url"] });
