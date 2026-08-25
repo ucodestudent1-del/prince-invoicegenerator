@@ -1,19 +1,20 @@
--- Repair migration: Re-apply Estimate enhancements that were never executed
--- The 20260820_add_estimate_enhancements migration was marked as "applied" in
--- _prisma_migrations via prisma migrate resolve --applied without running the SQL.
--- This migration re-applies the missing schema changes:
---   1. EstimateStatus enum type (may not exist or may be missing values)
+-- Repair migration: Add missing Estimate enhancements columns and table
+-- The 20260820_add_estimate_enhancements migration was marked as "applied"
+-- via prisma migrate resolve --applied without running the SQL.
+-- This migration adds the missing schema changes:
+--   1. EstimateStatus enum (create if missing, recreate if missing values)
 --   2. Estimate engagement tracking columns
 --   3. Invoice.estimateId FK column
 --   4. EstimateAudit table
 -- All operations are idempotent (IF NOT EXISTS guards).
 
 -- ---------------------------------------------------------------------------
--- 1. Extend the EstimateStatus enum
+-- 1. Ensure EstimateStatus enum exists with all required values
 -- ---------------------------------------------------------------------------
 -- PostgreSQL doesn't allow ALTER TYPE ... ADD VALUE inside a transaction
 -- (which Prisma Migrate uses). We work around this by recreating the type
--- if new values are needed.
+-- if new values are missing.
+
 DO $$
 DECLARE
     type_exists BOOLEAN;
@@ -25,7 +26,7 @@ BEGIN
         -- Type doesn't exist at all, create it with all values
         CREATE TYPE "EstimateStatus" AS ENUM ('DRAFT', 'SENT', 'VIEWED', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'INVOICED');
 
-        -- Try to cast the status column to the new type (in case it's TEXT)
+        -- Try to cast the column to the new type (in case it's TEXT)
         BEGIN
             ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE "EstimateStatus" USING status::"EstimateStatus";
         EXCEPTION WHEN OTHERS THEN

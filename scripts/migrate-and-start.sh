@@ -122,22 +122,31 @@ else
 
    # -------------------------------------------------------------------------
    # Resolve the failed 20260825_repair_estimate_enhancements migration.
-   # This migration was attempted but failed in previous deployments.
-   # The migration folder exists in the repo. Mark it as rolled-back so
-   # prisma migrate deploy can retry it.
+   # This migration was attempted but failed due to ALTER TYPE restrictions.
+   # The fix is in 2026082502_repair_estimate_enhancements (new migration).
+   # Mark the old one as applied to clear the failed state from _prisma_migrations,
+   # so prisma migrate deploy can proceed with the new migration.
    # -------------------------------------------------------------------------
+   ESTIMATE_OLD_RESOLVE_CREATED=0
+   if [ ! -d "prisma/migrations/20260825_repair_estimate_enhancements" ]; then
+     echo "Creating temporary migration folder for old estimate repair resolve..."
+     mkdir -p prisma/migrations/20260825_repair_estimate_enhancements
+     echo "-- placeholder" > prisma/migrations/20260825_repair_estimate_enhancements/migration.sql
+     ESTIMATE_OLD_RESOLVE_CREATED=1
+   fi
+
    echo "Resolving failed migration 20260825_repair_estimate_enhancements..."
-   npx prisma migrate resolve --rolled-back 20260825_repair_estimate_enhancements || true
+   npx prisma migrate resolve --applied 20260825_repair_estimate_enhancements || true
+
+   if [ "$ESTIMATE_OLD_RESOLVE_CREATED" = "1" ]; then
+     echo "Removing temporary old estimate repair migration folder..."
+     rm -rf prisma/migrations/20260825_repair_estimate_enhancements
+   fi
 
    # Retry migrations up to 5 times in case database is not ready yet
    max_retries=5
    retry=1
    until npx prisma migrate deploy; do
-     # Resolve the repair migration again before retrying, since the failed
-     # attempt will have re-marked it as failed in _prisma_migrations
-     echo "Resolving failed migration 20260825_repair_estimate_enhancements before retry..."
-     npx prisma migrate resolve --rolled-back 20260825_repair_estimate_enhancements || true
-
      if [ $retry -ge $max_retries ]; then
        echo "Migration failed after $retry attempts"
        exit 1
