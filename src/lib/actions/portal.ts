@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { sendEmail } from "@/lib/email";
 import { randomBytes } from "crypto";
@@ -14,17 +15,43 @@ export async function requestPortalAccess(email: string) {
       actionError("Email address is required.");
     }
 
-    const customer = await db["customer"]["findFirst"]({
-      where: { email: email["trim"]() },
-      include: { org: { select: { name: true } } },
-    });
+    let customer: any;
+    try {
+      customer = await db["customer"]["findFirst"]({
+        where: { email: email["trim"]() },
+        include: { org: { select: { name: true } } },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        customer = await db["customer"]["findFirst"]({
+          where: { email: email["trim"]() },
+          select: {
+            id: true,
+            orgId: true,
+            name: true,
+            company: true,
+            email: true,
+            phone: true,
+            address: true,
+            notes: true,
+            createdAt: true,
+            updatedAt: true,
+            org: { select: { name: true } },
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     if (!customer) {
       // Don't reveal whether email exists
       return { success: true, message: "If an account exists, a login link has been sent." };
     }
 
-    if (!customer["portalAccess"]) {
+    // portalAccess is a v2 column; if the database hasn't been migrated,
+    // the customer won't have portal access
+    if (!(customer as any)["portalAccess"]) {
       return { success: true, message: "If an account exists, a login link has been sent." };
     }
 
@@ -38,6 +65,7 @@ export async function requestPortalAccess(email: string) {
         token,
         expiresAt,
       },
+      select: { token: true },
     });
 
     // Build magic link URL
@@ -67,10 +95,38 @@ export async function verifyPortalToken(token: string) {
   return withActionError("verifyPortalToken", async () => {
     if (!token) actionError("Invalid token");
 
-    const session = await db["portalSession"]["findUnique"]({
-      where: { token },
-      include: { customer: true },
-    });
+    let session: any;
+    try {
+      session = await db["portalSession"]["findUnique"]({
+        where: { token },
+        include: { customer: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        session = await db["portalSession"]["findUnique"]({
+          where: { token },
+          select: {
+            id: true,
+            customerId: true,
+            customer: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                orgId: true,
+              },
+            },
+            token: true,
+            expiresAt: true,
+            lastAccessedAt: true,
+            revokedAt: true,
+            createdAt: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     if (!session) actionError("Invalid or expired token");
     if (session["revokedAt"]) actionError("Token has been revoked");
@@ -80,21 +136,51 @@ export async function verifyPortalToken(token: string) {
     const newToken = randomBytes(32)["toString"]("hex");
     const expiresAt = new Date(Date["now"]() + SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000);
 
-    const newSession = await db["portalSession"]["create"]({
-      data: {
-        customerId: session["customerId"],
-        token: newToken,
-        expiresAt,
-        ipAddress: null,
-        userAgent: null,
-      },
-    });
+    let newSession: any;
+    try {
+      newSession = await db["portalSession"]["create"]({
+        data: {
+          customerId: session["customerId"],
+          token: newToken,
+          expiresAt,
+          ipAddress: null,
+          userAgent: null,
+        },
+        select: { token: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        newSession = await db["portalSession"]["create"]({
+          data: {
+            customerId: session["customerId"],
+            token: newToken,
+            expiresAt,
+          },
+          select: { token: true },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     // Revoke the magic link token
-    await db["portalSession"]["update"]({
-      where: { id: session["id"] },
-      data: { revokedAt: new Date() },
-    });
+    try {
+      await db["portalSession"]["update"]({
+        where: { id: session["id"] },
+        data: { revokedAt: new Date() },
+        select: { id: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await db["portalSession"]["update"]({
+          where: { id: session["id"] },
+          data: { revokedAt: new Date() },
+          select: { id: true },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     return {
       token: newSession["token"],
@@ -111,20 +197,62 @@ export async function getPortalSession(token: string) {
   return withActionError("getPortalSession", async () => {
     if (!token) return null;
 
-    const session = await db["portalSession"]["findUnique"]({
-      where: { token },
-      include: { customer: { include: { org: { select: { name: true, brandColor: true } } } } },
-    });
+    let session: any;
+    try {
+      session = await db["portalSession"]["findUnique"]({
+        where: { token },
+        include: { customer: { include: { org: { select: { name: true, brandColor: true } } } } },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        session = await db["portalSession"]["findUnique"]({
+          where: { token },
+          select: {
+            id: true,
+            customerId: true,
+            customer: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                orgId: true,
+                org: { select: { name: true, brandColor: true } },
+              },
+            },
+            token: true,
+            expiresAt: true,
+            lastAccessedAt: true,
+            revokedAt: true,
+            createdAt: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     if (!session) return null;
     if (session["revokedAt"]) return null;
     if (session["expiresAt"] < new Date()) return null;
 
     // Update last accessed
-    await db["portalSession"]["update"]({
-      where: { id: session["id"] },
-      data: { lastAccessedAt: new Date() },
-    });
+    try {
+      await db["portalSession"]["update"]({
+        where: { id: session["id"] },
+        data: { lastAccessedAt: new Date() },
+        select: { id: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await db["portalSession"]["update"]({
+          where: { id: session["id"] },
+          data: { lastAccessedAt: new Date() },
+          select: { id: true },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     return session;
   });
@@ -177,14 +305,20 @@ export async function getPortalDashboard(token: string) {
       }),
     ]);
 
+    // v2 columns (outstandingBalance, totalInvoiced, totalPaid) may not exist
+    // if the client portal migration hasn't been applied to the database
+    const outstandingBalance = customer["outstandingBalance"] ?? 0;
+    const totalInvoiced = customer["totalInvoiced"] ?? 0;
+    const totalPaid = customer["totalPaid"] ?? 0;
+
     return {
       customer: {
         id: customer["id"],
         name: customer["name"],
         email: customer["email"],
-        outstandingBalance: customer["outstandingBalance"],
-        totalInvoiced: customer["totalInvoiced"],
-        totalPaid: customer["totalPaid"],
+        outstandingBalance,
+        totalInvoiced,
+        totalPaid,
       },
       invoices,
       payments,
@@ -213,10 +347,41 @@ export async function updatePortalProfile(
     if (data["website"] !== undefined) updateData["website"] = data["website"];
     if (data["taxId"] !== undefined) updateData["taxId"] = data["taxId"];
 
-    const customer = await db["customer"]["update"]({
-      where: { id: session["customer"]["id"] },
-      data: updateData,
-    });
+    let customer: any;
+    try {
+      customer = await db["customer"]["update"]({
+        where: { id: session["customer"]["id"] },
+        data: updateData,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          website: true,
+          taxId: true,
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        const safeData: Record<string, any> = {};
+        if (data["name"] !== undefined) safeData["name"] = data["name"];
+        if (data["email"] !== undefined) safeData["email"] = data["email"];
+        if (data["phone"] !== undefined) safeData["phone"] = data["phone"];
+
+        customer = await db["customer"]["update"]({
+          where: { id: session["customer"]["id"] },
+          data: safeData,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     return {
       id: customer["id"],

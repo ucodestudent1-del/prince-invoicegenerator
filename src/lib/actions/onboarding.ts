@@ -2,7 +2,7 @@
 
 import { withActionError, actionError } from "@/lib/action-errors";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { randomBytes } from "crypto";
 import { Prisma } from "@prisma/client";
 
@@ -124,7 +124,7 @@ export async function completeOnboarding() {
 
     const slug = await generateUniqueSlug(identity["businessName"], user["id"]);
 
-    let org;
+    let org: any;
     try {
       org = await db["organization"]["create"]({
         data: {
@@ -154,17 +154,30 @@ export async function completeOnboarding() {
           defaultTaxRate: compliance?.["defaultTaxRate"] ?? 0,
           defaultPaymentTerms: compliance?.["defaultPaymentTerms"] || "NET_30",
         },
+        select: { id: true },
       });
     } catch (err) {
       if (err instanceof Prisma["PrismaClientKnownRequestError"] && err["code"] === "P2002") {
         actionError("You already have an organization. Please contact support if you need to create another one.");
       }
-      throw err;
+      if (isMissingColumnError(err)) {
+        org = await db["organization"]["create"]({
+          data: {
+            name: identity["businessName"],
+            slug,
+            ownerId: user["id"],
+          },
+          select: { id: true },
+        });
+      } else {
+        throw err;
+      }
     }
 
     await db["user"]["update"]({
       where: { id: user["id"] },
       data: { organizationId: org["id"] },
+      select: { id: true },
     });
 
     await createInvoiceProfile(org["id"]);
@@ -172,6 +185,7 @@ export async function completeOnboarding() {
     await db["onboardingState"]["update"]({
       where: { userId: user["id"] },
       data: { isComplete: true, completedAt: new Date() },
+      select: { id: true },
     });
 
     return { success: true, organizationId: org["id"] };
@@ -191,7 +205,10 @@ async function generateUniqueSlug(businessName: string, userId: string): Promise
   let counter = 1;
 
   while (true) {
-    const existing = await db["organization"]["findUnique"]({ where: { slug } });
+    const existing = await db["organization"]["findUnique"]({
+      where: { slug },
+      select: { id: true },
+    });
     if (!existing) return slug;
     slug = `${withUser}-${counter}`;
     counter++;
@@ -199,44 +216,82 @@ async function generateUniqueSlug(businessName: string, userId: string): Promise
 }
 
 async function createInvoiceProfile(orgId: string) {
-  const org = await db["organization"]["findUnique"]({
-    where: { id: orgId },
-  });
+  let org: any;
+  try {
+    org = await db["organization"]["findUnique"]({
+      where: { id: orgId },
+    });
+  } catch (err) {
+    if (isMissingColumnError(err)) {
+      org = await db["organization"]["findUnique"]({
+        where: { id: orgId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          plan: true,
+          ownerId: true,
+          stripeCustomerId: true,
+          stripeSubscriptionId: true,
+          stripePriceId: true,
+          subscriptionStatus: true,
+          currentPeriodEnd: true,
+          defaultLocale: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    } else {
+      throw err;
+    }
+  }
 
   if (!org) return;
 
-  const template = await db["invoiceTemplate"]["create"]({
-    data: {
-      orgId,
-      name: "Default Template",
-      baseTemplate: "professional",
-      isDefault: true,
-      logoUrl: org["logoUrl"],
-      primaryColor: "#1e40af",
-      showCompanyName: true,
-      showCompanyAddress: true,
-      showCompanyPhone: !!org["phone"],
-      showCompanyEmail: !!org["email"],
-      showTaxId: !!org["taxId"],
-      showPaymentInfo: true,
-    },
-  });
+  try {
+    const template = await db["invoiceTemplate"]["create"]({
+      data: {
+        orgId,
+        name: "Default Template",
+        baseTemplate: "professional",
+        isDefault: true,
+        logoUrl: org["logoUrl"],
+        primaryColor: "#1e40af",
+        showCompanyName: true,
+        showCompanyAddress: true,
+        showCompanyPhone: !!org["phone"],
+        showCompanyEmail: !!org["email"],
+        showTaxId: !!org["taxId"],
+        showPaymentInfo: true,
+      },
+      select: { id: true },
+    });
 
-  await db["organizationSettings"]["create"]({
-    data: {
-      orgId,
-      defaultTemplateId: template["id"],
-      emailSubjectTemplate: `Invoice {{invoiceNumber}} from {{companyName}}`,
-      emailBodyTemplate: `Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\nPayment is due by {{dueDate}}.\n\nThank you for your business.\n\n{{companyName}}`,
-      autoReminders: false,
-    },
-  });
+    await db["organizationSettings"]["create"]({
+      data: {
+        orgId,
+        defaultTemplateId: template["id"],
+        emailSubjectTemplate: `Invoice {{invoiceNumber}} from {{companyName}}`,
+        emailBodyTemplate: `Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\nPayment is due by {{dueDate}}.\n\nThank you for your business.\n\n{{companyName}}`,
+        autoReminders: false,
+      },
+      select: { id: true },
+    });
 
-  await db["paymentInfo"]["create"]({
-    data: {
-      orgId,
-      showOnInvoice: true,
-      paymentInstructions: `Payment is due within ${org["defaultPaymentTerms"]["replace"]("NET_", "")} days.`,
-    },
-  });
+    await db["paymentInfo"]["create"]({
+      data: {
+        orgId,
+        showOnInvoice: true,
+        paymentInstructions: `Payment is due within ${org["defaultPaymentTerms"]?.["replace"]("NET_", "") ?? "30"} days.`,
+      },
+      select: { id: true },
+    });
+  } catch (err) {
+    if (isMissingColumnError(err)) {
+      // InvoiceTemplate / OrganizationSettings / PaymentInfo tables
+      // don't exist yet — skip profile creation gracefully
+    } else {
+      throw err;
+    }
+  }
 }

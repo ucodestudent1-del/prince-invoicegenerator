@@ -865,14 +865,23 @@ export async function linkInvoiceToRecurring(invoiceId: string, configId: string
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
-    await db["invoice"]["update"]({
-      where: { id: invoiceId, orgId: user["organizationId"] },
-      data: { recurringConfigId: configId },
-    });
+    try {
+      await db["invoice"]["update"]({
+        where: { id: invoiceId, orgId: user["organizationId"] },
+        data: { recurringConfigId: configId },
+        select: { id: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        actionError("Recurring invoice linking is not available on your current database schema. Please run pending migrations.");
+      }
+      throw err;
+    }
 
     await db["recurringInvoiceConfig"]["update"]({
       where: { id: configId, orgId: user["organizationId"] },
       data: { lastInvoiceId: invoiceId },
+      select: { id: true },
     });
 
     await revalidateWithLocale("/dashboard/recurring");
