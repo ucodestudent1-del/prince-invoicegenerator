@@ -2,7 +2,7 @@
 -- The 20260820_add_estimate_enhancements migration was marked as "applied" in
 -- _prisma_migrations via prisma migrate resolve --applied without running the SQL.
 -- This migration re-applies the missing schema changes:
---   1. EstimateStatus enum type (may not exist if init migration was incomplete)
+--   1. EstimateStatus enum type (may not exist or may be missing values)
 --   2. Estimate engagement tracking columns
 --   3. Invoice.estimateId FK column
 --   4. EstimateAudit table
@@ -11,10 +11,9 @@
 -- ---------------------------------------------------------------------------
 -- 1. Extend the EstimateStatus enum
 -- ---------------------------------------------------------------------------
--- The enum type may or may not exist. If it doesn't exist, create it.
--- If it exists but is missing new values (VIEWED, INVOICED, REJECTED),
--- recreate it. This is done because PostgreSQL doesn't allow
--- ALTER TYPE ... ADD VALUE inside a transaction (which Prisma uses).
+-- PostgreSQL doesn't allow ALTER TYPE ... ADD VALUE inside a transaction
+-- (which Prisma Migrate uses). We work around this by recreating the type
+-- if new values are needed.
 DO $$
 DECLARE
     type_exists BOOLEAN;
@@ -27,8 +26,6 @@ BEGIN
         CREATE TYPE "EstimateStatus" AS ENUM ('DRAFT', 'SENT', 'VIEWED', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'INVOICED');
 
         -- Try to cast the status column to the new type (in case it's TEXT)
-        -- This will fail silently if the column already uses a different type
-        -- or if the column has values not in the new enum
         BEGIN
             ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE "EstimateStatus" USING status::"EstimateStatus";
         EXCEPTION WHEN OTHERS THEN
@@ -44,7 +41,8 @@ BEGIN
 
         IF NOT has_viewed THEN
             -- Recreate the enum type to add new values
-            -- Step 1: Convert the status column to TEXT
+            -- Step 1: Drop default and convert column to TEXT to remove type dependency
+            ALTER TABLE "Estimate" ALTER COLUMN "status" DROP DEFAULT;
             ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE TEXT USING status::TEXT;
 
             -- Step 2: Update DECLINED → REJECTED in existing data
@@ -56,6 +54,9 @@ BEGIN
 
             -- Step 4: Convert the column back to the new enum type
             ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE "EstimateStatus" USING status::"EstimateStatus";
+
+            -- Step 5: Restore the default value
+            ALTER TABLE "Estimate" ALTER COLUMN "status" SET DEFAULT 'DRAFT'::"EstimateStatus";
         END IF;
     END IF;
 END
