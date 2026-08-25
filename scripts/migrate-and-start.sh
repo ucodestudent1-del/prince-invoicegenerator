@@ -117,8 +117,31 @@ else
   # Mark it as applied to sync Prisma's migration history.
   # The migration folder exists in the repo, so no temp folder needed.
   # -------------------------------------------------------------------------
-  echo "Resolving failed migration 20260821_add_owner_unique..."
-  npx prisma migrate resolve --applied 20260821_add_owner_unique || true
+   echo "Resolving failed migration 20260821_add_owner_unique..."
+   npx prisma migrate resolve --applied 20260821_add_owner_unique || true
+
+   # -------------------------------------------------------------------------
+   # Resolve the failed 20260825_repair_estimate_enhancements migration.
+   # This migration was attempted but failed because PostgreSQL does not allow
+   # ALTER TYPE ... ADD VALUE inside DO $$ blocks (transactional context).
+   # The migration folder exists in the repo. Mark it as rolled-back so the
+   # fixed version can run during deploy.
+   # -------------------------------------------------------------------------
+   ESTIMATE_REPAIR_CREATED=0
+   if [ ! -d "prisma/migrations/20260825_repair_estimate_enhancements" ]; then
+     echo "Creating temporary migration folder for estimate repair resolve..."
+     mkdir -p prisma/migrations/20260825_repair_estimate_enhancements
+     echo "-- placeholder" > prisma/migrations/20260825_repair_estimate_enhancements/migration.sql
+     ESTIMATE_REPAIR_CREATED=1
+   fi
+
+   echo "Resolving failed migration 20260825_repair_estimate_enhancements..."
+   npx prisma migrate resolve --rolled-back 20260825_repair_estimate_enhancements || true
+
+   if [ "$ESTIMATE_REPAIR_CREATED" = "1" ]; then
+     echo "Removing temporary estimate repair migration folder..."
+     rm -rf prisma/migrations/20260825_repair_estimate_enhancements
+   fi
 
   # Retry migrations up to 5 times in case database is not ready yet
   max_retries=5

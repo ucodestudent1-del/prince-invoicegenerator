@@ -3,10 +3,13 @@
 -- _prisma_migrations via prisma migrate resolve --applied without running the SQL.
 -- This migration re-applies the missing schema changes:
 --   1. EstimateStatus enum values (VIEWED, INVOICED, REJECTED)
---   2. Estimate engagement tracking columns (shareToken, viewedAt, acceptedAt, etc.)
+--   2. Estimate engagement tracking columns
 --   3. Invoice.estimateId FK column
 --   4. EstimateAudit table
--- All operations are idempotent (IF NOT EXISTS / DO $$ guards).
+--
+-- NOTE: PostgreSQL does not allow ALTER TYPE ... ADD VALUE inside a transaction
+-- block (which Prisma Migrate uses). We work around this by recreating the enum
+-- type inside a DO block if new values are missing.
 
 -- ---------------------------------------------------------------------------
 -- 1. Extend the EstimateStatus enum
@@ -16,23 +19,26 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_type WHERE typname = 'EstimateStatus'
     ) THEN
+        -- Enum type doesn't exist yet, create it with all values
         CREATE TYPE "EstimateStatus" AS ENUM ('DRAFT', 'SENT', 'VIEWED', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'INVOICED');
     ELSE
-        -- Add new values if they don't exist
+        -- Check if we need to add new values
         IF NOT EXISTS (
             SELECT 1 FROM pg_enum WHERE enumtypid = 'EstimateStatus'::regtype AND enumlabel = 'VIEWED'
         ) THEN
-            ALTER TYPE "EstimateStatus" ADD VALUE 'VIEWED';
-        END IF;
-        IF NOT EXISTS (
-            SELECT 1 FROM pg_enum WHERE enumtypid = 'EstimateStatus'::regtype AND enumlabel = 'INVOICED'
-        ) THEN
-            ALTER TYPE "EstimateStatus" ADD VALUE 'INVOICED';
-        END IF;
-        IF NOT EXISTS (
-            SELECT 1 FROM pg_enum WHERE enumtypid = 'EstimateStatus'::regtype AND enumlabel = 'REJECTED'
-        ) THEN
-            ALTER TYPE "EstimateStatus" ADD VALUE 'REJECTED';
+            -- Values are missing — recreate the enum type
+            -- Step 1: Convert the status column to TEXT to remove enum dependency
+            ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE TEXT USING status::TEXT;
+
+            -- Step 2: Update DECLINED → REJECTED in existing data
+            UPDATE "Estimate" SET "status" = 'REJECTED' WHERE "status" = 'DECLINED';
+
+            -- Step 3: Drop old enum type and create new one with all values
+            DROP TYPE "EstimateStatus";
+            CREATE TYPE "EstimateStatus" AS ENUM ('DRAFT', 'SENT', 'VIEWED', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'INVOICED');
+
+            -- Step 4: Convert the column back to the new enum type
+            ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE "EstimateStatus" USING status::"EstimateStatus";
         END IF;
     END IF;
 END
@@ -48,9 +54,6 @@ ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "rejectedAt" TIMESTAMP WITH TIME
 ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "rejectionReason" TEXT;
 ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "convertedAt" TIMESTAMP WITH TIME ZONE;
 ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "sentAt" TIMESTAMP WITH TIME ZONE;
-
--- Fix: viewedAt should be nullable
-ALTER TABLE "Estimate" ALTER COLUMN "viewedAt" DROP NOT NULL;
 
 -- Add indexes
 CREATE UNIQUE INDEX IF NOT EXISTS "Estimate_shareToken_key" ON "Estimate" ("shareToken") WHERE "shareToken" IS NOT NULL;
