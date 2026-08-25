@@ -337,6 +337,7 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
             })),
           },
         },
+        select: { id: true, number: true },
       });
 
       const updatedEstimate = await db["estimate"]["update"]({
@@ -346,6 +347,7 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
           linkedInvoiceId: invoice["id"],
           convertedAt: new Date(),
         },
+        select: { id: true },
       });
 
       await logEstimateAudit(
@@ -414,6 +416,7 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
               })),
             },
           },
+          select: { id: true, number: true },
         });
 
         const updatedEstimate = await db["estimate"]["update"]({
@@ -422,6 +425,7 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
             status: "INVOICED" as EstimateStatus,
             convertedAt: new Date(),
           },
+          select: { id: true },
         });
 
         await logEstimateAudit(
@@ -484,10 +488,11 @@ export async function getEstimateAuditLogs(estimateId: string) {
     if (!estimate) actionError("Estimate not found");
 
     try {
-      const logs = await db["estimateAudit"]["findMany"]({
-        where: { estimateId },
-        orderBy: { createdAt: "desc" },
-      });
+       const logs = await db["estimateAudit"]["findMany"]({
+         where: { estimateId },
+         orderBy: { createdAt: "desc" },
+         select: { id: true, action: true, fromStatus: true, toStatus: true, note: true, createdAt: true },
+       });
       return logs;
     } catch (err) {
       if (isMissingColumnError(err)) {
