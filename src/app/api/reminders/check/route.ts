@@ -112,14 +112,19 @@ async function alreadySentForStage(invoiceId: string, stageId: string | null, ty
 
 async function checkGlobalFrequencyCap(invoiceId: string, config: any): Promise<boolean> {
   const since = new Date(Date["now"]() - config["frequencyHours"] * 60 * 60 * 1000);
-  const count = await db["reminder"]["count"]({
-    where: {
-      invoiceId,
-      status: { in: ["SENT", "DELIVERED", "QUEUED"] },
-      createdAt: { gte: since },
-    },
-  });
-  return count >= config["maxReminders"];
+  try {
+    const count = await db["reminder"]["count"]({
+      where: {
+        invoiceId,
+        status: { in: ["SENT", "DELIVERED", "QUEUED"] },
+        createdAt: { gte: since },
+      },
+    });
+    return count >= config["maxReminders"];
+  } catch (err) {
+    if (isMissingColumnError(err)) return false;
+    throw err;
+  }
 }
 
 function buildSendContext(invoice: any, customer: any, orgName: string): ContextResult {
@@ -259,12 +264,37 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const results: any[] = [];
 
-    const configs = await db["reminderConfig"]["findMany"]({
-      where: { enabled: true },
-      include: {
-        org: { select: { id: true, name: true } },
-      },
-    });
+    let configs;
+    try {
+      configs = await db["reminderConfig"]["findMany"]({
+        where: { enabled: true },
+        include: {
+          org: { select: { id: true, name: true } },
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        configs = await db["reminderConfig"]["findMany"]({
+          where: { enabled: true },
+          select: {
+            id: true,
+            orgId: true,
+            enabled: true,
+            frequencyHours: true,
+            maxReminders: true,
+            emailSubject: true,
+            emailTemplate: true,
+            remindBeforeDue: true,
+            remindAfterDue: true,
+            createdAt: true,
+            updatedAt: true,
+            org: { select: { id: true, name: true } },
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     for (const config of configs) {
       const orgId = config["orgId"];
@@ -296,16 +326,26 @@ export async function GET(req: NextRequest) {
             orgId,
             status: { in: eligibleInvoiceStatuses() },
           },
-          include: { customer: { select: { name: true, email: true } } },
+          include: { customer: { select: { name: true, email: true, company: true } } },
         });
       } catch (err) {
-        if (isInvalidEnumValueError(err)) {
+        if (isInvalidEnumValueError(err) || isMissingColumnError(err)) {
           invoices = await db["invoice"]["findMany"]({
             where: {
               orgId,
               status: { in: ["SENT", "OVERDUE", "VIEWED"] },
             },
-            include: { customer: { select: { name: true, email: true } } },
+            select: {
+              id: true,
+              number: true,
+              total: true,
+              amountPaid: true,
+              currency: true,
+              issueDate: true,
+              dueDate: true,
+              status: true,
+              customer: { select: { name: true, email: true, company: true } },
+            },
           });
         } else {
           throw err;

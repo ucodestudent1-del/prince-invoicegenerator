@@ -64,7 +64,20 @@ export async function applyLateFees() {
     const now = new Date();
 
     const orgs = await db["organization"]["findMany"]({
-      include: { lateFeeConfig: true },
+      where: { lateFeeConfig: { isNot: null } },
+      select: {
+        id: true,
+        lateFeeConfig: {
+          select: {
+            id: true,
+            enabled: true,
+            rate: true,
+            graceDays: true,
+            fixedFee: true,
+            maxFee: true,
+          },
+        },
+      },
     });
 
     const results: { invoiceId: string; number: string; lateFee: number }[] = [];

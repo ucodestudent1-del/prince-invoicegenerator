@@ -121,10 +121,21 @@ async function getInvoiceData(invoiceId: string, orgId: string) {
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      // Fallback for schema drift
+      // Fallback for schema drift — select only safe columns
       return await db["invoice"]["findFirst"]({
         where: { id: invoiceId, orgId },
-        include: {
+        select: {
+          id: true,
+          number: true,
+          status: true,
+          total: true,
+          amountPaid: true,
+          currency: true,
+          issueDate: true,
+          dueDate: true,
+          notes: true,
+          customerId: true,
+          projectId: true,
           customer: true,
           project: true,
           items: { orderBy: { sortOrder: "asc" } },
