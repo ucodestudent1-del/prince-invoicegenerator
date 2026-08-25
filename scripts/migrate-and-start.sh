@@ -39,12 +39,15 @@ else
     rm -rf prisma/migrations/20260816223700_replace_template_styles
   fi
 
-  # -------------------------------------------------------------------------
-  # Resolve the failed client portal migration.
-  # The schema already contains these changes (verified in schema.prisma),
-  # so the database changes were likely applied before the migration failed.
-  # Mark it as applied to sync Prisma's migration history.
-  # -------------------------------------------------------------------------
+   # -------------------------------------------------------------------------
+   # Resolve the failed client portal migration.
+   # The 20260820083000_add_client_portal migration's SQL was never actually
+   # executed against the production database — it was only marked as "applied"
+   # via prisma migrate resolve. The missing columns are repaired by the
+   # 20260824_add_portal_access_fix migration, which runs below as a pending
+   # migration. Mark the old migration as applied so Prisma doesn't try to
+   # re-run it during deploy.
+   # -------------------------------------------------------------------------
   PORTAL_RESOLVE_CREATED=0
   if [ ! -d "prisma/migrations/20260820083000_add_client_portal" ]; then
     echo "Creating temporary migration folder for client portal resolve..."
