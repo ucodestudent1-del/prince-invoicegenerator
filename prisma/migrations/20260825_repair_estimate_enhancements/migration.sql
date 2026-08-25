@@ -2,32 +2,49 @@
 -- The 20260820_add_estimate_enhancements migration was marked as "applied" in
 -- _prisma_migrations via prisma migrate resolve --applied without running the SQL.
 -- This migration re-applies the missing schema changes:
---   1. EstimateStatus enum values (VIEWED, INVOICED, REJECTED)
+--   1. EstimateStatus enum type (may not exist if init migration was incomplete)
 --   2. Estimate engagement tracking columns
 --   3. Invoice.estimateId FK column
 --   4. EstimateAudit table
---
--- NOTE: PostgreSQL does not allow ALTER TYPE ... ADD VALUE inside a transaction
--- block (which Prisma Migrate uses). We work around this by recreating the enum
--- type inside a DO block if new values are missing.
+-- All operations are idempotent (IF NOT EXISTS guards).
 
 -- ---------------------------------------------------------------------------
 -- 1. Extend the EstimateStatus enum
 -- ---------------------------------------------------------------------------
+-- The enum type may or may not exist. If it doesn't exist, create it.
+-- If it exists but is missing new values (VIEWED, INVOICED, REJECTED),
+-- recreate it. This is done because PostgreSQL doesn't allow
+-- ALTER TYPE ... ADD VALUE inside a transaction (which Prisma uses).
 DO $$
+DECLARE
+    type_exists BOOLEAN;
+    has_viewed BOOLEAN;
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type WHERE typname = 'EstimateStatus'
-    ) THEN
-        -- Enum type doesn't exist yet, create it with all values
+    SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'EstimateStatus') INTO type_exists;
+
+    IF NOT type_exists THEN
+        -- Type doesn't exist at all, create it with all values
         CREATE TYPE "EstimateStatus" AS ENUM ('DRAFT', 'SENT', 'VIEWED', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'INVOICED');
+
+        -- Try to cast the status column to the new type (in case it's TEXT)
+        -- This will fail silently if the column already uses a different type
+        -- or if the column has values not in the new enum
+        BEGIN
+            ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE "EstimateStatus" USING status::"EstimateStatus";
+        EXCEPTION WHEN OTHERS THEN
+            NULL;
+        END;
     ELSE
-        -- Check if we need to add new values
-        IF NOT EXISTS (
-            SELECT 1 FROM pg_enum WHERE enumtypid = 'EstimateStatus'::regtype AND enumlabel = 'VIEWED'
-        ) THEN
-            -- Values are missing — recreate the enum type
-            -- Step 1: Convert the status column to TEXT to remove enum dependency
+        -- Type exists, check if VIEWED value is missing (using safe JOIN)
+        SELECT EXISTS (
+            SELECT 1 FROM pg_enum pe
+            JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'EstimateStatus' AND pe.enumlabel = 'VIEWED'
+        ) INTO has_viewed;
+
+        IF NOT has_viewed THEN
+            -- Recreate the enum type to add new values
+            -- Step 1: Convert the status column to TEXT
             ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE TEXT USING status::TEXT;
 
             -- Step 2: Update DECLINED → REJECTED in existing data
