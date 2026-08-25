@@ -268,35 +268,8 @@ model Organization {
   reminders      Reminder[]
   reminderSuppressions InvoiceReminderSuppression[]
   lateFeeConfig  LateFeeConfig?
-  templates      InvoiceTemplate[]
-  settings       OrganizationSettings?
-  paymentInfo    PaymentInfo?
-}
-
-// ---------------------------------------------------------------------------
-// Invoice Templates (Pro tier+)
-// ---------------------------------------------------------------------------
-
-model InvoiceTemplate {
-  id               String   @id @default(cuid())
-  orgId            String
-  org              Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  name             String
-  baseTemplate     String   @default("professional")
-  isDefault        Boolean  @default(false)
-  logoUrl          String?
-  primaryColor     String?  @default("#1e40af")
-  showCompanyName  Boolean  @default(true)
-  showCompanyAddress Boolean @default(true)
-  showCompanyPhone Boolean  @default(false)
-  showCompanyEmail Boolean  @default(false)
-  showTaxId        Boolean  @default(false)
-  showPaymentInfo  Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@index([orgId])
-  @@unique([orgId, name])
+   settings       OrganizationSettings?
+   paymentInfo    PaymentInfo?
 }
 
 // ---------------------------------------------------------------------------
@@ -333,7 +306,6 @@ model OrganizationSettings {
   id                   String   @id @default(cuid())
   orgId                String   @unique
   org                  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  defaultTemplateId    String?
   emailSubjectTemplate String?
   emailBodyTemplate    String?
   autoReminders        Boolean  @default(false)

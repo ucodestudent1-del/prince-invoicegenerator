@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  saveTemplateSettings,
-  getTemplateSettings,
   saveThemeSettings,
   getThemeSettings,
   saveBrandColors,
@@ -21,8 +19,6 @@ export async function GET(req: NextRequest) {
     const key = url["searchParams"]["get"]("key");
 
     switch (key) {
-      case "template":
-        return NextResponse["json"](await getTemplateSettings());
       case "theme":
         return NextResponse["json"](await getThemeSettings());
       case "colors":
@@ -45,9 +41,6 @@ export async function POST(req: NextRequest) {
     const key = body["key"];
 
     switch (key) {
-      case "template":
-        await saveTemplateSettings(body["value"]);
-        break;
       case "theme":
         await saveThemeSettings(body["value"]);
         break;

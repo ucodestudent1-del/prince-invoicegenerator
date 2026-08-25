@@ -4,36 +4,6 @@ import { db } from "@/lib/db";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
-import type { TemplateStyle } from "@prisma/client";
-
-export async function saveTemplateSettings(template: TemplateStyle) {
-  return withActionError("saveTemplateSettings", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
-
-    await db["organization"]["update"]({
-      where: { id: user["organizationId"] },
-      data: { template },
-    });
-
-    await revalidateWithLocale("/dashboard/settings/templates");
-    await revalidateWithLocale("/dashboard/invoices");
-  });
-}
-
-export async function getTemplateSettings() {
-  return withActionError("getTemplateSettings", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
-
-    const org = await db["organization"]["findUnique"]({
-      where: { id: user["organizationId"] },
-      select: { template: true },
-    });
-
-    return org?.["template"] ?? "STANDARD";
-  });
-}
 
 export async function saveThemeSettings(theme: string) {
   return withActionError("saveThemeSettings", async () => {
@@ -107,8 +77,8 @@ export async function saveBrandColors(input: {
       },
     });
 
-    await revalidateWithLocale("/dashboard/settings/templates");
     await revalidateWithLocale("/dashboard/invoices");
+    await revalidateWithLocale("/dashboard");
   });
 }
 
@@ -139,7 +109,7 @@ export async function saveFontSettings(fontFamily: string) {
       data: { fontFamily: fontFamily || null },
     });
 
-    await revalidateWithLocale("/dashboard/settings/templates");
+    await revalidateWithLocale("/dashboard/invoices");
   });
 }
 

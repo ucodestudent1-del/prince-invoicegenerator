@@ -176,7 +176,6 @@
     "reminders": "Recordatorios",
     "lateFees": "Recargos por mora",
     "scheduled": "Programadas",
-    "templates": "Plantillas",
     "customization": "Personalización",
     "features": "Características",
     "pricing": "Precios",
@@ -235,7 +234,6 @@
       "customIntegrations": "Integraciones personalizadas",
       "prioritySupport": "Soporte prioritario",
       "savedAddresses": "Direcciones guardadas",
-      "invoiceTemplates": "Plantillas de factura",
       "darkMode": "Modo oscuro",
       "customBranding": "Marca personalizada",
       "customFonts": "Fuentes personalizadas",
@@ -652,13 +650,6 @@
     "loading": "Cargando…",
     "noScheduled": "Aún no hay facturas programadas.",
     "scheduledFor": "Programada para el {date}"
-  },
-  "templates": {
-    "title": "Plantillas de factura",
-    "description": "Elige el aspecto de tus facturas y aplica la imagen de tu marca.",
-    "loading": "Cargando…",
-    "previews": "Vistas previas de plantillas",
-    "previewHint": "Las plantillas se previsualizan en la vista de impresión de facturas."
   },
   "customization": {
     "title": "Marca y personalización",

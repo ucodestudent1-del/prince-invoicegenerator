@@ -178,7 +178,6 @@
     "reminders": "Reminders",
     "lateFees": "Late fees",
     "scheduled": "Scheduled",
-    "templates": "Templates",
     "customization": "Customization",
     "features": "Features",
     "pricing": "Pricing",
@@ -239,7 +238,6 @@
       "customIntegrations": "Custom integrations",
       "prioritySupport": "Priority support",
       "savedAddresses": "Saved addresses",
-      "invoiceTemplates": "Invoice templates",
       "darkMode": "Dark mode",
       "customBranding": "Custom branding",
       "customFonts": "Custom fonts",
@@ -873,13 +871,6 @@
     "loading": "Loading…",
     "noScheduled": "No scheduled invoices yet.",
     "scheduledFor": "Scheduled for {date}"
-  },
-  "templates": {
-    "title": "Invoice Templates",
-    "description": "Choose how your invoices look and apply your brand styling.",
-    "loading": "Loading…",
-    "previews": "Template previews",
-    "previewHint": "Templates are previewed in the invoice print view."
   },
   "customization": {
     "title": "Branding & Customization",

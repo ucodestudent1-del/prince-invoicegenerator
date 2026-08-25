@@ -249,28 +249,9 @@ async function createInvoiceProfile(orgId: string) {
   if (!org) return;
 
   try {
-    const template = await db["invoiceTemplate"]["create"]({
-      data: {
-        orgId,
-        name: "Default Template",
-        baseTemplate: "professional",
-        isDefault: true,
-        logoUrl: org["logoUrl"],
-        primaryColor: "#1e40af",
-        showCompanyName: true,
-        showCompanyAddress: true,
-        showCompanyPhone: !!org["phone"],
-        showCompanyEmail: !!org["email"],
-        showTaxId: !!org["taxId"],
-        showPaymentInfo: true,
-      },
-      select: { id: true },
-    });
-
     await db["organizationSettings"]["create"]({
       data: {
         orgId,
-        defaultTemplateId: template["id"],
         emailSubjectTemplate: `Invoice {{invoiceNumber}} from {{companyName}}`,
         emailBodyTemplate: `Dear {{customerName}},\n\nPlease find attached invoice {{invoiceNumber}} for {{amount}}.\n\nPayment is due by {{dueDate}}.\n\nThank you for your business.\n\n{{companyName}}`,
         autoReminders: false,
@@ -288,8 +269,7 @@ async function createInvoiceProfile(orgId: string) {
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      // InvoiceTemplate / OrganizationSettings / PaymentInfo tables
-      // don't exist yet — skip profile creation gracefully
+      // OrganizationSettings / PaymentInfo tables don't exist yet
     } else {
       throw err;
     }

@@ -19,9 +19,8 @@ export type FeatureKey =
   | "apiAccess"
   | "customIntegrations"
   | "prioritySupport"
-  | "savedAddresses"
-  | "invoiceTemplates"
-  | "darkMode"
+   | "savedAddresses"
+   | "darkMode"
   | "customBranding"
   | "customFonts"
   | "multipleLayouts"
@@ -99,7 +98,6 @@ export const PLANS: PlanDefinition[] = [
       "photoAttachments",
       "savedAddresses",
       "darkMode",
-      "invoiceTemplates",
       "customBranding",
       "pdfExport",
       "multilingual",
@@ -128,7 +126,6 @@ export const PLANS: PlanDefinition[] = [
       "photoAttachments",
       "savedAddresses",
       "darkMode",
-      "invoiceTemplates",
       "customBranding",
       "customFonts",
       "multipleLayouts",
@@ -166,7 +163,6 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   customIntegrations: "Custom integrations",
   prioritySupport: "Priority support",
   savedAddresses: "Saved customer addresses",
-  invoiceTemplates: "Multiple invoice templates",
   darkMode: "Dark / light mode",
   customBranding: "Custom brand colors",
   customFonts: "Custom fonts",

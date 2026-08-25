@@ -176,7 +176,6 @@
     "reminders": "Erinnerungen",
     "lateFees": "Verspätungsgebühren",
     "scheduled": "Geplant",
-    "templates": "Vorlagen",
     "customization": "Anpassung",
     "features": "Funktionen",
     "pricing": "Preise",
@@ -235,7 +234,6 @@
       "customIntegrations": "Benutzerdefinierte Integrationen",
       "prioritySupport": "Prioritäts-Support",
       "savedAddresses": "Gespeicherte Adressen",
-      "invoiceTemplates": "Rechnungsvorlagen",
       "darkMode": "Dunkelmodus",
       "customBranding": "Benutzerdefinierte Marke",
       "customFonts": "Benutzerdefinierte Schriftarten",
@@ -652,13 +650,6 @@
     "loading": "Laden…",
     "noScheduled": "Noch keine geplanten Rechnungen.",
     "scheduledFor": "Geplant für den {date}"
-  },
-  "templates": {
-    "title": "Rechnungsvorlagen",
-    "description": "Wähle das Erscheinungsbild deiner Rechnungen und wende dein Markendesign an.",
-    "loading": "Laden…",
-    "previews": "Vorlagenvorschauen",
-    "previewHint": "Vorlagen werden in der Rechnungsdruckansicht angezeigt."
   },
   "customization": {
     "title": "Marke & Anpassung",

@@ -46,9 +46,8 @@ const nav = [
   { href: "/dashboard/recurring", label: "navigation.recurring", icon: Calendar },
    { href: "/dashboard/settings/reminders", label: "navigation.reminders", icon: Bell, feature: "automaticReminders" as FeatureKey },
   { href: "/dashboard/settings/late-fees", label: "navigation.lateFees", icon: Receipt, feature: "lateFees" as FeatureKey },
-  { href: "/dashboard/settings/scheduled", label: "navigation.scheduled", icon: Calendar, feature: "scheduledInvoices" as FeatureKey },
-  { href: "/dashboard/settings/templates", label: "navigation.templates", icon: FileText, feature: "invoiceTemplates" as FeatureKey },
-  { href: "/dashboard/settings", label: "navigation.settings", icon: Settings },
+   { href: "/dashboard/settings/scheduled", label: "navigation.scheduled", icon: Calendar, feature: "scheduledInvoices" as FeatureKey },
+   { href: "/dashboard/settings", label: "navigation.settings", icon: Settings },
 ];
 
 export const dynamic = "force-dynamic";

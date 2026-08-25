@@ -176,7 +176,6 @@
     "reminders": "Rappels",
     "lateFees": "Frais de retard",
     "scheduled": "Planifié",
-    "templates": "Modèles",
     "customization": "Personnalisation",
     "features": "Fonctionnalités",
     "pricing": "Tarifs",
@@ -235,7 +234,6 @@
       "customIntegrations": "Intégrations personnalisées",
       "prioritySupport": "Support prioritaire",
       "savedAddresses": "Adresses enregistrées",
-      "invoiceTemplates": "Modèles de facture",
       "darkMode": "Mode sombre",
       "customBranding": "Marque personnalisée",
       "customFonts": "Polices personnalisées",
@@ -660,13 +658,6 @@
     "loading": "Chargement…",
     "noScheduled": "Aucune facture planifiée pour le moment.",
     "scheduledFor": "Planifié pour le {date}"
-  },
-  "templates": {
-    "title": "Modèles de facture",
-    "description": "Choisissez l'apparence de vos factures et appliquez votre style de marque.",
-    "loading": "Chargement…",
-    "previews": "Aperçus des modèles",
-    "previewHint": "Les modèles sont prévisualisés dans la vue d'impression des factures."
   },
   "customization": {
     "title": "Marque et personnalisation",
