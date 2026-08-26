@@ -5,6 +5,7 @@ import { isInvalidEnumValueError, isMissingColumnError } from "@/lib/org";
 import { isBackgroundJobAuthorized } from "@/lib/background-job-auth";
 import { sendEmail, renderTemplate, buildHtmlBody } from "@/lib/email";
 import { buildDefaultStages } from "@/lib/invoice-utils";
+import { getOrgLocale } from "@/lib/locale";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -127,9 +128,9 @@ async function checkGlobalFrequencyCap(invoiceId: string, config: any): Promise<
   }
 }
 
-function buildSendContext(invoice: any, customer: any, orgName: string): ContextResult {
+function buildSendContext(invoice: any, customer: any, orgName: string, locale: string): ContextResult {
   const baseUrl = getBaseUrl();
-  const invoiceUrl = `${baseUrl}/invoices/${invoice["id"]}`;
+  const invoiceUrl = `${baseUrl}/${locale}/invoices/${invoice["id"]}`;
 
   return {
     invoice: {
@@ -298,6 +299,7 @@ export async function GET(req: NextRequest) {
 
     for (const config of configs) {
       const orgId = config["orgId"];
+      const orgLocale = await getOrgLocale(orgId);
 
       // Load stages (falls back to legacy derived stages if table is missing)
       let stages = await loadStages(config["id"]);
@@ -367,7 +369,7 @@ export async function GET(req: NextRequest) {
 
         const dueDate = new Date(invoice["dueDate"]);
         const daysDiff = getDayDifference(now, dueDate);
-        const ctx = buildSendContext(invoice, invoice["customer"], config["org"]["name"]);
+        const ctx = buildSendContext(invoice, invoice["customer"], config["org"]["name"], orgLocale);
 
         for (const stage of stages) {
           if (!stage["enabled"]) continue;

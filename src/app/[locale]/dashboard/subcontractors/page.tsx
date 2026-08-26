@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser, requireFeature } from "@/lib/org";
+import { requireUser, requireFeature, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,7 +23,7 @@ export default async function SubcontractorsPage({ params }: { params: { locale:
   if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("subcontractors");
 
-  let subs;
+  let subs: any[] = [];
   try {
     subs = await db["subcontractor"]["findMany"]({
       where: { orgId: user["organizationId"] },
@@ -31,8 +31,25 @@ export default async function SubcontractorsPage({ params }: { params: { locale:
       include: { _count: { select: { projects: true } } },
     });
   } catch (err) {
-    logServerError("SubcontractorsPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      subs = await db["subcontractor"]["findMany"]({
+        where: { orgId: user["organizationId"] },
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          company: true,
+          trade: true,
+          email: true,
+          rate: true,
+          createdAt: true,
+          _count: { select: { projects: true } },
+        },
+      });
+    } else {
+      logServerError("SubcontractorsPage", err);
+      throw err;
+    }
   }
 
   return (

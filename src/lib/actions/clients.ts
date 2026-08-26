@@ -20,6 +20,7 @@ export interface UpdateCustomerInput extends Partial<CreateCustomerInput> {
   status?: CustomerStatus;
   portalAccess?: boolean;
   portalPin?: string | null;
+  address?: string | null;
 }
 
 function recalculateCustomerFinancials(customerId: string) {
@@ -222,6 +223,7 @@ export async function updateCustomer(id: string, input: UpdateCustomerInput) {
     if (input["website"] !== undefined) data["website"] = input["website"];
     if (input["taxId"] !== undefined) data["taxId"] = input["taxId"];
     if (input["notes"] !== undefined) data["notes"] = input["notes"];
+    if (input["address"] !== undefined) data["address"] = input["address"] || null;
     if (input["status"] !== undefined) data["status"] = input["status"];
     if (input["portalAccess"] !== undefined) data["portalAccess"] = input["portalAccess"];
     if (input["portalPin"] !== undefined) data["portalPin"] = input["portalPin"];

@@ -38,6 +38,7 @@ interface InvoiceDetail {
 
 export default function PortalInvoicePage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const { id } = params;
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +62,7 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
         }
 
         // Fetch invoice details
-        const res = await fetch(`/api/portal/invoices/${params["id"]}?token=${token}`);
+        const res = await fetch(`/api/portal/invoices/${id}?token=${token}`);
         if (!res["ok"]) {
           throw new Error("Failed to load invoice.");
         }
@@ -75,7 +76,7 @@ export default function PortalInvoicePage({ params }: { params: { id: string } }
     };
 
     fetchInvoice();
-  }, [params["id"], router]);
+  }, [id, router]);
 
   if (loading) {
     return (

@@ -29,18 +29,29 @@ export default async function ChangeOrdersPage({ params }: { params: { locale: s
   const user = await requireUser();
   if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("changeOrders");
-  let cos;
+  let cos: any[] = [];
   try {
-    cos = await db.changeOrder.findMany({
+    cos = await db["changeOrder"]["findMany"]({
       where: { orgId: user["organizationId"] },
       orderBy: { createdAt: "desc" },
       include: { project: true },
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      cos = await db.changeOrder.findMany({
+      cos = await db["changeOrder"]["findMany"]({
         where: { orgId: user["organizationId"] },
         orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          number: true,
+          title: true,
+          amount: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          projectId: true,
+          project: { select: { id: true, name: true } },
+        },
       });
     } else {
       logServerError("ChangeOrdersPage", err);

@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser, requireFeature } from "@/lib/org";
+import { requireUser, requireFeature, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,7 +24,7 @@ export default async function ProjectsPage({ params }: { params: { locale: strin
   const orgId = user["organizationId"];
   const t = await getTranslations("projects");
 
-  let projects;
+  let projects: any[] = [];
   try {
     projects = await db["project"]["findMany"]({
       where: { orgId },
@@ -32,8 +32,28 @@ export default async function ProjectsPage({ params }: { params: { locale: strin
       include: { customer: true, _count: { select: { invoices: true, expenses: true } } },
     });
   } catch (err) {
-    logServerError("ProjectsPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      projects = await db["project"]["findMany"]({
+        where: { orgId },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          startDate: true,
+          endDate: true,
+          status: true,
+          customerId: true,
+          createdAt: true,
+          updatedAt: true,
+          customer: { select: { name: true, company: true, email: true } },
+          _count: { select: { invoices: true, expenses: true } },
+        },
+      });
+    } else {
+      logServerError("ProjectsPage", err);
+      throw err;
+    }
   }
 
   return (

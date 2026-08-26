@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser, requireFeature } from "@/lib/org";
+import { requireUser, requireFeature, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +22,7 @@ export default async function ExpensesPage({ params }: { params: { locale: strin
   const user = await requireUser();
   if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("expenses");
-  let expenses;
+  let expenses: any[] = [];
   try {
     expenses = await db["expense"]["findMany"]({
       where: { orgId: user["organizationId"] },
@@ -30,8 +30,28 @@ export default async function ExpensesPage({ params }: { params: { locale: strin
       include: { project: true, photo: true },
     });
   } catch (err) {
-    logServerError("ExpensesPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      expenses = await db["expense"]["findMany"]({
+        where: { orgId: user["organizationId"] },
+        orderBy: { date: "desc" },
+        select: {
+          id: true,
+          vendor: true,
+          category: true,
+          amount: true,
+          date: true,
+          projectId: true,
+          photoId: true,
+          createdAt: true,
+          updatedAt: true,
+          project: { select: { id: true, name: true } },
+          photo: { select: { id: true } },
+        },
+      });
+    } else {
+      logServerError("ExpensesPage", err);
+      throw err;
+    }
   }
   const total = expenses["reduce"]((a, e) => a + e["amount"], 0);
 

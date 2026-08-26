@@ -1,4 +1,4 @@
-import { requireUser, requireFeature, getActivePlan } from "@/lib/org";
+import { requireUser, requireFeature, getActivePlan, isMissingColumnError } from "@/lib/org";
 import { hasFeature } from "@/lib/plans";
 import { db } from "@/lib/db";
 import { logServerError } from "@/lib/errors";
@@ -14,15 +14,20 @@ export default async function TimeTrackingPage({ params }: { params: { locale: s
   const plan = await getActivePlan(user);
   const canApprove = hasFeature(plan, "timeTracking");
 
-  let projects: { id: string; name: string }[];
-  let initialEntries: any[];
+  let projects: { id: string; name: string }[] = [];
+  let initialEntries: any[] = [];
   try {
     projects = await db["project"]["findMany"]({
       where: { orgId },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     });
+  } catch (err) {
+    logServerError("TimeTrackingPage", err);
+    projects = [];
+  }
 
+  try {
     initialEntries = await db["timeEntry"]["findMany"]({
       where: { orgId },
       orderBy: { startTime: "desc" },
@@ -40,9 +45,43 @@ export default async function TimeTrackingPage({ params }: { params: { locale: s
       },
     });
   } catch (err) {
-    logServerError("TimeTrackingPage", err);
-    projects = [];
-    initialEntries = [];
+    if (isMissingColumnError(err)) {
+      try {
+        initialEntries = await db["timeEntry"]["findMany"]({
+          where: { orgId },
+          orderBy: { startTime: "desc" },
+          take: 100,
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            duration: true,
+            description: true,
+            billable: true,
+            hourlyRate: true,
+            amount: true,
+            isManual: true,
+            status: true,
+            userId: true,
+            projectId: true,
+            user: { select: { id: true, name: true, email: true } },
+            project: {
+              select: {
+                id: true,
+                name: true,
+                customerId: true,
+                customer: { select: { name: true } },
+              },
+            },
+          },
+        });
+      } catch {
+        initialEntries = [];
+      }
+    } else {
+      logServerError("TimeTrackingPage", err);
+      initialEntries = [];
+    }
   }
 
   return (

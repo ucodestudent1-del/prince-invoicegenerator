@@ -46,7 +46,7 @@ export default async function CustomersPage({
       where["status"] = statusFilter;
     }
 
-    customers = await db.customer.findMany({
+      customers = await db["customer"]["findMany"]({
       where,
       orderBy: { name: "asc" },
       select: {
@@ -73,7 +73,7 @@ export default async function CustomersPage({
           { email: { contains: searchQuery, mode: "insensitive" } },
         ];
       }
-      customers = await db.customer.findMany({
+    customers = await db["customer"]["findMany"]({
         where,
         orderBy: { name: "asc" },
         select: {

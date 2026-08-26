@@ -48,10 +48,30 @@ export default async function CustomerDetailPage({
     if (isMissingColumnError(err)) {
       customer = await db["customer"]["findFirst"]({
         where: { id: params["id"], orgId },
-        include: {
-          invoices: { orderBy: { createdAt: "desc" }, take: 50 },
-          estimates: { orderBy: { createdAt: "desc" }, take: 50 },
-          addresses: { orderBy: { createdAt: "desc" } },
+        select: {
+          id: true,
+          name: true,
+          company: true,
+          email: true,
+          phone: true,
+          website: true,
+          taxId: true,
+          address: true,
+          notes: true,
+          status: true,
+          portalAccess: true,
+          createdAt: true,
+          updatedAt: true,
+          invoices: {
+            orderBy: { createdAt: "desc" },
+            take: 50,
+            select: { id: true, total: true, amountPaid: true },
+          },
+          estimates: { orderBy: { createdAt: "desc" }, take: 50, select: { id: true, number: true } },
+          addresses: {
+            orderBy: { createdAt: "desc" },
+            select: { id: true, label: true, type: true, line1: true, city: true, country: true },
+          },
         },
       });
     } else {

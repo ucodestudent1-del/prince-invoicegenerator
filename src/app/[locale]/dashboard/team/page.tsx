@@ -1,4 +1,4 @@
-import { requireUser, requireFeature } from "@/lib/org";
+import { requireUser, requireFeature, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,15 +22,32 @@ export default async function TeamPage({ params }: { params: { locale: string } 
   const orgId = user["organizationId"];
   const t = await getTranslations("team");
 
-  let members;
+  let members: any[] = [];
   try {
-    members = await db.user.findMany({
+    members = await db["user"]["findMany"]({
       where: { organizationId: orgId },
       orderBy: { createdAt: "asc" },
     });
   } catch (err) {
-    logServerError("TeamPage", err);
-    throw err;
+    if (isMissingColumnError(err)) {
+      try {
+        members = await db["user"]["findMany"]({
+          where: { organizationId: orgId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        });
+      } catch {
+        members = [];
+      }
+    } else {
+      logServerError("TeamPage", err);
+      throw err;
+    }
   }
 
   return (
