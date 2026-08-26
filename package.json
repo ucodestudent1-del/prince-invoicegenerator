@@ -13,6 +13,7 @@
         "db:migrate": "prisma migrate dev",
         "db:push": "prisma db push",
         "db:studio": "prisma studio",
+        "test": "vitest run",
         "test:smoke": "node tests/auth-smoke.js",
         "postinstall": "prisma generate"
     },
@@ -65,7 +66,8 @@
         "postcss": "^8.4.49",
         "prisma": "^5.22.0",
         "tailwindcss": "^3.4.15",
-        "typescript": "^5.6.3"
+        "typescript": "^5.6.3",
+        "vitest": "^4.1.11"
     },
     "engines": {
         "node": ">=22.0.0"

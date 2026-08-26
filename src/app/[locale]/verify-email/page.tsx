@@ -4,7 +4,7 @@ import * as React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useLocaleSafe } from "@/hooks/use-locale-safe";
 import { Link } from "@/i18n/navigation";
-import { HardHat } from "lucide-react";
+import { Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useTranslations } from "next-intl";
@@ -59,7 +59,7 @@ export default function VerifyEmailPage() {
         <CardHeader className="text-center">
           <Link href="/" className="mx-auto mb-2 flex items-center gap-2 font-bold">
             <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <HardHat className="h-5 w-5" />
+              <Receipt className="h-5 w-5" />
             </span>
             {APP_NAME}
           </Link>

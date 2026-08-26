@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { generateInvoicePdf } from "@/lib/pdf-generator";
 import { uploadPdfToR2 } from "@/lib/r2-storage";
 import { logError } from "@/lib/logging";
+import { hasFeature } from "@/lib/plans";
 import { revalidateWithLocale } from "@/lib/revalidate";
 
 export const runtime = "nodejs";
@@ -127,12 +128,22 @@ async function getInvoiceData(invoiceId: string, orgId: string) {
         select: {
           id: true,
           number: true,
+          type: true,
           status: true,
-          total: true,
-          amountPaid: true,
-          currency: true,
           issueDate: true,
           dueDate: true,
+          currency: true,
+          subtotal: true,
+          taxRate: true,
+          taxAmount: true,
+          discount: true,
+          retainageRate: true,
+          retainageAmount: true,
+          total: true,
+          amountPaid: true,
+          logoUrl: true,
+          billToAddress: true,
+          shipToAddress: true,
           notes: true,
           customerId: true,
           projectId: true,
@@ -147,11 +158,12 @@ async function getInvoiceData(invoiceId: string, orgId: string) {
 }
 
 async function getOrgData(orgId: string) {
-  return await db["organization"]["findUnique"]({
+  const org = await db["organization"]["findUnique"]({
     where: { id: orgId },
     select: {
       id: true,
       name: true,
+      plan: true,
       brandColor: true,
       accentColor: true,
       fontFamily: true,
@@ -159,4 +171,9 @@ async function getOrgData(orgId: string) {
       layout: true,
     },
   });
+  if (!org) return null;
+  return {
+    ...org,
+    canPdfExport: hasFeature(org["plan"] ?? "FREE", "pdfExport"),
+  };
 }
