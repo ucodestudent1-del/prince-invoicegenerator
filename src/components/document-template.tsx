@@ -1,5 +1,6 @@
 import { formatCurrency, formatDate, quoteFontFamily } from "@/lib/utils";
 import { getTypeLabel, getTypeBadgeClass } from "@/lib/invoice-types";
+import { PAPER_SIZES, type PaperSize } from "@/lib/pdf-constants";
 
 export type EntityType = "invoices" | "change-orders" | "estimates";
 
@@ -7,15 +8,9 @@ export interface DocumentTemplateProps {
   entityType: EntityType;
   doc: any;
   org?: any;
-  paperSize?: "A4" | "Letter" | "Legal";
+  paperSize?: PaperSize;
   locale?: string;
 }
-
-const PAPER_SIZES = {
-  A4: "210mm",
-  Letter: "215.9mm",
-  Legal: "215.9mm",
-} as const;
 
 const LABELS: Record<EntityType, Record<string, string>> = {
   invoices: {
@@ -90,7 +85,7 @@ export function DocumentTemplate({
   locale: _locale = "en",
 }: DocumentTemplateProps) {
   const t = LABELS[entityType] ?? LABELS.invoices;
-  const paperWidth = PAPER_SIZES[paperSize];
+  const paper = PAPER_SIZES[paperSize];
   const templateClass = `template-${String(org?.["template"] ?? "standard")}`;
   const layoutClass = `layout-${org?.["layout"] ?? "default"}`;
   const isChangeOrder = entityType === "change-orders";
@@ -109,8 +104,8 @@ export function DocumentTemplate({
     <div
       className={`document-page ${templateClass} ${layoutClass}`}
       style={{
-        width: paperWidth,
-        minHeight: "297mm",
+         width: paper.width,
+         minHeight: paper.height,
         padding: "15mm 12mm",
         margin: "0 auto",
         backgroundColor: "white",

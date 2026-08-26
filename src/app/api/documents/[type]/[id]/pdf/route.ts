@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
 import { generateDocumentPdf } from "@/lib/pdf-generator";
+import { resolvePaperSize } from "@/lib/pdf-constants";
 import { logError } from "@/lib/logging";
 import { hasFeature } from "@/lib/plans";
 import type { EntityType } from "@/components/document-template";
@@ -33,8 +34,7 @@ export async function GET(
     }
 
     const { searchParams } = new URL(req["url"]);
-    const paperSize =
-      ((searchParams["get"]("paperSize") as "A4" | "Letter" | "Legal") ?? "A4") || "A4";
+    const paperSize = resolvePaperSize(searchParams["get"]("paperSize"));
     const locale = searchParams["get"]("locale") || "en";
 
     const doc = await getDocumentData(cfg["entityType"], params["id"], user["organizationId"]);

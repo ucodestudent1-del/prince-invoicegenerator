@@ -1,15 +1,10 @@
 import { InvoiceTemplate } from "@/components/invoice-template";
 import { DocumentTemplate } from "@/components/document-template";
 import type { EntityType } from "@/components/document-template";
-
-const PAPER_SIZES = {
-  A4: { width: "210mm", height: "297mm" },
-  Letter: { width: "215.9mm", height: "279.4mm" },
-  Legal: { width: "215.9mm", height: "355.6mm" },
-} as const;
+import { PAPER_SIZES, type PaperSize } from "@/lib/pdf-constants";
 
 export interface PdfGenerationOptions {
-  paperSize?: "A4" | "Letter" | "Legal";
+  paperSize?: PaperSize;
   locale?: string;
 }
 
@@ -98,7 +93,6 @@ async function renderPdf(
       printBackground: true,
       preferCSSPageSize: true,
       margin: { top: "0", right: "0", bottom: "0", left: "0" },
-      scale: 2,
       displayHeaderFooter: false,
     });
 
