@@ -87,7 +87,11 @@ export default async function ChangeOrdersPage({ params }: { params: { locale: s
               <TableBody>
                 {cos["map"]((co) => (
                   <TableRow key={co["id"]}>
-                    <TableCell className="font-medium">{co["number"]}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link href={`/dashboard/change-orders/${co["id"]}`} className="font-medium">
+                        {co["number"]}
+                      </Link>
+                    </TableCell>
                     <TableCell>{co["title"]}</TableCell>
                     <TableCell>{(co as any).project?.name ?? "—"}</TableCell>
                     <TableCell>

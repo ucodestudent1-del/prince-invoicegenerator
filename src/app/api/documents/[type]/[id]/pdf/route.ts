@@ -1,0 +1,168 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireUser, isMissingColumnError } from "@/lib/org";
+import { db } from "@/lib/db";
+import { generateDocumentPdf } from "@/lib/pdf-generator";
+import { logError } from "@/lib/logging";
+import { hasFeature } from "@/lib/plans";
+import type { EntityType } from "@/components/document-template";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type DocConfig = { label: string; entityType: EntityType };
+
+const SUPPORTED: Record<string, DocConfig> = {
+  "change-orders": { label: "Change-Order", entityType: "change-orders" },
+  estimates: { label: "Estimate", entityType: "estimates" },
+};
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { type: string; id: string } }
+) {
+  try {
+    const user = await requireUser();
+    if (!user?.["organizationId"]) {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const cfg = SUPPORTED[params["type"]];
+    if (!cfg) {
+      return NextResponse["json"]({ error: "Unsupported document type" }, { status: 400 });
+    }
+
+    const { searchParams } = new URL(req["url"]);
+    const paperSize =
+      ((searchParams["get"]("paperSize") as "A4" | "Letter" | "Legal") ?? "A4") || "A4";
+    const locale = searchParams["get"]("locale") || "en";
+
+    const doc = await getDocumentData(cfg["entityType"], params["id"], user["organizationId"]);
+    if (!doc) {
+      return NextResponse["json"]({ error: "Document not found" }, { status: 404 });
+    }
+
+    const org = await getOrgData(user["organizationId"]);
+
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await generateDocumentPdf(cfg["entityType"], doc, org, { paperSize, locale });
+    } catch (genErr: any) {
+      const msg = genErr?.["message"] ?? "Failed to generate PDF";
+      const retryable = /Chromium|launch/i["test"](msg);
+      return NextResponse["json"](
+        { error: msg, retryable },
+        { status: retryable ? 503 : 500 }
+      );
+    }
+
+    const filename = `${cfg["label"]}-${doc["number"] ?? doc["id"]}.pdf`;
+    return new NextResponse(new Uint8Array(pdfBuffer), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Length": pdfBuffer["length"]["toString"](),
+        "Cache-Control": "private, no-cache, no-store",
+      },
+    });
+  } catch (err: any) {
+    logError("GET /api/documents/[type]/[id]/pdf", err);
+    return NextResponse["json"](
+      { error: err?.["message"] ?? "Failed to generate PDF" },
+      { status: 500 }
+    );
+  }
+}
+
+async function getDocumentData(entityType: EntityType, docId: string, orgId: string): Promise<any> {
+  try {
+    if (entityType === "estimates") {
+      return await db["estimate"]["findFirst"]({
+        where: { id: docId, orgId },
+        include: {
+          customer: true,
+          project: true,
+          items: { orderBy: { sortOrder: "asc" } },
+          linkedInvoice: { select: { id: true, number: true, status: true, total: true } },
+        },
+      });
+    }
+    return await db["changeOrder"]["findFirst"]({
+      where: { id: docId, orgId },
+      include: {
+        project: true,
+        invoice: { select: { id: true, number: true, status: true, total: true } },
+      },
+    });
+  } catch (err) {
+    if (isMissingColumnError(err)) {
+      if (entityType === "estimates") {
+        return await db["estimate"]["findFirst"]({
+          where: { id: docId, orgId },
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            issueDate: true,
+            validUntil: true,
+            currency: true,
+            subtotal: true,
+            taxRate: true,
+            taxAmount: true,
+            discount: true,
+            total: true,
+            notes: true,
+            customerId: true,
+            projectId: true,
+            createdAt: true,
+            updatedAt: true,
+            customer: { select: { id: true, name: true, company: true, email: true, address: true } },
+            project: { select: { id: true, name: true } },
+            items: { orderBy: { sortOrder: "asc" } },
+            linkedInvoice: { select: { id: true, number: true, status: true, total: true } },
+          },
+        });
+      }
+      return await db["changeOrder"]["findFirst"]({
+        where: { id: docId, orgId },
+        select: {
+          id: true,
+          number: true,
+          title: true,
+          description: true,
+          amount: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          projectId: true,
+          invoiceId: true,
+          project: { select: { id: true, name: true } },
+          invoice: { select: { id: true, number: true, status: true, total: true } },
+        },
+      });
+    }
+    throw err;
+  }
+}
+
+async function getOrgData(orgId: string): Promise<any> {
+  const org = await db["organization"]["findUnique"]({
+    where: { id: orgId },
+    select: {
+      id: true,
+      name: true,
+      plan: true,
+      brandColor: true,
+      accentColor: true,
+      fontFamily: true,
+      template: true,
+      layout: true,
+      currency: true,
+    },
+  });
+  if (!org) return null;
+  return {
+    ...org,
+    canPdfExport: hasFeature(org["plan"] ?? "FREE", "pdfExport"),
+  };
+}

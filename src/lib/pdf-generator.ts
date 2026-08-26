@@ -1,4 +1,6 @@
 import { InvoiceTemplate } from "@/components/invoice-template";
+import { DocumentTemplate } from "@/components/document-template";
+import type { EntityType } from "@/components/document-template";
 
 const PAPER_SIZES = {
   A4: { width: "210mm", height: "297mm" },
@@ -17,20 +19,33 @@ export async function generateInvoicePdf(
   options: PdfGenerationOptions = {}
 ): Promise<Buffer> {
   const { paperSize = "A4", locale = "en" } = options;
-  const paper = PAPER_SIZES[paperSize];
-
-  // Dynamic import to avoid Next.js bundling restrictions on react-dom/server
   const { renderToString } = await import("react-dom/server");
-
-  // Render the shared template to HTML string
-  const templateHtml = renderToString(
-    InvoiceTemplate({ invoice, org, paperSize, locale })
+  const html = wrapHtmlForPdf(
+    renderToString(InvoiceTemplate({ invoice, org, paperSize, locale })),
+    PAPER_SIZES[paperSize]
   );
+  return renderPdf(html, PAPER_SIZES[paperSize]);
+}
 
-  // Wrap with proper HTML structure, CSS, and meta tags
-  const fullHtml = wrapHtmlForPdf(templateHtml, paper);
+export async function generateDocumentPdf(
+  entityType: EntityType,
+  doc: any,
+  org: any,
+  options: PdfGenerationOptions = {}
+): Promise<Buffer> {
+  const { paperSize = "A4", locale = "en" } = options;
+  const { renderToString } = await import("react-dom/server");
+  const html = wrapHtmlForPdf(
+    renderToString(DocumentTemplate({ entityType, doc, org, paperSize, locale })),
+    PAPER_SIZES[paperSize]
+  );
+  return renderPdf(html, PAPER_SIZES[paperSize]);
+}
 
-  // Dynamic import to avoid bundling issues - puppeteer is optional
+async function renderPdf(
+  html: string,
+  paper: { width: string; height: string }
+): Promise<Buffer> {
   let puppeteer: any;
   try {
     puppeteer = await import(/* webpackIgnore: true */ "puppeteer");
@@ -40,40 +55,56 @@ export async function generateInvoicePdf(
     );
   }
 
-  const browser = await puppeteer["launch"]({
-    headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--single-process",
-      "--disable-gpu",
-    ],
-  });
+  const launch = puppeteer?.["default"]?.launch ?? puppeteer?.["launch"];
+  if (typeof launch !== "function") {
+    throw new Error(
+      "Puppeteer is installed but its launcher could not be resolved."
+    );
+  }
+
+  const executablePath = process["env"]["PUPPETEER_EXECUTABLE_PATH"] || undefined;
+
+  const puppeteerInstance = puppeteer["default"] ?? puppeteer;
+
+  let browser: any;
+  try {
+    browser = await launch.call(puppeteerInstance, {
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+      executablePath,
+    });
+  } catch (err: any) {
+    throw new Error(
+      `Failed to launch Chromium: ${err?.["message"] ?? err}. Ensure a Chromium build is available (set PUPPETEER_EXECUTABLE_PATH or install @puppeteer/browsers).`
+    );
+  }
 
   try {
     const page = await browser["newPage"]();
 
-    // Set content and wait for rendering to complete
-    await page["setContent"](fullHtml, {
-      waitUntil: ["networkidle0", "domcontentloaded"],
-      timeout: 30000,
+    await page["setContent"](html, {
+      waitUntil: "networkidle0",
+      timeout: 60000,
     });
 
-    // Generate PDF with print-optimized settings
     const pdfBuffer = await page["pdf"]({
       width: paper["width"],
       height: paper["height"],
       printBackground: true,
       preferCSSPageSize: true,
       margin: { top: "0", right: "0", bottom: "0", left: "0" },
-      scale: 2, // Higher scale for better quality
+      scale: 2,
       displayHeaderFooter: false,
     });
 
     return Buffer["from"](pdfBuffer);
   } finally {
-    await browser["close"]();
+    await browser["close"]().catch(() => {});
   }
 }
 
@@ -83,10 +114,9 @@ function wrapHtmlForPdf(bodyHtml: string, paper: { width: string; height: string
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invoice</title>
+  <title>Document</title>
   <style>
-    /* Reset */
-    *, *::before, *::after {
+    * , *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
@@ -106,16 +136,13 @@ function wrapHtmlForPdf(bodyHtml: string, paper: { width: string; height: string
       print-color-adjust: exact;
     }
 
-    /* Page setup */
     @page {
       size: ${paper["width"]} ${paper["height"]};
       margin: 0;
     }
 
-    /* Utility */
     table { border-collapse: collapse; }
 
-    /* Print colors */
     .type-badge {
       background-color: var(--invoice-accent, #3b82f6);
       color: white;

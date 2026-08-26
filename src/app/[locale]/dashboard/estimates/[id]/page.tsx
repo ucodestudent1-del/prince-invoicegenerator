@@ -12,6 +12,7 @@ import {
   Send,
   FileText,
   ExternalLink,
+  Download,
 } from "lucide-react";
 import { EstimateAuditLog } from "@/components/estimate-audit-log";
 import { CopyShareLinkButton } from "@/components/copy-share-link-button";
@@ -337,9 +338,25 @@ export default async function EstimateDetailPage({
                 </a>
               </Button>
             )}
-            <Button variant="outline" size="sm" className="w-full">
+          <Button asChild variant="outline" size="sm" className="w-full">
+            <Link
+              href={`/dashboard/estimates/${estimate["id"]}/print`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <Printer className="mr-2 h-4 w-4" /> {t("exportPdf")}
-            </Button>
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="w-full">
+            <a
+              href={`/api/documents/estimates/${estimate["id"]}/pdf`}
+              target="_blank"
+              download
+              rel="noopener noreferrer"
+            >
+              <Download className="mr-2 h-4 w-4" /> Download PDF
+            </a>
+          </Button>
           </CardContent>
         </Card>
 
