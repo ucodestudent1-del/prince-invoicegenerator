@@ -229,7 +229,7 @@ export async function updateCustomer(id: string, input: UpdateCustomerInput) {
     if (input["portalPin"] !== undefined) data["portalPin"] = input["portalPin"];
 
     const customer = await db["customer"]["update"]({
-      where: { id },
+      where: { id, orgId },
       data,
     });
 
@@ -252,7 +252,7 @@ export async function archiveCustomer(id: string) {
     if (!existing) actionError("Customer not found");
 
     const customer = await db["customer"]["update"]({
-      where: { id },
+      where: { id, orgId },
       data: {
         status: "ARCHIVED",
         archivedAt: new Date(),
@@ -278,7 +278,7 @@ export async function unarchiveCustomer(id: string) {
     if (!existing) actionError("Customer not found");
 
     const customer = await db["customer"]["update"]({
-      where: { id },
+      where: { id, orgId },
       data: {
         status: "ACTIVE",
         archivedAt: null,

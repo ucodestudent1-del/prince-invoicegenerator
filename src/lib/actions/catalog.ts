@@ -127,7 +127,7 @@ export async function updateCatalogItem(id: string, input: Partial<CreateCatalog
     let item;
     try {
       item = await db["catalogItem"]["update"]({
-        where: { id },
+        where: { id, orgId },
         data: {
           name: input["name"],
           description: input["description"],
@@ -153,7 +153,7 @@ export async function updateCatalogItem(id: string, input: Partial<CreateCatalog
         if (input["taxCategory"] !== undefined) updateData["taxCategory"] = input["taxCategory"];
 
         item = await db["catalogItem"]["update"]({
-          where: { id },
+          where: { id, orgId },
           data: updateData,
         });
       } else {
@@ -178,7 +178,7 @@ export async function deleteCatalogItem(id: string) {
     });
     if (!existing) actionError("Catalog item not found");
 
-    await db["catalogItem"]["delete"]({ where: { id } });
+    await db["catalogItem"]["delete"]({ where: { id, orgId } });
 
     await revalidateWithLocale("/dashboard/settings/catalog");
     return { success: true, id };
@@ -296,7 +296,7 @@ export async function toggleCatalogItemFavorite(id: string, isFavorite: boolean)
 
     try {
       const item = await db["catalogItem"]["update"]({
-        where: { id },
+        where: { id, orgId },
         data: { isFavorite },
       });
       await revalidateWithLocale("/dashboard/settings/catalog");

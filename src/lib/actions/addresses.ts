@@ -117,7 +117,7 @@ export async function updateAddress(id: string, input: Partial<AddressInput>) {
     }
 
     const updated = await db["customerAddress"]["update"]({
-      where: { id },
+      where: { id, orgId: user["organizationId"] },
       data: {
         label: input["label"],
         line1: input["line1"],

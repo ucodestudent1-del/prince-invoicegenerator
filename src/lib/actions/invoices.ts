@@ -223,7 +223,7 @@ export async function markInvoiceStatus(id: string, status: InvoiceStatus) {
 
     try {
       await db["invoice"]["update"]({
-        where: { id },
+        where: { id, orgId },
         data: { status, amountPaid },
       });
     } catch (err: any) {
@@ -231,7 +231,7 @@ export async function markInvoiceStatus(id: string, status: InvoiceStatus) {
         // UNPAID enum value may not exist in the database yet —
         // fall back to SENT status to indicate the invoice has a balance
         await db["invoice"]["update"]({
-          where: { id },
+          where: { id, orgId },
           data: { status: "SENT", amountPaid },
         });
       } else {

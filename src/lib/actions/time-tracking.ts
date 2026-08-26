@@ -5,7 +5,8 @@ import { requireUser, isMissingColumnError, getActivePlan } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
 import { hasFeature } from "@/lib/plans";
-import type { TimeEntryStatus } from "@prisma/client";
+import { coerceEnum } from "@/lib/utils";
+import { TimeEntryStatus } from "@prisma/client";
 
 export interface CreateTimeEntryInput {
   projectId: string;
@@ -197,12 +198,14 @@ export async function updateTimeEntry(id: string, input: Partial<CreateTimeEntry
       ...(input["endTime"] !== undefined && { endTime: input["endTime"] ? new Date(input["endTime"]) : null }),
       ...(duration !== undefined && { duration }),
       ...(input["isManual"] !== undefined && { isManual: input["isManual"] }),
-      ...(input["status"] !== undefined && { status: input["status"] }),
+      ...(input["status"] !== undefined && {
+        status: coerceEnum(input["status"], TimeEntryStatus, "status"),
+      }),
     };
 
     try {
       const entry = await db["timeEntry"]["update"]({
-        where: { id },
+        where: { id, orgId },
         data,
       });
       await revalidateWithLocale("/dashboard/time-tracking");
@@ -229,7 +232,7 @@ export async function deleteTimeEntry(id: string) {
     if (!existing) actionError("Time entry not found");
 
     try {
-      await db["timeEntry"]["delete"]({ where: { id } });
+      await db["timeEntry"]["delete"]({ where: { id, orgId } });
     } catch (err) {
       if (isMissingColumnError(err)) {
         actionError("Time tracking tables are not fully migrated.");
