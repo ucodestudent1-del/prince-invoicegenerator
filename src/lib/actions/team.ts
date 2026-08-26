@@ -28,7 +28,7 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
       actionError("Email is required.");
     }
 
-    const existingUser = await db.user.findUnique({
+    const existingUser = await db["user"]["findUnique"]({
       where: { email: normalizedEmail },
       select: { id: true, organizationId: true },
     });
@@ -46,7 +46,7 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
     const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
     try {
-      await db.user.create({
+      await db["user"]["create"]({
         data: {
           email: normalizedEmail,
           name: input.name.trim(),
