@@ -5,7 +5,8 @@ import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextEstimateNumber, getNextChangeOrderNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
-import type { EstimateStatus, ExpenseCategory } from "@prisma/client";
+import { coerceEnum } from "@/lib/utils";
+import { ExpenseCategory, type EstimateStatus } from "@prisma/client";
 
 // --------------------------- Estimates ---------------------------
 
@@ -188,7 +189,7 @@ export async function createExpense(input: {
       data: {
         orgId: user["organizationId"],
         vendor: input["vendor"],
-        category: input["category"],
+        category: coerceEnum(input["category"], ExpenseCategory, "category"),
         amount: input["amount"],
         date: input["date"] ? new Date(input["date"]) : new Date(),
         notes: input["notes"],
