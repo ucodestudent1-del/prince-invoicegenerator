@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 type DocConfig = { label: string; entityType: EntityType };
 
 const SUPPORTED: Record<string, DocConfig> = {
+  invoices: { label: "Invoice", entityType: "invoices" },
   "change-orders": { label: "Change-Order", entityType: "change-orders" },
   estimates: { label: "Estimate", entityType: "estimates" },
 };
@@ -76,6 +77,16 @@ export async function GET(
 
 async function getDocumentData(entityType: EntityType, docId: string, orgId: string): Promise<any> {
   try {
+    if (entityType === "invoices") {
+      return await db["invoice"]["findFirst"]({
+        where: { id: docId, orgId },
+        include: {
+          customer: true,
+          project: true,
+          items: { orderBy: { sortOrder: "asc" } },
+        },
+      });
+    }
     if (entityType === "estimates") {
       return await db["estimate"]["findFirst"]({
         where: { id: docId, orgId },
@@ -96,6 +107,37 @@ async function getDocumentData(entityType: EntityType, docId: string, orgId: str
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
+      if (entityType === "invoices") {
+        return await db["invoice"]["findFirst"]({
+          where: { id: docId, orgId },
+          select: {
+            id: true,
+            number: true,
+            type: true,
+            status: true,
+            issueDate: true,
+            dueDate: true,
+            currency: true,
+            subtotal: true,
+            taxRate: true,
+            taxAmount: true,
+            discount: true,
+            retainageRate: true,
+            retainageAmount: true,
+            total: true,
+            amountPaid: true,
+            logoUrl: true,
+            billToAddress: true,
+            shipToAddress: true,
+            notes: true,
+            customerId: true,
+            projectId: true,
+            customer: true,
+            project: true,
+            items: { orderBy: { sortOrder: "asc" } },
+          },
+        });
+      }
       if (entityType === "estimates") {
         return await db["estimate"]["findFirst"]({
           where: { id: docId, orgId },

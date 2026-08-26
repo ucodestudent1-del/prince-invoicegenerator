@@ -130,7 +130,7 @@ export default async function InvoiceDetailPage({
             </Link>
           </Button>
           <Button asChild variant="outline">
-            <a href={`/api/invoices/${invoice["id"]}/pdf`} target="_blank" download>
+            <a href={`/api/documents/invoices/${invoice["id"]}/pdf`} target="_blank" download>
               <Download className="mr-2 h-4 w-4" /> Download PDF
             </a>
           </Button>
