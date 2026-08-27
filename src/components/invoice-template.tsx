@@ -21,6 +21,7 @@ export function InvoiceTemplate({ invoice, org, paperSize = "A4", locale = "en" 
   const paperWidth = PAPER_SIZES[paperSize];
   const templateClass = `template-${org?.["template"]?.["toLowerCase"]?.() ?? "standard"}`;
   const layoutClass = `layout-${org?.["layout"] ?? "default"}`;
+  const items: any[] = invoice["items"] ?? [];
 
   return (
     <div
@@ -171,7 +172,7 @@ export function InvoiceTemplate({ invoice, org, paperSize = "A4", locale = "en" 
           </tr>
         </thead>
         <tbody>
-          {invoice["items"]["map"]((it: any, idx: number) => (
+          {items["map"]((it: any, idx: number) => (
             <tr key={it["id"]} style={{ borderBottom: "1px solid #f3f4f6" }}>
               <td style={{ padding: "0.5rem 0", color: "#9ca3af" }}>{idx + 1}</td>
               <td style={{ padding: "0.5rem 0" }}>{it["description"]}</td>

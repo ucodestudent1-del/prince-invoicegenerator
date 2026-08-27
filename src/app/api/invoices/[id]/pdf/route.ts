@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, isMissingColumnError } from "@/lib/org";
+import { resolvePaperSize } from "@/lib/pdf-constants";
 import { db } from "@/lib/db";
 import { generateInvoicePdf } from "@/lib/pdf-generator";
 import { uploadPdfToR2 } from "@/lib/r2-storage";
@@ -22,7 +23,7 @@ export async function GET(
     }
 
     const { searchParams } = new URL(req["url"]);
-    const paperSize = (searchParams["get"]("paperSize") as "A4" | "Letter" | "Legal") || "A4";
+    const paperSize = resolvePaperSize(searchParams["get"]("paperSize"));
 
     const invoice = await getInvoiceData(params["id"], user["organizationId"]);
     if (!invoice) {
@@ -63,7 +64,7 @@ export async function POST(
     }
 
     const body = await req["json"]();
-    const paperSize = (body["paperSize"] as "A4" | "Letter" | "Legal") || "A4";
+    const paperSize = resolvePaperSize(body["paperSize"]);
 
     const invoice = await getInvoiceData(params["id"], user["organizationId"]);
     if (!invoice) {
