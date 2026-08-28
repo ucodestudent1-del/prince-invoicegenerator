@@ -118,8 +118,8 @@ export const authOptions: NextAuthOptions = {
               });
               organizationId = dbUser?.["organizationId"] ?? null;
               role = dbUser?.["role"] ?? "OWNER";
-            } catch {
-              // Fall through to defaults
+             } catch (fallbackErr) {
+              logServerError("auth session callback (fallback query)", fallbackErr);
             }
           }
           logServerError("auth session callback", err);
@@ -138,6 +138,9 @@ export const authOptions: NextAuthOptions = {
 
       const target = new URL(url);
       const effectiveBaseUrl = baseUrl || target["origin"];
+      if (!effectiveBaseUrl) {
+        return `${target.origin}${target.pathname}${target.search}${target.hash}`;
+      }
       const origin = new URL(effectiveBaseUrl);
 
       // If baseUrl is localhost but the target is the real production domain,

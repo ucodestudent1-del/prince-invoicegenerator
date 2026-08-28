@@ -9,6 +9,7 @@ export function middleware(request: NextRequest) {
     pathname["startsWith"]("/api/") ||
     pathname["startsWith"]("/_next/") ||
     pathname["startsWith"]("/portal") ||
+    pathname["startsWith"]("/api/auth/") ||
     pathname["includes"](".")
   ) {
     return NextResponse["next"]();
