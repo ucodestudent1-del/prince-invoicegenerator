@@ -4,7 +4,8 @@ import { db, withRetry } from "@/lib/db";
 import { requireUser } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
-import type { AddressType } from "@prisma/client";
+import { coerceEnum } from "@/lib/utils";
+import { AddressType } from "@prisma/client";
 
 export interface AddressInput {
   customerId: string;
@@ -25,9 +26,11 @@ export async function createAddress(input: AddressInput) {
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
+    const type = coerceEnum(input["type"], AddressType, "type");
+
     if (input["isDefault"]) {
       await db["customerAddress"]["updateMany"]({
-        where: { orgId, customerId: input["customerId"], type: input["type"] },
+        where: { orgId, customerId: input["customerId"], type },
         data: { isDefault: false },
       });
     }
@@ -37,7 +40,7 @@ export async function createAddress(input: AddressInput) {
         orgId,
         customerId: input["customerId"],
         label: input["label"],
-        type: input["type"],
+        type,
         line1: input["line1"],
         line2: input["line2"],
         city: input["city"],
@@ -127,6 +130,9 @@ export async function updateAddress(id: string, input: Partial<AddressInput>) {
         postalCode: input["postalCode"],
         country: input["country"],
         isDefault: input["isDefault"] ?? false,
+        ...(input["type"] !== undefined && {
+          type: coerceEnum(input["type"], AddressType, "type"),
+        }),
       },
       select: { id: true },
     });
