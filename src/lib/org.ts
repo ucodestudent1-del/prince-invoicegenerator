@@ -75,6 +75,27 @@ export async function ensureOrganization(userId: string) {
         where: { id: userId },
         data: { organizationId: org["id"] },
       });
+      try {
+        await db["reminderConfig"]["create"]({
+          data: {
+            orgId: org["id"],
+            enabled: false,
+            frequencyHours: 24,
+            maxReminders: 3,
+            remindBeforeDue: 3,
+            remindAfterDue: 1,
+          },
+          select: { id: true },
+        });
+      } catch (err: any) {
+        if (err instanceof Prisma["PrismaClientKnownRequestError"] && err["code"] === "P2002") {
+          // reminderConfig already exists
+        } else if (isMissingColumnError(err)) {
+          // Schema drift — reminderConfig table doesn't exist yet
+        } else {
+          throw err;
+        }
+      }
       return org;
     } catch (err) {
       if (err instanceof Prisma["PrismaClientKnownRequestError"] && err["code"] === "P2002") {

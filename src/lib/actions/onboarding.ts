@@ -267,6 +267,18 @@ async function createInvoiceProfile(orgId: string) {
       },
       select: { id: true },
     });
+
+    await db["reminderConfig"]["create"]({
+      data: {
+        orgId,
+        enabled: false,
+        frequencyHours: 24,
+        maxReminders: 3,
+        remindBeforeDue: 3,
+        remindAfterDue: 1,
+      },
+      select: { id: true },
+    });
   } catch (err) {
     if (isMissingColumnError(err)) {
       // OrganizationSettings / PaymentInfo tables don't exist yet

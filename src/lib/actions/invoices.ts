@@ -325,13 +325,13 @@ export async function recordPayment(input: {
 
       try {
         await tx["invoice"]["update"]({
-          where: { id: input["invoiceId"] },
+          where: { id: input["invoiceId"], orgId },
           data: { amountPaid: adjustedAmountPaid, status: newStatus },
         });
       } catch (err: any) {
         if (isInvalidEnumValueError(err) && newStatus === "UNPAID") {
           await tx["invoice"]["update"]({
-            where: { id: input["invoiceId"] },
+            where: { id: input["invoiceId"], orgId },
             data: { amountPaid: adjustedAmountPaid, status: "SENT" },
           });
         } else {
@@ -571,8 +571,8 @@ export async function sendReminder(invoiceId: string) {
       }
     }
 
-    if (!invoice) actionError("Invoice not found.");
-    if (!config?.["enabled"]) actionError("Reminders are disabled for this organization.");
+    if (!invoice) return null;
+    if (!config?.["enabled"]) return null;
 
     const now = new Date();
     let type = "DUE_DATE";

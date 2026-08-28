@@ -1,7 +1,8 @@
 import { Link, redirect } from "@/i18n/navigation";
 import Image from "next/image";
-import { requireUser, isMissingColumnError } from "@/lib/org";
+import { requireUser, isMissingColumnError, getActivePlan } from "@/lib/org";
 import { db } from "@/lib/db";
+import { hasFeature } from "@/lib/plans";
 import {
   markInvoicePaid,
   deleteInvoice,
@@ -41,6 +42,8 @@ export default async function InvoiceDetailPage({
 }) {
   const user = await requireUser();
   if (!user || !user["organizationId"]) return null;
+  const plan = await getActivePlan(user);
+  const remindersEnabled = hasFeature(plan, "automaticReminders");
   const t = await getTranslations("invoices");
 
   let invoice;
@@ -298,18 +301,22 @@ export default async function InvoiceDetailPage({
             invoiceId={invoice["id"]}
             currentStatus={invoice["status"]}
           />
-          {invoice["status"] !== "PAID" && (
-            <form
-              action={async () => {
-                "use server";
-                await sendReminder(invoice["id"]);
-              }}
-            >
-              <Button type="submit" variant="outline" className="w-full">
-                <Mail className="mr-2 h-4 w-4" /> {t("sendReminder")}
-              </Button>
-            </form>
-          )}
+           {invoice["status"] !== "PAID" && remindersEnabled && (
+             <form
+               action={async () => {
+                 "use server";
+                 try {
+                   await sendReminder(invoice["id"]);
+                 } catch (err: any) {
+                   logServerError("sendReminderFormAction", err);
+                 }
+               }}
+             >
+               <Button type="submit" variant="outline" className="w-full">
+                 <Mail className="mr-2 h-4 w-4" /> {t("sendReminder")}
+               </Button>
+             </form>
+           )}
 
           {reminders["length"] > 0 && (
             <Card>
@@ -357,7 +364,7 @@ export default async function InvoiceDetailPage({
         </div>
       </div>
 
-      {invoice["status"] !== "PAID" && invoice["customer"]?.["email"] && (
+      {invoice["status"] !== "PAID" && invoice["customer"]?.["email"] && remindersEnabled && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Automated reminders</CardTitle>
