@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
-import { requireUser } from "@/lib/org";
+import { requireUser, getActivePlan } from "@/lib/org";
+import { hasFeature } from "@/lib/plans";
 import {
   getRecurringConfigs,
   toggleRecurringConfig,
@@ -20,6 +21,7 @@ import { Plus, Pause, Play } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
+import { PricingFeature } from "@/components/pricing-feature";
 import { GenerateInvoiceButton } from "./_components/generate-invoice-button";
 import { LinkInvoiceForm } from "./_components/link-invoice-form";
 
@@ -27,6 +29,11 @@ export default async function RecurringPage({ params }: { params: { locale: stri
   const user = await requireUser();
   if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("recurring");
+  const plan = await getActivePlan(user);
+
+  if (!hasFeature(plan, "recurring")) {
+    return <PricingFeature feature="recurring" plan={plan} />;
+  }
 
   let configs;
   try {

@@ -44,7 +44,7 @@ const nav = [
   { href: "/dashboard/team", label: "navigation.team", icon: Users, feature: "multipleUsers" as FeatureKey },
   { href: "/dashboard/billing", label: "navigation.billing", icon: CreditCard },
   { href: "/dashboard/reports", label: "navigation.reports", icon: BarChart3 },
-  { href: "/dashboard/recurring", label: "navigation.recurring", icon: Calendar },
+  { href: "/dashboard/recurring", label: "navigation.recurring", icon: Calendar, feature: "recurring" as FeatureKey },
    { href: "/dashboard/settings/reminders", label: "navigation.reminders", icon: Bell, feature: "automaticReminders" as FeatureKey },
   { href: "/dashboard/settings/late-fees", label: "navigation.lateFees", icon: Receipt, feature: "lateFees" as FeatureKey },
    { href: "/dashboard/settings/scheduled", label: "navigation.scheduled", icon: Calendar, feature: "scheduledInvoices" as FeatureKey },

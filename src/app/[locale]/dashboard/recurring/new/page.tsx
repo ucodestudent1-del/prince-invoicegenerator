@@ -1,12 +1,20 @@
-import { requireUser } from "@/lib/org";
+import { requireUser, getActivePlan } from "@/lib/org";
 import { db } from "@/lib/db";
+import { hasFeature } from "@/lib/plans";
 import { RecurringConfigForm } from "@/components/recurring-config-form";
+import { PricingFeature } from "@/components/pricing-feature";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
 
 export default async function NewRecurringPage({ params }: { params: { locale: string } }) {
   const user = await requireUser();
   if (!user || !user["organizationId"]) return null;
+  const plan = await getActivePlan(user);
+
+  if (!hasFeature(plan, "recurring")) {
+    return <PricingFeature feature="recurring" plan={plan} />;
+  }
+
   const orgId = user["organizationId"];
   const t = await getTranslations("recurring");
 

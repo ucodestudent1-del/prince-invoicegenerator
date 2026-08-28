@@ -2,7 +2,7 @@
 
 import { addMonths, addDays, addWeeks, addYears } from "date-fns";
 import { db, withRetry } from "@/lib/db";
-import { requireUser, isMissingColumnError } from "@/lib/org";
+import { requireUser, isMissingColumnError, getActivePlan } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextInvoiceNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
@@ -539,6 +539,9 @@ export async function createRecurringConfig(input: RecurringConfigInput) {
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "recurring")) actionError("Recurring invoices require a paid plan. Upgrade to unlock this feature.");
+
     const customerExists = await withRetry(() =>
       db["customer"]["findFirst"]({
         where: { id: input["customerId"], orgId },
@@ -680,6 +683,9 @@ export async function toggleRecurringConfig(id: string, active: boolean) {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "recurring")) actionError("Recurring invoices require a paid plan. Upgrade to unlock this feature.");
+
     await db["recurringInvoiceConfig"]["update"]({
       where: { id, orgId: user["organizationId"] },
       data: { active },
@@ -750,6 +756,9 @@ export async function generateNextInvoice(configId: string) {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
+
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "recurring")) actionError("Recurring invoices require a paid plan. Upgrade to unlock this feature.");
 
     let config;
     try {
@@ -837,6 +846,8 @@ export async function processRecurringInvoices() {
     const now = new Date();
 
     for (const org of orgs) {
+      const orgPlan = (org as any)["plan"];
+      if (orgPlan && !hasFeature(orgPlan, "recurring")) continue;
       for (const config of org["recurringConfigs"]) {
         if (now["getTime"]() < new Date(config["nextRunDate"])["getTime"]()) continue;
 
@@ -867,6 +878,9 @@ export async function linkInvoiceToRecurring(invoiceId: string, configId: string
   return withActionError("linkInvoiceToRecurring", async () => {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
+
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "recurring")) actionError("Recurring invoices require a paid plan. Upgrade to unlock this feature.");
 
     try {
       await db["invoice"]["update"]({
