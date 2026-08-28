@@ -5,6 +5,23 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+function buildDatabaseUrl(url: string): string {
+  const keepalive =
+    "tcp_keepalives_idle=60&tcp_keepalives_interval=10&tcp_keepalives_count=5";
+  const separator = url.includes("?") ? "&" : "?";
+  const hasPgbouncer = url.includes("pgbouncer=true");
+  const hasKeepalive = url.includes("tcp_keepalives_idle=");
+
+  let normalized = url;
+  if (!hasPgbouncer) {
+    normalized = `${url}${separator}pgbouncer=true`;
+  }
+  if (!hasKeepalive) {
+    normalized = `${normalized}${normalized.includes("?") ? "&" : "?"}${keepalive}`;
+  }
+  return normalized;
+}
+
 export const db =
   globalForPrisma["prisma"] ??
   new PrismaClient({
@@ -13,9 +30,7 @@ export const db =
       ? {
           datasources: {
             db: {
-              url: process["env"]["DATABASE_URL"]["includes"]("pgbouncer=true")
-                ? process["env"]["DATABASE_URL"]
-                : `${process["env"]["DATABASE_URL"]}${process["env"]["DATABASE_URL"]["includes"]("?") ? "&" : "?"}pgbouncer=true&connection_limit=5`,
+              url: buildDatabaseUrl(process["env"]["DATABASE_URL"]),
             },
           },
         }
