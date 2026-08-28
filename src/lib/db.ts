@@ -6,20 +6,16 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function buildDatabaseUrl(url: string): string {
-  const keepalive =
-    "tcp_keepalives_idle=60&tcp_keepalives_interval=10&tcp_keepalives_count=5";
+  const params = [
+    "pgbouncer=true",
+    "connection_limit=20",
+    "connect_timeout=10",
+    "tcp_keepalives_idle=60",
+    "tcp_keepalives_interval=10",
+    "tcp_keepalives_count=5",
+  ];
   const separator = url.includes("?") ? "&" : "?";
-  const hasPgbouncer = url.includes("pgbouncer=true");
-  const hasKeepalive = url.includes("tcp_keepalives_idle=");
-
-  let normalized = url;
-  if (!hasPgbouncer) {
-    normalized = `${url}${separator}pgbouncer=true`;
-  }
-  if (!hasKeepalive) {
-    normalized = `${normalized}${normalized.includes("?") ? "&" : "?"}${keepalive}`;
-  }
-  return normalized;
+  return `${url}${separator}${params.join("&")}`;
 }
 
 export const db =
