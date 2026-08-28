@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
 import { logError, logInfo } from "@/lib/logging";
 import { isMissingColumnError } from "@/lib/org";
@@ -6,23 +7,30 @@ import { isMissingColumnError } from "@/lib/org";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function verifySignature(req: NextRequest, provider: string): boolean {
+// Resend signs webhooks with an HMAC-SHA256 (hex) of the raw request body using
+// RESEND_WEBHOOK_SECRET. Any request whose signature doesn't match is rejected.
+function verifySignature(rawBody: string, req: NextRequest, provider: string): boolean {
   if (provider !== "resend") return true;
   const secret = process["env"]["RESEND_WEBHOOK_SECRET"];
-  if (!secret) return true;
+  if (!secret) return false;
   const signature = req["headers"]["get"]("x-resend-signature");
   if (!signature) return false;
-  return true;
+  const expected = createHmac("sha256", secret)["update"](rawBody)["digest"]("hex");
+  const expectedBuf = Buffer["from"](expected);
+  const providedBuf = Buffer["from"](signature);
+  if (expectedBuf["length"] !== providedBuf["length"]) return false;
+  return timingSafeEqual(expectedBuf, providedBuf);
 }
 
 export async function POST(req: NextRequest) {
   try {
     const provider = process["env"]["EMAIL_PROVIDER"] || "resend";
-    if (!verifySignature(req, provider)) {
+    const rawBody = await req["text"]();
+    if (!verifySignature(rawBody, req, provider)) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const body = await req["json"]();
+    const body = JSON.parse(rawBody);
     const eventType = body["type"] || body["event"];
     const data = body["data"] || {};
     const messageId = data?.["email_id"] || data?.["message_id"] || data?.["id"];
