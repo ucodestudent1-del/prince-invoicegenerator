@@ -275,35 +275,37 @@ export async function getPortalDashboard(token: string) {
 
     const customer = session["customer"];
 
-    const [invoices, payments] = await Promise["all"]([
-      db["invoice"]["findMany"]({
-        where: { customerId: customer["id"] },
-        select: {
-          id: true,
-          number: true,
-          status: true,
-          total: true,
-          amountPaid: true,
-          issueDate: true,
-          dueDate: true,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-      }),
-      db["payment"]["findMany"]({
-        where: { invoice: { customerId: customer["id"] } },
-        select: {
-          id: true,
-          amount: true,
-          method: true,
-          status: true,
-          createdAt: true,
-          invoice: { select: { number: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-      }),
-    ]);
+    const [invoices, payments] = await Promise["all"](
+      [
+        db["invoice"]["findMany"]({
+          where: { customerId: customer["id"], orgId: customer["orgId"] },
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            total: true,
+            amountPaid: true,
+            issueDate: true,
+            dueDate: true,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 50,
+        }),
+        db["payment"]["findMany"]({
+          where: { invoice: { customerId: customer["id"], orgId: customer["orgId"] } },
+          select: {
+            id: true,
+            amount: true,
+            method: true,
+            status: true,
+            createdAt: true,
+            invoice: { select: { number: true, status: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 50,
+        }),
+      ]
+    );
 
     // v2 columns (outstandingBalance, totalInvoiced, totalPaid) may not exist
     // if the client portal migration hasn't been applied to the database

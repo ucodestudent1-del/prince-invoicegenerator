@@ -85,7 +85,7 @@ export async function sendEstimate(estimateId: string, input: SendEstimateInput)
     const shareUrl = `${baseUrl}/estimate/${estimate["number"]}?token=${shareToken}`;
 
     await db["estimate"]["update"]({
-      where: { id: estimateId },
+      where: { id: estimateId, orgId },
       data: {
         status: "SENT" as EstimateStatus,
         shareToken,
@@ -341,7 +341,7 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
       });
 
       const updatedEstimate = await db["estimate"]["update"]({
-        where: { id: estimateId },
+        where: { id: estimateId, orgId },
         data: {
           status: "INVOICED" as EstimateStatus,
           linkedInvoiceId: invoice["id"],
@@ -420,7 +420,7 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
         });
 
         const updatedEstimate = await db["estimate"]["update"]({
-          where: { id: estimateId },
+          where: { id: estimateId, orgId },
           data: {
             status: "INVOICED" as EstimateStatus,
             convertedAt: new Date(),

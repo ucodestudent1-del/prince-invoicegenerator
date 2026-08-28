@@ -8,6 +8,7 @@ import { getNextInvoiceNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
 import { hasFeature } from "@/lib/plans";
 import { stripe } from "@/lib/stripe";
+import { logError } from "@/lib/logging";
 
 export interface RecurringConfigInput {
   customerId: string;
@@ -358,7 +359,9 @@ async function chargeRecurringInvoice(
           note: `autoCharge failed: ${err?.["message"] ?? String(err)}`,
         },
       });
-    } catch {}
+    } catch (auditErr) {
+      logError("Failed to write auto-charge audit log", auditErr);
+    }
   }
 }
 
@@ -398,7 +401,7 @@ async function generateRecurringInvoice(ctx: {
   // 2) exhaustion gate — the series is already finished.
   if (isRecurrenceExhausted(endDate, occurrences, generatedCount, now)) {
     await db["recurringInvoiceConfig"]["update"]({
-      where: { id: config["id"] },
+      where: { id: config["id"], orgId },
       data: { active: false },
     });
     return { invoice: null, error: "completed" };
@@ -504,7 +507,7 @@ async function generateRecurringInvoice(ctx: {
   // been migrated to the new schema yet (schema-drift tolerance).
   try {
     await db["recurringInvoiceConfig"]["update"]({
-      where: { id: config["id"] },
+      where: { id: config["id"], orgId },
       data: advance,
     });
   } catch (err: any) {
@@ -515,7 +518,7 @@ async function generateRecurringInvoice(ctx: {
       };
       if (shouldDeactivate) legacy["active"] = false;
       await db["recurringInvoiceConfig"]["update"]({
-        where: { id: config["id"] },
+        where: { id: config["id"], orgId },
         data: legacy,
       });
     } else {

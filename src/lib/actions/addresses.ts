@@ -69,7 +69,7 @@ export async function getCustomerAddresses(customerId: string) {
     if (!customer) actionError("Customer not found.");
 
     const addresses = await db["customerAddress"]["findMany"]({
-      where: { customerId },
+      where: { customerId, orgId: user["organizationId"] },
       orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
       select: { id: true, label: true, type: true, line1: true, line2: true, city: true, state: true, postalCode: true, country: true, isDefault: true },
     });

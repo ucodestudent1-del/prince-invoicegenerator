@@ -306,19 +306,19 @@ export async function getCustomerActivityLog(customerId: string) {
 
     const [invoices, estimates, payments] = await Promise["all"]([
       db["invoice"]["findMany"]({
-        where: { customerId },
+        where: { customerId, orgId },
         select: { id: true, number: true, status: true, total: true, createdAt: true },
         orderBy: { createdAt: "desc" },
         take: 100,
       }),
       db["estimate"]["findMany"]({
-        where: { customerId },
+        where: { customerId, orgId },
         select: { id: true, number: true, status: true, total: true, createdAt: true },
         orderBy: { createdAt: "desc" },
         take: 100,
       }),
       db["payment"]["findMany"]({
-        where: { invoice: { customerId } },
+        where: { invoice: { customerId, orgId } },
         select: { id: true, amount: true, method: true, status: true, createdAt: true, invoice: { select: { number: true } } },
         orderBy: { createdAt: "desc" },
         take: 100,
