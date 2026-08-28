@@ -1,6 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import { redirect } from "@/i18n/navigation";
-import { requireUser, ensureOrganization, getCurrentOrg, getActivePlan, ensureEnv } from "@/lib/org";
+import { requireUser, ensureOrganization, getCurrentOrg, getActivePlan, ensureEnv, isMissingColumnError } from "@/lib/org";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
 import {
   LayoutDashboard,
@@ -28,6 +28,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { getTranslations } from "next-intl/server";
 import { getLocaleSafe } from "@/lib/locale";
 import { APP_NAME } from "@/lib/app-name";
+import { db } from "@/lib/db";
 
 const nav = [
   { href: "/dashboard", label: "navigation.overview", icon: LayoutDashboard },
@@ -74,6 +75,20 @@ export default async function DashboardLayout({
 
   if (!org) {
     const locale = await getLocaleSafe();
+    let onboardingState;
+    try {
+      onboardingState = await db["onboardingState"]["findUnique"]({
+        where: { userId: user["id"] },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        redirect({ href: "/onboarding", locale });
+      }
+      throw err;
+    }
+    if (!onboardingState?.isComplete) {
+      redirect({ href: "/onboarding", locale });
+    }
     redirect({ href: "/pricing?error=no-org", locale });
     return null;
   }
