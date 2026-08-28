@@ -1,6 +1,6 @@
 import { coerceEnum } from "../src/lib/utils";
 import { describe, it, expect } from "vitest";
-import { PaymentMethod, CustomerStatus, CatalogUnit } from "@prisma/client";
+import { PaymentMethod, CustomerStatus, CatalogUnit, TimeEntryStatus } from "@prisma/client";
 
 enum Sample {
   A = "A",
@@ -30,5 +30,9 @@ describe("coerceEnum", () => {
 
   it("rejects invalid CatalogUnit values", () => {
     expect(() => coerceEnum("BOGUS", CatalogUnit, "unit")).toThrow(/Invalid value for "unit"/);
+  });
+
+  it("rejects invalid TimeEntryStatus values", () => {
+    expect(() => coerceEnum("BOGUS", TimeEntryStatus, "status")).toThrow(/Invalid value for "status"/);
   });
 });

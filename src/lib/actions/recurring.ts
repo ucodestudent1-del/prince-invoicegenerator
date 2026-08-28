@@ -339,7 +339,7 @@ async function chargeRecurringInvoice(
     });
 
     await db["invoice"]["update"]({
-      where: { id: invoice["id"] },
+      where: { id: invoice["id"], orgId: org!["id"] },
       data: {
         status: "PAID",
         amountPaid: totals["total"],

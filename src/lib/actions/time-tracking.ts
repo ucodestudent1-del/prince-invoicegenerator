@@ -104,7 +104,7 @@ export async function getTimeEntries(params?: {
     if (params?.["projectId"]) where["projectId"] = params["projectId"];
     if (params?.["invoiceId"]) where["invoiceId"] = params["invoiceId"];
     else if (params?.["invoiceId"] === null) where["invoiceId"] = null;
-    if (params?.["status"]) where["status"] = params["status"];
+    if (params?.["status"]) where["status"] = coerceEnum(params["status"], TimeEntryStatus, "status");
     if (params?.["billable"] !== undefined) where["billable"] = params["billable"];
     if (params?.["dateFrom"] || params?.["dateTo"]) {
       const from = params?.["dateFrom"];

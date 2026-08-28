@@ -122,7 +122,7 @@ export async function applyLateFees() {
         if (cfg["maxFee"] && lateFee > cfg["maxFee"]) lateFee = cfg["maxFee"];
 
         await db["invoice"]["update"]({
-          where: { id: invoice["id"] },
+          where: { id: invoice["id"], orgId: org["id"] },
           data: {
             lateFeeAmount: lateFee,
             total: invoice["total"] + lateFee,
