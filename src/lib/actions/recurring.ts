@@ -908,46 +908,55 @@ export async function processScheduledInvoices() {
       }
     }
 
-    const results: { id: string; number: string }[] = [];
+    const results: { id: string; number: string; error?: boolean }[] = [];
 
     for (const inv of scheduled) {
+      let failed = false;
       try {
-        await db["invoice"]["update"]({
-          where: { id: inv["id"] },
-          data: {
-            scheduledFor: null,
-            status: "SENT",
-          },
-        });
-      } catch (err) {
-        if (isMissingColumnError(err)) {
+        try {
           await db["invoice"]["update"]({
             where: { id: inv["id"] },
             data: {
+              scheduledFor: null,
               status: "SENT",
             },
           });
+        } catch (err) {
+          if (isMissingColumnError(err)) {
+            await db["invoice"]["update"]({
+              where: { id: inv["id"] },
+              data: {
+                status: "SENT",
+              },
+            });
+          } else {
+            throw err;
+          }
+        }
+
+        try {
+          await db["invoiceAudit"]["create"]({
+            data: {
+              invoiceId: inv["id"],
+              orgId: inv["orgId"],
+              action: "SCHEDULED_INVOICE_SENT",
+              fromStatus: "DRAFT",
+              toStatus: "SENT",
+              note: "Automatically sent from scheduled queue",
+            },
+          });
+        } catch (err) {
+          if (!isMissingColumnError(err)) throw err;
+        }
+      } catch (err) {
+        if (!isMissingColumnError(err)) {
+          failed = true;
         } else {
           throw err;
         }
       }
 
-      try {
-        await db["invoiceAudit"]["create"]({
-          data: {
-            invoiceId: inv["id"],
-            orgId: inv["orgId"],
-            action: "SCHEDULED_INVOICE_SENT",
-            fromStatus: "DRAFT",
-            toStatus: "SENT",
-            note: "Automatically sent from scheduled queue",
-          },
-        });
-      } catch (err) {
-        if (!isMissingColumnError(err)) throw err;
-      }
-
-      results["push"]({ id: inv["id"], number: inv["number"] });
+      results["push"]({ id: inv["id"], number: inv["number"], error: failed });
     }
 
     return results;

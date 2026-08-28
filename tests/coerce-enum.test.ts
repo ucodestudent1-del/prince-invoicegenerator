@@ -1,5 +1,6 @@
 import { coerceEnum } from "../src/lib/utils";
 import { describe, it, expect } from "vitest";
+import { PaymentMethod, CustomerStatus } from "@prisma/client";
 
 enum Sample {
   A = "A",
@@ -17,5 +18,13 @@ describe("coerceEnum", () => {
     expect(() => coerceEnum(undefined, Sample, "x")).toThrow();
     expect(() => coerceEnum(null, Sample, "x")).toThrow();
     expect(() => coerceEnum("", Sample, "x")).toThrow();
+  });
+
+  it("rejects invalid PaymentMethod values", () => {
+    expect(() => coerceEnum("BOGUS", PaymentMethod, "method")).toThrow(/Invalid value for "method"/);
+  });
+
+  it("rejects invalid CustomerStatus values", () => {
+    expect(() => coerceEnum("BOGUS", CustomerStatus, "status")).toThrow(/Invalid value for "status"/);
   });
 });

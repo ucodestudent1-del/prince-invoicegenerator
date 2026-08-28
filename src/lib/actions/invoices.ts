@@ -7,7 +7,8 @@ import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextInvoiceNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
 import { buildDefaultStages } from "@/lib/invoice-utils";
-import type { InvoiceType, PaymentMethod, PaymentStatus, InvoiceStatus } from "@prisma/client";
+import { InvoiceType, PaymentMethod, PaymentStatus, InvoiceStatus } from "@prisma/client";
+import { coerceEnum } from "@/lib/utils";
 
 export interface InvoiceItemInput {
   description: string;
@@ -114,7 +115,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
             number,
             customerId: input["customerId"],
             projectId: input["projectId"] ?? null,
-            type: input["type"],
+            type: coerceEnum(input["type"], InvoiceType, "type"),
             issueDate: new Date(input["issueDate"]),
             dueDate: input["dueDate"] ? new Date(input["dueDate"]) : null,
             currency: input["currency"] ?? "USD",
@@ -164,7 +165,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
               number,
               customerId: input["customerId"],
               projectId: input["projectId"] ?? null,
-              type: input["type"],
+              type: coerceEnum(input["type"], InvoiceType, "type"),
               issueDate: new Date(input["issueDate"]),
               dueDate: input["dueDate"] ? new Date(input["dueDate"]) : null,
               currency: input["currency"] ?? "USD",
@@ -307,7 +308,7 @@ export async function recordPayment(input: {
           invoiceId: input["invoiceId"],
           orgId,
           amount: roundedAmount,
-          method: input["method"] ?? "OTHER",
+          method: input["method"] ? coerceEnum(input["method"], PaymentMethod, "method") : "OTHER",
           status: "COMPLETED",
           stripePaymentId: input["stripePaymentId"],
           paypalTransactionId: input["paypalTransactionId"],
@@ -662,7 +663,18 @@ export async function getReminders(input: { invoiceId?: string; status?: string 
 
     const where: any = { orgId: user["organizationId"] };
     if (input["invoiceId"]) where["invoiceId"] = input["invoiceId"];
-    if (input["status"]) where["status"] = input["status"];
+    if (input["status"]) {
+      const ReminderStatus = {
+        PENDING: "PENDING",
+        SENT: "SENT",
+        QUEUED: "QUEUED",
+        DELIVERED: "DELIVERED",
+        FAILED: "FAILED",
+        BOUNCED: "BOUNCED",
+        SKIPPED: "SKIPPED",
+      } as const;
+      where["status"] = coerceEnum(input["status"], ReminderStatus, "status");
+    }
 
     const reminders = await db["reminder"]["findMany"]({
       where,

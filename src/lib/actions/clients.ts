@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
-import type { CustomerStatus } from "@prisma/client";
+import { CustomerStatus } from "@prisma/client";
+import { coerceEnum } from "@/lib/utils";
 
 export interface CreateCustomerInput {
   name: string;
@@ -23,10 +24,10 @@ export interface UpdateCustomerInput extends Partial<CreateCustomerInput> {
   address?: string | null;
 }
 
-function recalculateCustomerFinancials(customerId: string) {
+function recalculateCustomerFinancials(customerId: string, orgId: string) {
   return db["$transaction"](async (tx) => {
     const invoices = await tx["invoice"]["findMany"]({
-      where: { customerId },
+      where: { customerId, orgId },
       select: { total: true, amountPaid: true },
     });
 
@@ -35,7 +36,7 @@ function recalculateCustomerFinancials(customerId: string) {
     const outstandingBalance = totalInvoiced - totalPaid;
 
     await tx["customer"]["update"]({
-      where: { id: customerId },
+      where: { id: customerId, orgId },
       data: { totalInvoiced, totalPaid, outstandingBalance },
     });
 
@@ -55,7 +56,7 @@ export async function recalculateAllCustomerFinancials() {
     });
 
     for (const customer of customers) {
-      await recalculateCustomerFinancials(customer["id"]);
+      await recalculateCustomerFinancials(customer["id"], orgId);
     }
 
     await revalidateWithLocale("/dashboard/customers");
@@ -224,7 +225,7 @@ export async function updateCustomer(id: string, input: UpdateCustomerInput) {
     if (input["taxId"] !== undefined) data["taxId"] = input["taxId"];
     if (input["notes"] !== undefined) data["notes"] = input["notes"];
     if (input["address"] !== undefined) data["address"] = input["address"] || null;
-    if (input["status"] !== undefined) data["status"] = input["status"];
+    if (input["status"] !== undefined) data["status"] = coerceEnum(input["status"], CustomerStatus, "status");
     if (input["portalAccess"] !== undefined) data["portalAccess"] = input["portalAccess"];
     if (input["portalPin"] !== undefined) data["portalPin"] = input["portalPin"];
 
