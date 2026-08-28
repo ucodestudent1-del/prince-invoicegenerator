@@ -923,37 +923,41 @@ export async function processScheduledInvoices() {
           });
         } catch (err) {
           if (isMissingColumnError(err)) {
-            await db["invoice"]["update"]({
-              where: { id: inv["id"] },
-              data: {
-                status: "SENT",
-              },
-            });
+            try {
+              await db["invoice"]["update"]({
+                where: { id: inv["id"] },
+                data: {
+                  status: "SENT",
+                },
+              });
+            } catch (retryErr) {
+              failed = true;
+            }
           } else {
-            throw err;
+            failed = true;
           }
         }
 
-        try {
-          await db["invoiceAudit"]["create"]({
-            data: {
-              invoiceId: inv["id"],
-              orgId: inv["orgId"],
-              action: "SCHEDULED_INVOICE_SENT",
-              fromStatus: "DRAFT",
-              toStatus: "SENT",
-              note: "Automatically sent from scheduled queue",
-            },
-          });
-        } catch (err) {
-          if (!isMissingColumnError(err)) throw err;
+        if (!failed) {
+          try {
+            await db["invoiceAudit"]["create"]({
+              data: {
+                invoiceId: inv["id"],
+                orgId: inv["orgId"],
+                action: "SCHEDULED_INVOICE_SENT",
+                fromStatus: "DRAFT",
+                toStatus: "SENT",
+                note: "Automatically sent from scheduled queue",
+              },
+            });
+          } catch (err) {
+            if (!isMissingColumnError(err)) {
+              failed = true;
+            }
+          }
         }
       } catch (err) {
-        if (!isMissingColumnError(err)) {
-          failed = true;
-        } else {
-          throw err;
-        }
+        failed = true;
       }
 
       results["push"]({ id: inv["id"], number: inv["number"], error: failed });

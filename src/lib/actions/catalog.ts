@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
-import type { CatalogUnit } from "@prisma/client";
+import { CatalogUnit } from "@prisma/client";
+import { coerceEnum } from "@/lib/utils";
 
 export interface CreateCatalogItemInput {
   name: string;
@@ -60,7 +61,7 @@ export async function createCatalogItem(input: CreateCatalogItemInput) {
           name: input["name"],
           description: input["description"] || null,
           price: input["price"],
-          unit: input["unit"],
+          unit: coerceEnum(input["unit"], CatalogUnit, "unit"),
           taxRate: input["taxRate"],
           taxCategory: input["taxCategory"] || null,
           sku: input["sku"] || null,
@@ -78,7 +79,7 @@ export async function createCatalogItem(input: CreateCatalogItemInput) {
             name: input["name"],
             description: input["description"] || null,
             price: input["price"],
-            unit: input["unit"],
+            unit: coerceEnum(input["unit"], CatalogUnit, "unit"),
             taxRate: input["taxRate"],
             discount: input["discount"],
           },
@@ -132,7 +133,7 @@ export async function updateCatalogItem(id: string, input: Partial<CreateCatalog
           name: input["name"],
           description: input["description"],
           price: input["price"],
-          unit: input["unit"],
+          unit: input["unit"] !== undefined ? coerceEnum(input["unit"], CatalogUnit, "unit") : undefined,
           taxRate: input["taxRate"],
           taxCategory: input["taxCategory"],
           sku: input["sku"],
@@ -146,7 +147,7 @@ export async function updateCatalogItem(id: string, input: Partial<CreateCatalog
         if (input["name"] !== undefined) updateData["name"] = input["name"];
         if (input["description"] !== undefined) updateData["description"] = input["description"];
         if (input["price"] !== undefined) updateData["price"] = input["price"];
-        if (input["unit"] !== undefined) updateData["unit"] = input["unit"];
+        if (input["unit"] !== undefined) updateData["unit"] = coerceEnum(input["unit"], CatalogUnit, "unit");
         if (input["taxRate"] !== undefined) updateData["taxRate"] = input["taxRate"];
         if (input["sku"] !== undefined) updateData["sku"] = input["sku"];
         if (input["discount"] !== undefined) updateData["discount"] = input["discount"];
@@ -205,7 +206,7 @@ export async function getCatalogItems(params?: {
       ];
     }
     if (params?.["unit"]) {
-      where["unit"] = params["unit"];
+      where["unit"] = coerceEnum(params["unit"], CatalogUnit, "unit");
     }
     if (params?.["favoritesOnly"]) {
       where["isFavorite"] = true;
@@ -231,7 +232,7 @@ export async function getCatalogItems(params?: {
           ];
         }
         if (params?.["unit"]) {
-          fallbackWhere["unit"] = params["unit"];
+          fallbackWhere["unit"] = coerceEnum(params["unit"], CatalogUnit, "unit");
         }
         return await db["catalogItem"]["findMany"]({
           where: fallbackWhere,
