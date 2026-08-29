@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useTranslations } from "next-intl";
 import { APP_NAME } from "@/lib/app-name";
 import { resetPassword } from "@/lib/actions/auth";
+import { getPasswordStrength } from "@/lib/password-strength";
 
 export default function ResetPasswordPage() {
   const t = useTranslations("auth");
@@ -27,6 +28,8 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = React["useState"]("");
   const [confirmPassword, setConfirmPassword] = React["useState"]("");
 
+  const strength = getPasswordStrength(password);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e["preventDefault"]();
     setLoading(true);
@@ -34,6 +37,12 @@ export default function ResetPasswordPage() {
 
     if (password !== confirmPassword) {
       setError(t("passwordMismatch"));
+      setLoading(false);
+      return;
+    }
+
+    if (strength["score"] === 0) {
+      setError(t("passwordTooWeak"));
       setLoading(false);
       return;
     }
@@ -128,6 +137,24 @@ export default function ResetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e["target"]["value"])}
                 />
+                {password && (
+                  <div className="mt-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 flex-1 rounded-full bg-muted">
+                        <div
+                          className="h-1.5 rounded-full transition-all"
+                          style={{
+                            width: `${strength["score"] * 25}%`,
+                            backgroundColor: strength["color"],
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs" style={{ color: strength["color"] }}>
+                        {strength["label"]}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="space-y-1">
                 <Label htmlFor="confirmPassword">{t("confirmPassword")} *</Label>

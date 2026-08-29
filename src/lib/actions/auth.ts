@@ -70,14 +70,28 @@ export async function signup(data: {
       Date["now"]() + VERIFICATION_TOKEN_EXPIRY_MINUTES * 60 * 1000
     );
 
-    await db["verificationToken"]["create"]({
-      data: {
-        identifier: normalizedEmail,
-        token,
-        expires: expiresAt,
-        type: "EMAIL_VERIFY",
-      },
-    });
+    try {
+      await db["verificationToken"]["create"]({
+        data: {
+          identifier: normalizedEmail,
+          token,
+          expires: expiresAt,
+          type: "EMAIL_VERIFY",
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await db["verificationToken"]["create"]({
+          data: {
+            identifier: normalizedEmail,
+            token,
+            expires: expiresAt,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "http://localhost:3000";
     const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
@@ -178,14 +192,28 @@ export async function requestPasswordReset(email: string) {
     const token = randomBytes(32)["toString"]("hex");
     const expiresAt = new Date(Date["now"]() + 60 * 60 * 1000);
 
-    await db["verificationToken"]["create"]({
-      data: {
-        identifier: normalizedEmail,
-        token,
-        expires: expiresAt,
-        type: "PASSWORD_RESET",
-      },
-    });
+    try {
+      await db["verificationToken"]["create"]({
+        data: {
+          identifier: normalizedEmail,
+          token,
+          expires: expiresAt,
+          type: "PASSWORD_RESET",
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await db["verificationToken"]["create"]({
+          data: {
+            identifier: normalizedEmail,
+            token,
+            expires: expiresAt,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "http://localhost:3000";
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
@@ -271,11 +299,25 @@ export async function resendVerificationEmail() {
       actionError("Too many verification requests. Please try again later.");
     }
 
-    const existingToken = await db["verificationToken"]["findFirst"]({
-      where: { identifier: session["user"]["email"] },
-      orderBy: { expires: "desc" },
-      select: { expires: true, type: true, identifier: true },
-    });
+    let existingToken;
+    try {
+      existingToken = await db["verificationToken"]["findFirst"]({
+        where: { identifier: session["user"]["email"] },
+        orderBy: { expires: "desc" },
+        select: { expires: true, type: true, identifier: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        existingToken = await db["verificationToken"]["findFirst"]({
+          where: { identifier: session["user"]["email"] },
+          orderBy: { expires: "desc" },
+          select: { expires: true, identifier: true },
+        });
+        (existingToken as any)["type"] = "EMAIL_VERIFY";
+      } else {
+        throw err;
+      }
+    }
 
     if (existingToken && existingToken["expires"] > new Date(Date["now"]() + VERIFICATION_RESEND_COOLDOWN_SECONDS * 1000)) {
       actionError("Please wait before requesting another email.");
@@ -286,14 +328,28 @@ export async function resendVerificationEmail() {
       Date["now"]() + VERIFICATION_TOKEN_EXPIRY_MINUTES * 60 * 1000
     );
 
-    await db["verificationToken"]["create"]({
-      data: {
-        identifier: session["user"]["email"],
-        token,
-        expires: expiresAt,
-        type: "EMAIL_VERIFY",
-      },
-    });
+    try {
+      await db["verificationToken"]["create"]({
+        data: {
+          identifier: session["user"]["email"],
+          token,
+          expires: expiresAt,
+          type: "EMAIL_VERIFY",
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await db["verificationToken"]["create"]({
+          data: {
+            identifier: session["user"]["email"],
+            token,
+            expires: expiresAt,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "http://localhost:3000";
     const verifyUrl = `${baseUrl}/verify-email?token=${token}`;

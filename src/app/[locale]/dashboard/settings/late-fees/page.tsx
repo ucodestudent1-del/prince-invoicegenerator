@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/org";
+import { requireUser, requireFeature } from "@/lib/org";
 import { LateFeeSettingsForm } from "@/components/late-fee-settings-form";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
@@ -7,6 +7,7 @@ export default async function LateFeesPage({ params }: { params: { locale: strin
   const t = await getTranslations("lateFees");
   let user;
   try {
+    await requireFeature("lateFees");
     user = await requireUser();
   } catch (err) {
     logServerError("LateFeesPage", err);

@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { useTranslations } from "next-intl";
 import { APP_NAME } from "@/lib/app-name";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
@@ -29,17 +31,37 @@ export default function LoginPage() {
       await signIn("google", { callbackUrl: getPathnameWithLocale({ href: "/dashboard", locale }) });
     } catch (err: any) {
       setError(err?.["message"] || t("googleSignInFailed"));
+    } finally {
       setLoading(false);
     }
   }
 
   async function emailLogin(e: React.FormEvent<HTMLFormElement>) {
     e["preventDefault"]();
-    setLoading(true);
     setError(null);
+
+    const trimmedEmail = email["trim"]();
+    if (!trimmedEmail) {
+      setError(t("emailRequired"));
+      return;
+    }
+    if (!EMAIL_RE["test"](trimmedEmail)) {
+      setError(t("emailInvalid"));
+      return;
+    }
+    if (!password) {
+      setError(t("passwordRequired"));
+      return;
+    }
+    if (password["length"] < 8) {
+      setError(t("passwordTooShort"));
+      return;
+    }
+
+    setLoading(true);
     try {
       const result = await signIn("credentials", {
-        email,
+        email: trimmedEmail,
         password,
         redirect: false,
       });
@@ -98,11 +120,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e["target"]["value"])}
               />
             </div>
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
-                <span>{t("rememberMe")}</span>
-              </label>
+            <div className="flex items-center justify-end">
               <Link href="/forgot-password" className="text-sm text-primary hover:underline">
                 {t("forgotPassword")}
               </Link>

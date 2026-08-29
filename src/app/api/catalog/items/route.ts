@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { createCatalogItem, getCatalogItems, duplicateCatalogItem, toggleCatalogItemFavorite } from "@/lib/actions/catalog";
 import { isMissingColumnError } from "@/lib/org";
 
@@ -7,6 +9,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
     const url = new URL(req["url"]);
     const params: Record<string, any> = {};
     if (url["searchParams"]["get"]("search")) params["search"] = url["searchParams"]["get"]("search")!;
@@ -26,6 +32,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await req["json"]();
     const item = await createCatalogItem({
       name: body["name"],
