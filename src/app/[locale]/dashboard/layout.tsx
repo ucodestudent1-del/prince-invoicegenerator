@@ -73,6 +73,12 @@ export default async function DashboardLayout({
     throw err;
   }
 
+  if (user && !user["emailVerified"]) {
+    const locale = await getLocaleSafe();
+    redirect({ href: "/verify-email?sent=1", locale });
+    return null;
+  }
+
   if (!org) {
     const locale = await getLocaleSafe();
     let onboardingState;

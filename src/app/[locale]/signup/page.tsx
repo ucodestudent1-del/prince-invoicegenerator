@@ -63,7 +63,7 @@ export default function SignupPage() {
           setLoading(false);
           return;
         }
-        router["push"](getPathnameWithLocale({ href: "/onboarding", locale }));
+        router["push"](getPathnameWithLocale({ href: "/verify-email?sent=1", locale }));
       }
     } catch (err: any) {
       setError(err?.["message"] || t("unexpectedError"));

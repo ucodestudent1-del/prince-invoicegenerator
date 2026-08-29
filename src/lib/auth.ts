@@ -101,14 +101,16 @@ export const authOptions: NextAuthOptions = {
         let organizationId: string | null = null;
         let role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER" = "OWNER";
         let userLocale: string | null = null;
+        let emailVerified: Date | null = null;
         try {
           const dbUser = await db["user"]["findUnique"]({
             where: { id: user["id"] },
-            select: { organizationId: true, role: true, locale: true },
+            select: { organizationId: true, role: true, locale: true, emailVerified: true },
           });
           organizationId = dbUser?.["organizationId"] ?? null;
           role = dbUser?.["role"] ?? "OWNER";
           userLocale = dbUser?.["locale"] ?? null;
+          emailVerified = dbUser?.["emailVerified"] ?? null;
         } catch (err) {
           if (isMissingColumnError(err)) {
             try {
@@ -127,6 +129,7 @@ export const authOptions: NextAuthOptions = {
         session["user"]["organizationId"] = organizationId;
         session["user"]["role"] = role;
         session["user"]["locale"] = userLocale;
+        session["user"]["emailVerified"] = emailVerified;
       }
       return { ...session, appName: APP_NAME };
     },
@@ -169,6 +172,7 @@ declare module "next-auth" {
       organizationId: string | null;
       role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
       locale: string | null;
+      emailVerified: Date | null;
     } & DefaultSession["user"];
   }
 

@@ -20,6 +20,7 @@ type AppUser = DefaultSession["user"] & {
   id: string;
   organizationId: string | null;
   role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
+  emailVerified: Date | null;
 };
 
 export async function getCurrentUser(): Promise<AppUser | null> {
