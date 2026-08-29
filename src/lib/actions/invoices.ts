@@ -1,7 +1,7 @@
 "use server";
 
 import { db, withRetry } from "@/lib/db";
-import { requireUser, isMissingColumnError, isInvalidEnumValueError } from "@/lib/org";
+import { requireUser, isMissingColumnError, isInvalidEnumValueError, getActivePlan } from "@/lib/org";
 import { INVOICE_LIMITS } from "@/lib/plans";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextInvoiceNumber } from "@/lib/numbering";
@@ -76,22 +76,26 @@ export async function createInvoice(input: CreateInvoiceInput) {
       actionError("At least one line item with a description, quantity, and unit price is required.");
     }
 
-    const limit =
-      process["env"]["NEXT_PUBLIC_UNLOCK_ALL_FEATURES"] === "true"
-        ? null
-        : INVOICE_LIMITS["FREE"];
+    const unlockAll =
+      process["env"]["NEXT_PUBLIC_UNLOCK_ALL_FEATURES"] === "true";
+    const activePlan = await getActivePlan(user);
+    const limit = unlockAll ? null : INVOICE_LIMITS[activePlan];
     if (limit !== null) {
       const startOfMonth = new Date();
       startOfMonth["setDate"](1);
       startOfMonth["setHours"](0, 0, 0, 0);
       const count = await withRetry(() =>
         db["invoice"]["count"]({
-          where: { orgId, createdAt: { gte: startOfMonth } },
+          where: {
+            orgId,
+            createdAt: { gte: startOfMonth },
+            status: { not: InvoiceStatus.DRAFT },
+          },
         })
       );
       if (count >= limit) {
         actionError(
-          `Your Free plan is limited to ${limit} invoices per month. Upgrade to create more.`
+          `Your ${activePlan} plan is limited to ${limit} invoices per month. Upgrade to create more.`
         );
       }
     }
