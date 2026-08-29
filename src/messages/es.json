@@ -114,6 +114,8 @@
   },
   "auth": {
     "signInTitle": "Iniciar sesión",
+    "email": "Correo electrónico",
+    "signIn": "Iniciar sesión",
     "googleButton": "Continuar con Google",
     "signUpTitle": "Crea tu cuenta",
     "signUpDescription": "Comienza con Prince Invoice Generator",

@@ -114,6 +114,8 @@
   },
   "auth": {
     "signInTitle": "Sign in",
+    "email": "Email",
+    "signIn": "Sign in",
     "googleButton": "Continue with Google",
     "signUpTitle": "Create your account",
     "signUpDescription": "Get started with Prince Invoice Generator",
@@ -126,7 +128,7 @@
     "creatingAccount": "Creating account…",
     "createAccount": "Create account",
     "alreadyHaveAccount": "Already have an account?",
-    "noAccount": "Don&apos;t have an account?",
+    "noAccount": "Don't have an account?",
     "signUp": "Sign up",
     "verifyEmailTitle": "Verify your email",
     "verifyEmailDescription": "We sent a verification link to your email address.",
