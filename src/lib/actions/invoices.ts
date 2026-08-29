@@ -76,7 +76,10 @@ export async function createInvoice(input: CreateInvoiceInput) {
       actionError("At least one line item with a description, quantity, and unit price is required.");
     }
 
-    const limit = INVOICE_LIMITS["FREE"];
+    const limit =
+      process["env"]["NEXT_PUBLIC_UNLOCK_ALL_FEATURES"] === "true"
+        ? null
+        : INVOICE_LIMITS["FREE"];
     if (limit !== null) {
       const startOfMonth = new Date();
       startOfMonth["setDate"](1);
