@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getTimeEntries, createManualTimeEntry } from "@/lib/actions/time-tracking";
 import { isMissingColumnError } from "@/lib/org";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function requireAuth() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+  return session;
+}
+
 export async function GET(req: NextRequest) {
   try {
+    await requireAuth();
     const url = new URL(req["url"]);
     const params: Record<string, any> = {};
     if (url["searchParams"]["get"]("userId")) params["userId"] = url["searchParams"]["get"]("userId");
@@ -35,6 +46,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    await requireAuth();
     const body = await req["json"]();
     const entry = await createManualTimeEntry({
       projectId: body["projectId"],

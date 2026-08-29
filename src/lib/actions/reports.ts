@@ -258,22 +258,45 @@ export async function getTaxesCollectedReport(year?: number) {
 
     const targetYear = year ?? new Date()["getFullYear"]();
 
-    const invoices = await db["invoice"]["findMany"]({
-      where: {
-        orgId,
-        issueDate: {
-          gte: new Date(`${targetYear}-01-01`),
-          lte: new Date(`${targetYear}-12-31T23:59:59.999Z`),
+    let invoices;
+    try {
+      invoices = await db["invoice"]["findMany"]({
+        where: {
+          orgId,
+          issueDate: {
+            gte: new Date(`${targetYear}-01-01`),
+            lte: new Date(`${targetYear}-12-31T23:59:59.999Z`),
+          },
         },
-      },
-      select: {
-        issueDate: true,
-        taxRate: true,
-        taxAmount: true,
-        currency: true,
-        status: true,
-      },
-    });
+        select: {
+          issueDate: true,
+          taxRate: true,
+          taxAmount: true,
+          currency: true,
+          status: true,
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        invoices = await db["invoice"]["findMany"]({
+          where: {
+            orgId,
+            issueDate: {
+              gte: new Date(`${targetYear}-01-01`),
+              lte: new Date(`${targetYear}-12-31T23:59:59.999Z`),
+            },
+          },
+          select: {
+            issueDate: true,
+            taxRate: true,
+            taxAmount: true,
+            status: true,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const monthlyMap: Record<string, any> = {};
     for (let m = 0; m < 12; m++) {
@@ -319,21 +342,48 @@ export async function getCustomerAnalytics() {
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
-    const customers = await db["customer"]["findMany"]({
-      where: { orgId },
-      include: {
-        invoices: {
-          select: {
-            total: true,
-            amountPaid: true,
-            taxAmount: true,
-            createdAt: true,
-            number: true,
+    let customers;
+    try {
+      customers = await db["customer"]["findMany"]({
+        where: { orgId },
+        include: {
+          invoices: {
+            select: {
+              total: true,
+              amountPaid: true,
+              taxAmount: true,
+              createdAt: true,
+              number: true,
+            },
           },
         },
-      },
-      orderBy: { name: "asc" },
-    });
+        orderBy: { name: "asc" },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        customers = await db["customer"]["findMany"]({
+          where: { orgId },
+          select: {
+            id: true,
+            name: true,
+            company: true,
+            email: true,
+            invoices: {
+              select: {
+                total: true,
+                amountPaid: true,
+                taxAmount: true,
+                createdAt: true,
+                number: true,
+              },
+            },
+          },
+          orderBy: { name: "asc" },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const analytics = customers["map"]((c) => {
       const invoiceCount = c["invoices"]["length"];

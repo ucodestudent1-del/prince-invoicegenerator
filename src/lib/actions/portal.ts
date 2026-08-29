@@ -275,8 +275,10 @@ export async function getPortalDashboard(token: string) {
 
     const customer = session["customer"];
 
-    const [invoices, payments] = await Promise["all"](
-      [
+    let invoices: any[] = [];
+    let payments: any[] = [];
+    try {
+      [invoices, payments] = await Promise["all"]([
         db["invoice"]["findMany"]({
           where: { customerId: customer["id"], orgId: customer["orgId"] },
           select: {
@@ -304,8 +306,39 @@ export async function getPortalDashboard(token: string) {
           orderBy: { createdAt: "desc" },
           take: 50,
         }),
-      ]
-    );
+      ]);
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        [invoices, payments] = await Promise["all"]([
+          db["invoice"]["findMany"]({
+            where: { customerId: customer["id"], orgId: customer["orgId"] },
+            select: {
+              id: true,
+              number: true,
+              status: true,
+              total: true,
+              amountPaid: true,
+            },
+            orderBy: { createdAt: "desc" },
+            take: 50,
+          }),
+          db["payment"]["findMany"]({
+            where: { invoice: { customerId: customer["id"], orgId: customer["orgId"] } },
+            select: {
+              id: true,
+              amount: true,
+              method: true,
+              status: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: "desc" },
+            take: 50,
+          }),
+        ]);
+      } else {
+        throw err;
+      }
+    }
 
     // v2 columns (outstandingBalance, totalInvoiced, totalPaid) may not exist
     // if the client portal migration hasn't been applied to the database

@@ -78,11 +78,16 @@ export default function SignupPage() {
       });
 
       if (result["success"]) {
-        await signIn("credentials", {
+        const signInResult = await signIn("credentials", {
           email,
           password: passwordValue,
           redirect: false,
         });
+        if (signInResult?.error) {
+          setError(t("invalidCredentials"));
+          setLoading(false);
+          return;
+        }
         router["push"](getPathnameWithLocale({ href: "/onboarding", locale }));
       }
     } catch (err: any) {

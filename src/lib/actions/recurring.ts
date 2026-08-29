@@ -662,12 +662,26 @@ export async function getRecurringConfigs() {
     const configIds = configs["map"]((c) => c["lastInvoiceId"])["filter"](Boolean) as string[];
     const invoices: Record<string, any> = {};
     if (configIds["length"] > 0) {
-      const lastInvoices = await db["invoice"]["findMany"]({
-        where: { id: { in: configIds } },
-        select: { id: true, number: true, status: true, total: true, issueDate: true },
-      });
-      for (const inv of lastInvoices) {
-        invoices[inv["id"]] = inv;
+      try {
+        const lastInvoices = await db["invoice"]["findMany"]({
+          where: { id: { in: configIds } },
+          select: { id: true, number: true, status: true, total: true, issueDate: true },
+        });
+        for (const inv of lastInvoices) {
+          invoices[inv["id"]] = inv;
+        }
+      } catch (err) {
+        if (isMissingColumnError(err)) {
+          const fallbackInvoices = await db["invoice"]["findMany"]({
+            where: { id: { in: configIds } },
+            select: { id: true, number: true, status: true, total: true },
+          });
+          for (const inv of fallbackInvoices) {
+            invoices[inv["id"]] = inv;
+          }
+        } else {
+          throw err;
+        }
       }
     }
 
@@ -697,12 +711,7 @@ export async function toggleRecurringConfig(id: string, active: boolean) {
 
 export async function getRecurringConfig(id: string) {
   return withActionError("getRecurringConfig", async () => {
-    let user;
-    try {
-      user = await requireUser();
-    } catch {
-      return;
-    }
+    const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
@@ -888,18 +897,18 @@ export async function linkInvoiceToRecurring(invoiceId: string, configId: string
         data: { recurringConfigId: configId },
         select: { id: true },
       });
+
+      await db["recurringInvoiceConfig"]["update"]({
+        where: { id: configId, orgId: user["organizationId"] },
+        data: { lastInvoiceId: invoiceId },
+        select: { id: true },
+      });
     } catch (err) {
       if (isMissingColumnError(err)) {
         actionError("Recurring invoice linking is not available on your current database schema. Please run pending migrations.");
       }
       throw err;
     }
-
-    await db["recurringInvoiceConfig"]["update"]({
-      where: { id: configId, orgId: user["organizationId"] },
-      data: { lastInvoiceId: invoiceId },
-      select: { id: true },
-    });
 
     await revalidateWithLocale("/dashboard/recurring");
   });

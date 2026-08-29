@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getTimeEntry, updateTimeEntry, deleteTimeEntry, approveTimeEntries, setTimeEntryInvoice, getTimeEntriesForInvoice } from "@/lib/actions/time-tracking";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const url = new URL(req["url"]);
-  const action = url["searchParams"]["get"]("action");
+async function requireAuth() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+  return session;
+}
 
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    await requireAuth();
+    const url = new URL(req["url"]);
+    const action = url["searchParams"]["get"]("action");
+
     if (action === "for-invoice") {
       const query: Record<string, any> = {};
       if (url["searchParams"]["get"]("userId")) query["userId"] = url["searchParams"]["get"]("userId");
@@ -28,6 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    await requireAuth();
     const body = await req["json"]();
     const action = body["action"];
 
@@ -60,6 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    await requireAuth();
     const result = await deleteTimeEntry(params["id"]);
     return NextResponse["json"](result);
   } catch (err: any) {

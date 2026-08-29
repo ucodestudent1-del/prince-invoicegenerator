@@ -105,7 +105,14 @@ async function alreadySentForStage(invoiceId: string, stageId: string | null, ty
     return count > 0;
   } catch (err) {
     if (isMissingColumnError(err)) {
-      // Fallback: check type only
+      const fallbackCount = await db["reminder"]["count"]({
+        where: {
+          invoiceId,
+          status: { in: ["SENT", "DELIVERED", "QUEUED"] },
+          type,
+        },
+      });
+      return fallbackCount > 0;
     }
     return false;
   }

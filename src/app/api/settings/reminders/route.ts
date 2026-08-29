@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getReminderConfig, saveReminderConfig, getReminders, type ReminderStageInput } from "@/lib/actions/invoices";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function requireAuth() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+  return session;
+}
+
 export async function GET(req: NextRequest) {
   try {
+    await requireAuth();
     const url = new URL(req["url"]);
     const invoiceId = url["searchParams"]["get"]("invoiceId");
 
@@ -23,6 +34,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    await requireAuth();
     const body = await req["json"]();
 
     const stages: ReminderStageInput[] = (body["stages"] || [])["map"]((s: any) => ({

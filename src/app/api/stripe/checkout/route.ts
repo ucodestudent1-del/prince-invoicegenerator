@@ -28,10 +28,10 @@ export async function POST(req: NextRequest) {
   try {
     const { plan } = await req["json"]();
     const planDef = getPlan(plan);
-    const priceId = planDef["stripePriceId"];
-    if (!priceId) {
+    if (!planDef || !planDef["stripePriceId"]) {
       return NextResponse["json"]({ error: "Invalid plan" }, { status: 400 });
     }
+    const priceId = planDef["stripePriceId"];
 
     const appUrl = process["env"]["NEXT_PUBLIC_APP_URL"];
     if (!appUrl) {
