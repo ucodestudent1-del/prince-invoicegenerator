@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { createAddress, getCustomerAddresses } from "@/lib/actions/addresses";
 
 export const runtime = "nodejs";
@@ -12,6 +13,7 @@ export async function GET(req: NextRequest) {
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const url = new URL(req["url"]);
     const customerId = url["searchParams"]["get"]("customerId");
     if (!customerId) {
@@ -20,7 +22,7 @@ export async function GET(req: NextRequest) {
     const addresses = await getCustomerAddresses(customerId);
     return NextResponse["json"](addresses);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -30,6 +32,7 @@ export async function POST(req: NextRequest) {
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const body = await req["json"]();
     const address = await createAddress({
       customerId: body["customerId"],
@@ -45,6 +48,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse["json"](address);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

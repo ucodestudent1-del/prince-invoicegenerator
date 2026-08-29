@@ -8,6 +8,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST() {
   const user = await requireUser();
+  if (!user["emailVerified"]) {
+    return NextResponse["json"]({ error: "Email verification required" }, { status: 403 });
+  }
   if (!user["organizationId"]) {
     return NextResponse["json"]({ error: "No organization" }, { status: 400 });
   }

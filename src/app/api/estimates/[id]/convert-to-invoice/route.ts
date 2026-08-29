@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { convertEstimateToInvoice } from "@/lib/actions/estimates";
 
 export const runtime = "nodejs";
@@ -12,6 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const body = await req["json"]();
     const result = await convertEstimateToInvoice(params["id"], {
       dueDate: body["dueDate"],
@@ -20,6 +22,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     });
     return NextResponse["json"](result);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

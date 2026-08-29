@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { getReminderConfig, saveReminderConfig, getReminders, type ReminderStageInput } from "@/lib/actions/invoices";
 
 export const runtime = "nodejs";
@@ -11,6 +12,7 @@ async function requireAuth() {
   if (!session?.user) {
     throw new Error("Unauthorized");
   }
+  await ensureVerified();
   return session;
 }
 
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
     const config = await getReminderConfig();
     return NextResponse["json"](config);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -62,6 +64,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse["json"](config);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

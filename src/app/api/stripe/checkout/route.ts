@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { db } from "@/lib/db";
 import { getPlan } from "@/lib/plans";
 import { rateLimit } from "@/lib/rate-limit";
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
   if (!authSession?.["user"]) {
     return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
   }
+  await ensureVerified();
   const user = authSession["user"];
   if (!user["organizationId"]) {
     return NextResponse["json"]({ error: "No organization" }, { status: 400 });
@@ -79,6 +81,9 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     logError("stripe-checkout", err);
     const message = err?.["message"] || "Checkout failed";
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: "Email verification required" }, { status: 403 });
+    }
     const status = err?.["statusCode"] === 400 ? 400 : 500;
     return NextResponse["json"]({ error: message }, { status });
   }

@@ -24,6 +24,8 @@ export default function SignupPage() {
   const [password, setPassword] = React["useState"]("");
   const [terms, setTerms] = React["useState"](false);
   const [marketing, setMarketing] = React["useState"](false);
+  const [confirmPassword, setConfirmPassword] = React["useState"]("");
+  const [confirmError, setConfirmError] = React["useState"]<string | null>(null);
 
   const strength = getPasswordStrength(password);
 
@@ -31,11 +33,19 @@ export default function SignupPage() {
     e["preventDefault"]();
     setLoading(true);
     setError(null);
+    setConfirmError(null);
 
     const fd = new FormData(e["currentTarget"]);
     const name = String(fd["get"]("name") || "")["trim"]();
     const email = String(fd["get"]("email") || "")["trim"]();
     const passwordValue = String(fd["get"]("password") || "");
+    const confirmPasswordValue = String(fd["get"]("confirmPassword") || "");
+
+    if (passwordValue !== confirmPasswordValue) {
+      setConfirmError(t("passwordMismatch"));
+      setLoading(false);
+      return;
+    }
 
     if (!terms) {
       setError("You must accept the terms and conditions.");
@@ -128,6 +138,26 @@ export default function SignupPage() {
                     </span>
                   </div>
                 </div>
+              )}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="confirmPassword">{t("confirmPassword")} *</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                minLength={8}
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e["target"]["value"]);
+                  if (confirmError && e["target"]["value"] === password) {
+                    setConfirmError(null);
+                  }
+                }}
+              />
+              {confirmError && (
+                <p className="text-xs text-destructive">{confirmError}</p>
               )}
             </div>
             <div className="flex items-start gap-2">

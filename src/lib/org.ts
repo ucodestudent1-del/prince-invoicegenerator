@@ -43,6 +43,30 @@ export async function requireUser(): Promise<AppUser> {
   return user;
 }
 
+// Thrown by API-route guards when an authenticated session has not verified email.
+export class EmailVerificationError extends Error {
+  status = 403;
+  constructor() {
+    super("Email verification required");
+    this.name = "EmailVerificationError";
+  }
+}
+
+// API-route guard: resolves the current verified user, or throws.
+// - Unauthenticated -> throws (routes still issue their own 401 via the session check)
+// - Authenticated but unverified -> throws EmailVerificationError (routes return 403)
+// Call it after the route's own `if (!session?.user) return 401` check.
+export async function ensureVerified(): Promise<AppUser> {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+  if (!user["emailVerified"]) {
+    throw new EmailVerificationError();
+  }
+  return user;
+}
+
 // Each user belongs to an Organization. Owners get one auto-created on first use.
 export async function ensureOrganization(userId: string) {
   try {

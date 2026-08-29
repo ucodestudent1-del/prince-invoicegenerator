@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { deleteOrganization } from "@/lib/actions/data";
 
 export const runtime = "nodejs";
@@ -13,9 +14,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    await ensureVerified();
     const result = await deleteOrganization();
     return NextResponse["json"]({ success: true, ...result });
   } catch (error: any) {
+    if (error && error["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: error["message"] }, { status: 403 });
+    }
     return NextResponse["json"](
       { success: false, error: error["message"] || "Failed to delete organization" },
       { status: 500 }

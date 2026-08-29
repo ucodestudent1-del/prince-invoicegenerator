@@ -10,6 +10,9 @@ const MAX_SIZE = 5 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   const user = await requireUser();
+  if (!user["emailVerified"]) {
+    return NextResponse["json"]({ error: "Email verification required" }, { status: 403 });
+  }
   if (!user.organizationId) {
     return NextResponse.json({ error: "No organization" }, { status: 400 });
   }

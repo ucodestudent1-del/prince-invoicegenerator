@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { getLateFeeConfig, saveLateFeeConfig } from "@/lib/actions/late-fees";
 
 export const runtime = "nodejs";
@@ -12,10 +13,11 @@ export async function GET() {
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const config = await getLateFeeConfig();
     return NextResponse["json"](config);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -25,6 +27,7 @@ export async function POST(req: NextRequest) {
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const body = await req["json"]();
     const config = await saveLateFeeConfig({
       enabled: body["enabled"] ?? false,
@@ -35,6 +38,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse["json"](config);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

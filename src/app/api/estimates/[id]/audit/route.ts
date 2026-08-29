@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { getEstimateAuditLogs } from "@/lib/actions/estimates";
 
 export const runtime = "nodejs";
@@ -12,9 +13,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const logs = await getEstimateAuditLogs(params["id"]);
     return NextResponse["json"](logs);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

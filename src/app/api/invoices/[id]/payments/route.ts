@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { getInvoicePayments } from "@/lib/actions/invoices";
 
 export const runtime = "nodejs";
@@ -12,9 +13,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const payments = await getInvoicePayments(params["id"]);
     return NextResponse["json"](payments);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

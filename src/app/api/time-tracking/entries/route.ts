@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getTimeEntries, createManualTimeEntry } from "@/lib/actions/time-tracking";
-import { isMissingColumnError } from "@/lib/org";
+import { isMissingColumnError, ensureVerified } from "@/lib/org";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +12,7 @@ async function requireAuth() {
   if (!session?.user) {
     throw new Error("Unauthorized");
   }
+  await ensureVerified();
   return session;
 }
 
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
     if (isMissingColumnError(err)) {
       return NextResponse["json"]([], { status: 200 });
     }
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -62,6 +63,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse["json"](entry, { status: 201 });
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { getRevenueReport } from "@/lib/actions/reports";
 
 export const runtime = "nodejs";
@@ -12,11 +13,12 @@ export async function GET(req: NextRequest) {
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const url = new URL(req["url"]);
     const year = url["searchParams"]["get"]("year") ? Number(url["searchParams"]["get"]("year")) : undefined;
     const report = await getRevenueReport(year);
     return NextResponse["json"](report);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

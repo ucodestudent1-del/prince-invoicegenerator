@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { getCatalogItem, updateCatalogItem, deleteCatalogItem } from "@/lib/actions/catalog";
 
 export const runtime = "nodejs";
@@ -12,10 +13,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const item = await getCatalogItem(params["id"]);
     return NextResponse["json"](item);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -25,6 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const body = await req["json"]();
     const item = await updateCatalogItem(params["id"], {
       name: body["name"],
@@ -39,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     });
     return NextResponse["json"](item);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -49,9 +52,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const result = await deleteCatalogItem(params["id"]);
     return NextResponse["json"](result);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

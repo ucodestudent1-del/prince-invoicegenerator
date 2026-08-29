@@ -120,6 +120,10 @@ export const authOptions: NextAuthOptions = {
               });
               organizationId = dbUser?.["organizationId"] ?? null;
               role = dbUser?.["role"] ?? "OWNER";
+              // Fail open: if the emailVerified column is missing (schema
+              // drift), treat the user as verified so the dashboard gate can
+              // never hard-lock the entire app.
+              emailVerified = new Date();
              } catch (fallbackErr) {
               logServerError("auth session callback (fallback query)", fallbackErr);
             }

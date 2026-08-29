@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createCatalogItem, getCatalogItems, duplicateCatalogItem, toggleCatalogItemFavorite } from "@/lib/actions/catalog";
-import { isMissingColumnError } from "@/lib/org";
+import { isMissingColumnError, ensureVerified } from "@/lib/org";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const url = new URL(req["url"]);
     const params: Record<string, any> = {};
     if (url["searchParams"]["get"]("search")) params["search"] = url["searchParams"]["get"]("search")!;
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
     if (isMissingColumnError(err)) {
       return NextResponse["json"]([], { status: 200 });
     }
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const body = await req["json"]();
     const item = await createCatalogItem({
       name: body["name"],
@@ -49,6 +51,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse["json"](item, { status: 201 });
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

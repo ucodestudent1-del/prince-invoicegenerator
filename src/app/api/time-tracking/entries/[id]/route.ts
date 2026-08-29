@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import { getTimeEntry, updateTimeEntry, deleteTimeEntry, approveTimeEntries, setTimeEntryInvoice, getTimeEntriesForInvoice } from "@/lib/actions/time-tracking";
 
 export const runtime = "nodejs";
@@ -11,6 +12,7 @@ async function requireAuth() {
   if (!session?.user) {
     throw new Error("Unauthorized");
   }
+  await ensureVerified();
   return session;
 }
 
@@ -33,7 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const entry = await getTimeEntry(params["id"]);
     return NextResponse["json"](entry);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -66,7 +68,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     });
     return NextResponse["json"](entry);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -76,6 +78,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     const result = await deleteTimeEntry(params["id"]);
     return NextResponse["json"](result);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }

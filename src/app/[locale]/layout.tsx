@@ -14,6 +14,13 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isMissingColumnError, ensureEnv } from "@/lib/org";
 
+// This layout reads cookies(), the session, and the database via
+// getInitialTheme(), so it must render dynamically per request. Without this,
+// Next attempts to statically generate/cache child routes (home, login, signup,
+// pricing, etc.) and the cookies()/session access during the cached render
+// throws "You reached the start of the range" (see doRender -> responseCache).
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: {
     default: "Prince — Construction Invoice Generator",

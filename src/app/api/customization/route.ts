@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ensureVerified } from "@/lib/org";
 import {
   saveThemeSettings,
   getThemeSettings,
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const url = new URL(req["url"]);
     const key = url["searchParams"]["get"]("key");
 
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
         return NextResponse["json"]({ error: "Invalid key" }, { status: 400 });
     }
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
 
@@ -47,6 +49,7 @@ export async function POST(req: NextRequest) {
     if (!session?.user) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
+    await ensureVerified();
     const body = await req["json"]();
     const key = body["key"];
 
@@ -69,6 +72,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse["json"]({ success: true });
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
   }
 }
