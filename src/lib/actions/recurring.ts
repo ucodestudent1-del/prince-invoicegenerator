@@ -738,7 +738,7 @@ export async function getRecurringConfig(id: string) {
             lastInvoiceId: true,
             createdAt: true,
             updatedAt: true,
-            customer: true,
+            customer: { select: { id: true, name: true, email: true, company: true } },
           },
         });
       } else {

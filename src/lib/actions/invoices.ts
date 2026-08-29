@@ -569,7 +569,7 @@ export async function sendReminder(invoiceId: string) {
             currency: true,
             issueDate: true,
             dueDate: true,
-            customer: true,
+            customer: { select: { id: true, name: true, email: true, company: true } },
           },
         });
         config = await db["reminderConfig"]["findUnique"]({ where: { orgId } });

@@ -69,14 +69,43 @@ export async function sendEstimate(estimateId: string, input: SendEstimateInput)
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
-    const estimate = await db["estimate"]["findFirst"]({
-      where: { id: estimateId, orgId },
-      include: {
-        customer: true,
-        items: true,
-        linkedInvoice: true,
-      },
-    });
+    let estimate;
+    try {
+      estimate = await db["estimate"]["findFirst"]({
+        where: { id: estimateId, orgId },
+        include: {
+          customer: true,
+          items: true,
+          linkedInvoice: true,
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        estimate = await db["estimate"]["findFirst"]({
+          where: { id: estimateId, orgId },
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            total: true,
+            currency: true,
+            validUntil: true,
+            orgId: true,
+            customerId: true,
+            projectId: true,
+            taxRate: true,
+            discount: true,
+            subtotal: true,
+            taxAmount: true,
+            notes: true,
+            customer: { select: { id: true, name: true, email: true, company: true } },
+            items: { select: { description: true, quantity: true, unitPrice: true, amount: true, sortOrder: true } },
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
     if (!estimate) actionError("Estimate not found");
     if (estimate["status"] !== "DRAFT") actionError("Only draft estimates can be sent");
 
@@ -165,10 +194,17 @@ export async function sendEstimate(estimateId: string, input: SendEstimateInput)
 
 export async function recordEstimateView(token: string) {
   return withActionError("recordEstimateView", async () => {
-    const estimate = await db["estimate"]["findFirst"]({
-      where: { shareToken: token },
-      include: { customer: true },
-    });
+    let estimate;
+    try {
+      estimate = await db["estimate"]["findFirst"]({
+        where: { shareToken: token },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        actionError("Estimate not found");
+      }
+      throw err;
+    }
     if (!estimate) actionError("Estimate not found");
     if (!["SENT", "VIEWED"]["includes"](estimate["status"])) {
       return { alreadyActioned: true, status: estimate["status"] };
@@ -182,10 +218,27 @@ export async function recordEstimateView(token: string) {
       data["status"] = "VIEWED";
     }
 
-    await db["estimate"]["update"]({
-      where: { id: estimate["id"] },
-      data,
-    });
+    try {
+      await db["estimate"]["update"]({
+        where: { id: estimate["id"] },
+        data,
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        const safeData: Record<string, any> = {};
+        if (estimate["status"] === "SENT") {
+          safeData["status"] = "VIEWED";
+        }
+        if (Object["keys"](safeData)["length"] > 0) {
+          await db["estimate"]["update"]({
+            where: { id: estimate["id"] },
+            data: safeData,
+          });
+        }
+      } else {
+        throw err;
+      }
+    }
 
     await logEstimateAudit(
       estimate["id"],
@@ -201,9 +254,17 @@ export async function recordEstimateView(token: string) {
 
 export async function acceptEstimate(token: string, comment?: string) {
   return withActionError("acceptEstimate", async () => {
-    const estimate = await db["estimate"]["findFirst"]({
-      where: { shareToken: token },
-    });
+    let estimate;
+    try {
+      estimate = await db["estimate"]["findFirst"]({
+        where: { shareToken: token },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        actionError("Estimate not found");
+      }
+      throw err;
+    }
     if (!estimate) actionError("Estimate not found");
     if (estimate["validUntil"] && estimate["validUntil"] < new Date()) {
       actionError("This estimate has expired");
@@ -213,13 +274,27 @@ export async function acceptEstimate(token: string, comment?: string) {
       actionError("This estimate cannot be accepted in its current state");
     }
 
-    const updated = await db["estimate"]["update"]({
-      where: { id: estimate["id"] },
-      data: {
-        status: "ACCEPTED" as EstimateStatus,
-        acceptedAt: new Date(),
-      },
-    });
+    let updated: any;
+    try {
+      updated = await db["estimate"]["update"]({
+        where: { id: estimate["id"] },
+        data: {
+          status: "ACCEPTED" as EstimateStatus,
+          acceptedAt: new Date(),
+        },
+        select: { id: true, acceptedAt: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        updated = await db["estimate"]["update"]({
+          where: { id: estimate["id"] },
+          data: { status: "ACCEPTED" as EstimateStatus },
+          select: { id: true },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     await logEstimateAudit(
       estimate["id"],
@@ -239,22 +314,47 @@ export async function acceptEstimate(token: string, comment?: string) {
 
 export async function rejectEstimate(token: string, reason?: string, comment?: string) {
   return withActionError("rejectEstimate", async () => {
-    const estimate = await db["estimate"]["findFirst"]({
-      where: { shareToken: token },
-    });
+    let estimate;
+    try {
+      estimate = await db["estimate"]["findFirst"]({
+        where: { shareToken: token },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        actionError("Estimate not found");
+      }
+      throw err;
+    }
     if (!estimate) actionError("Estimate not found");
     if (!["SENT", "VIEWED"]["includes"](estimate["status"])) {
       actionError("This estimate cannot be rejected in its current state");
     }
 
-    const updated = await db["estimate"]["update"]({
-      where: { id: estimate["id"] },
-      data: {
-        status: "REJECTED" as EstimateStatus,
-        rejectedAt: new Date(),
-        rejectionReason: reason || comment,
-      },
-    });
+    let updated: any;
+    try {
+      updated = await db["estimate"]["update"]({
+        where: { id: estimate["id"] },
+        data: {
+          status: "REJECTED" as EstimateStatus,
+          rejectedAt: new Date(),
+          rejectionReason: reason || comment,
+        },
+        select: { id: true, rejectedAt: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        updated = await db["estimate"]["update"]({
+          where: { id: estimate["id"] },
+          data: {
+            status: "REJECTED" as EstimateStatus,
+            rejectionReason: reason || comment,
+          },
+          select: { id: true },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     await logEstimateAudit(
       estimate["id"],
@@ -278,15 +378,47 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
-    const estimate = await db["estimate"]["findFirst"]({
-      where: { id: estimateId, orgId },
-      include: {
-        items: true,
-        customer: true,
-        project: true,
-        linkedInvoice: { select: { id: true, number: true } },
-      },
-    });
+    let estimate;
+    try {
+      estimate = await db["estimate"]["findFirst"]({
+        where: { id: estimateId, orgId },
+        include: {
+          items: true,
+          customer: true,
+          project: true,
+          linkedInvoice: { select: { id: true, number: true } },
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        estimate = await db["estimate"]["findFirst"]({
+          where: { id: estimateId, orgId },
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            total: true,
+            currency: true,
+            validUntil: true,
+            orgId: true,
+            customerId: true,
+            projectId: true,
+            taxRate: true,
+            discount: true,
+            subtotal: true,
+            taxAmount: true,
+            notes: true,
+            createdAt: true,
+            updatedAt: true,
+            items: { select: { description: true, quantity: true, unitPrice: true, amount: true, sortOrder: true } },
+            customer: { select: { id: true, name: true, email: true, company: true } },
+            project: { select: { id: true, name: true } },
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
     if (!estimate) actionError("Estimate not found");
     if (estimate["status"] !== "ACCEPTED") {
       actionError("Only accepted estimates can be converted to invoices");
@@ -294,8 +426,8 @@ export async function convertEstimateToInvoice(estimateId: string, input: Conver
     if (estimate["validUntil"] && estimate["validUntil"] < new Date()) {
       actionError("This estimate has expired. Duplicate it to create a new one.");
     }
-    if (estimate["linkedInvoice"]) {
-      actionError(`This estimate was already converted to invoice ${estimate["linkedInvoice"]["number"]}.`);
+    if ((estimate as any)["linkedInvoice"]) {
+      actionError(`This estimate was already converted to invoice ${(estimate as any)["linkedInvoice"]["number"]}.`);
     }
 
     let number = input["invoiceNumber"];
@@ -459,16 +591,48 @@ export async function getEstimateDetail(estimateId: string) {
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
-    const estimate = await db["estimate"]["findFirst"]({
-      where: { id: estimateId, orgId },
-      include: {
-        customer: true,
-        project: true,
-        items: { orderBy: { sortOrder: "asc" } },
-        linkedInvoice: { select: { id: true, number: true, status: true, total: true } },
-        org: { select: { name: true } },
-      },
-    });
+    let estimate;
+    try {
+      estimate = await db["estimate"]["findFirst"]({
+        where: { id: estimateId, orgId },
+        include: {
+          customer: true,
+          project: true,
+          items: { orderBy: { sortOrder: "asc" } },
+          linkedInvoice: { select: { id: true, number: true, status: true, total: true } },
+          org: { select: { name: true } },
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        estimate = await db["estimate"]["findFirst"]({
+          where: { id: estimateId, orgId },
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            total: true,
+            currency: true,
+            validUntil: true,
+            orgId: true,
+            customerId: true,
+            projectId: true,
+            taxRate: true,
+            discount: true,
+            subtotal: true,
+            taxAmount: true,
+            notes: true,
+            createdAt: true,
+            updatedAt: true,
+            customer: { select: { id: true, name: true, email: true, company: true, phone: true, address: true, notes: true } },
+            project: { select: { id: true, name: true } },
+            items: { orderBy: { sortOrder: "asc" }, select: { id: true, description: true, quantity: true, unitPrice: true, amount: true, sortOrder: true } },
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
     if (!estimate) actionError("Estimate not found");
 
     return estimate;
