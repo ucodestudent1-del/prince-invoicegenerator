@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createCatalogItem, getCatalogItems, duplicateCatalogItem, toggleCatalogItemFavorite } from "@/lib/actions/catalog";
 import { isMissingColumnError, ensureVerified } from "@/lib/org";
 import { checkRateLimit } from "@/lib/action-rate-limit";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,7 +29,14 @@ export async function GET(req: NextRequest) {
     if (isMissingColumnError(err)) {
       return NextResponse["json"]([], { status: 200 });
     }
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
 
@@ -40,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
     await ensureVerified();
 
-    if (!checkRateLimit(`api:catalog:${session.user.email}`, 30, 60 * 1000)) {
+    if (!(await checkRateLimit(`api:catalog:${session.user.email}`, 30, 60 * 1000))) {
       return NextResponse["json"]({ error: "Too many requests. Please try again later." }, { status: 429 });
     }
 
@@ -57,6 +65,14 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse["json"](item, { status: 201 });
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
+

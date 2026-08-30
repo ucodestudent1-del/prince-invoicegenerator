@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureVerified } from "@/lib/org";
 import { exportInvoices } from "@/lib/actions/reports";
+import { auditContextFromRequest, recordAudit } from "@/lib/audit";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +20,19 @@ export async function GET(req: NextRequest) {
     const formatParam = url["searchParams"]["get"]("format") || "csv";
     const format = formatParam === "xlsx" ? "xlsx" : "csv";
     const result = await exportInvoices(format);
+
+    // Bulk data egress is a compliance-relevant event (Plan 2.4).
+    await recordAudit({
+      category: "DATA",
+      action: "DATA_EXPORTED",
+      orgId: session["user"]["organizationId"],
+      actorId: session["user"]["id"],
+      actorEmail: session["user"]["email"],
+      actorRole: session["user"]["role"],
+      targetType: "Invoice",
+      metadata: { format, filename: result["filename"] },
+      ...auditContextFromRequest(req),
+    });
 
     if (format === "csv") {
       return new NextResponse(result["content"], {
@@ -36,6 +51,14 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
+

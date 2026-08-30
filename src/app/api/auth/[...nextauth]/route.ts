@@ -96,7 +96,7 @@ export async function GET(
   if (preflight) return preflight;
 
   try {
-    const limit = rateLimit(request);
+    const limit = await rateLimit(request);
     if (!limit["ok"]) {
       return NextResponse["json"]({ error: "Too many requests" }, { status: 429 });
     }
@@ -117,7 +117,7 @@ export async function POST(
   if (preflight) return preflight;
 
   try {
-    const limit = rateLimit(request);
+    const limit = await rateLimit(request);
     if (!limit["ok"]) {
       return NextResponse["json"]({ error: "Too many requests" }, { status: 429 });
     }

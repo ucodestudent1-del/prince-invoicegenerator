@@ -313,6 +313,7 @@
     "standard": "Estándar",
     "progress": "Progreso (estilo AIA)",
     "recurring": "Recurrente",
+    "expense": "Gasto",
     "invoiceName": "Nombre / número de factura",
     "invoiceNamePlaceholder": "ej. FAC-001 o nombre personalizado",
     "issueDate": "Fecha de emisión",
@@ -369,6 +370,7 @@
       "standard": "Estándar",
       "progress": "Progreso (estilo AIA)",
       "recurring": "Recurrente",
+      "expense": "Gasto",
       "invoice": "Factura"
     }
   },

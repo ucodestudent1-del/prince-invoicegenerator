@@ -208,7 +208,7 @@ export default async function InvoicePrintPage({
           {invoice["retainageAmount"] > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-500">{t("retainage")}</span>
-              <span>{formatCurrency(invoice["retainageAmount"], invoice["currency"])}</span>
+              <span>-{formatCurrency(invoice["retainageAmount"], invoice["currency"])}</span>
             </div>
           )}
           <div className="border-t-2 pt-1 mt-1 flex justify-between text-base font-bold" style={org?.["accentColor"] ? { borderColor: org["accentColor"], color: org["accentColor"] } : undefined}>

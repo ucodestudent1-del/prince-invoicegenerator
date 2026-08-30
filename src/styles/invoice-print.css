@@ -207,6 +207,43 @@
   padding-left: 0.5rem;
 }
 
+/* Corporate/Professional template: navy and slate palette,
+   clean header with accent stripe, serif-free typography */
+.template-professional {
+  --invoice-accent: #1d4ed8;
+  --invoice-header-bg: #f1f5f9;
+  --invoice-header-border: #cbd5e1;
+  --invoice-table-border: #e2e8f0;
+  --invoice-muted-text: #64748b;
+}
+
+.template-professional .invoice-header {
+  border-bottom: 3px solid var(--invoice-accent);
+  padding-bottom: 1rem;
+}
+
+.template-professional .invoice-header .company-name {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--invoice-accent);
+}
+
+.template-professional .invoice-totals {
+  border-top: 2px solid var(--invoice-accent);
+  border-bottom: 1px solid var(--invoice-table-border);
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.template-professional .type-badge {
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* Layout variations */
 .layout-default {
   /* Full width layout */
@@ -247,6 +284,19 @@
 
 .type-badge-recurring {
   background-color: #10b981;
+}
+
+.type-badge-expense {
+  background-color: #f59e0b;
+}
+
+/* Document type badge (estimates, change orders) */
+.type-badge-estimate {
+  background-color: #06b6d4;
+}
+
+.type-badge-change-order {
+  background-color: #8b5cf6;
 }
 
 /* Invoice totals styling */

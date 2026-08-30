@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
+import { recordAudit } from "@/lib/audit";
 
 type ActionResult = { count: number };
 
@@ -13,7 +14,34 @@ async function requireOrgAdmin() {
   if (user["role"] !== "OWNER" && user["role"] !== "ADMIN") {
     actionError("Only owners and admins can manage organization data.");
   }
-  return { userId: user["id"], orgId: user["organizationId"] };
+  return {
+    userId: user["id"],
+    orgId: user["organizationId"],
+    email: user["email"] ?? null,
+    role: user["role"],
+  };
+}
+
+/**
+ * Record a destructive bulk operation in the audit trail (Plan 2.4).
+ * Bulk deletes are irreversible, so who ran them and how much they removed must
+ * be recoverable after the fact.
+ */
+async function auditBulkDelete(
+  actor: { userId: string; orgId: string; email: string | null; role: string },
+  entity: string,
+  count: number
+) {
+  await recordAudit({
+    category: "DATA",
+    action: "BULK_DELETE",
+    orgId: actor["orgId"],
+    actorId: actor["userId"],
+    actorEmail: actor["email"],
+    actorRole: actor["role"],
+    targetType: entity,
+    metadata: { entity, deletedCount: count },
+  });
 }
 
 async function revalidateOrg() {
@@ -32,13 +60,24 @@ async function revalidateOrg() {
   for (const p of paths) await revalidateWithLocale(p);
 }
 
+/** Revalidate the dashboard and append the audit entry for a bulk delete. */
+async function finishBulkDelete(
+  actor: { userId: string; orgId: string; email: string | null; role: string },
+  entity: string,
+  count: number
+) {
+  await revalidateOrg();
+  await auditBulkDelete(actor, entity, count);
+}
+
 function pluckIds(rows: { id: string }[]) {
   return rows["map"]((r) => r["id"]);
 }
 
 export async function removeAllInvoices(): Promise<ActionResult> {
   return withActionError("removeAllInvoices", async () => {
-    const { orgId } = await requireOrgAdmin();
+    const actor = await requireOrgAdmin();
+    const { orgId } = actor;
 
     const invoices = await db["invoice"]["findMany"]({
       where: { orgId },
@@ -65,14 +104,15 @@ export async function removeAllInvoices(): Promise<ActionResult> {
       await tx["invoice"]["deleteMany"]({ where: { orgId } });
     });
 
-    await revalidateOrg();
+    await finishBulkDelete(actor, "Invoice", invoiceIds["length"]);
     return { count: invoiceIds["length"] };
   });
 }
 
 export async function removeAllEstimates(): Promise<ActionResult> {
   return withActionError("removeAllEstimates", async () => {
-    const { orgId } = await requireOrgAdmin();
+    const actor = await requireOrgAdmin();
+    const { orgId } = actor;
 
     const estimates = await db["estimate"]["findMany"]({
       where: { orgId },
@@ -89,32 +129,35 @@ export async function removeAllEstimates(): Promise<ActionResult> {
       await tx["estimate"]["deleteMany"]({ where: { orgId } });
     });
 
-    await revalidateOrg();
+    await finishBulkDelete(actor, "Estimate", estimateIds["length"]);
     return { count: estimateIds["length"] };
   });
 }
 
 export async function removeAllChangeOrders(): Promise<ActionResult> {
   return withActionError("removeAllChangeOrders", async () => {
-    const { orgId } = await requireOrgAdmin();
+    const actor = await requireOrgAdmin();
+    const { orgId } = actor;
     const res = await db["changeOrder"]["deleteMany"]({ where: { orgId } });
-    await revalidateOrg();
+    await finishBulkDelete(actor, "ChangeOrder", res["count"]);
     return { count: res["count"] };
   });
 }
 
 export async function removeAllExpenses(): Promise<ActionResult> {
   return withActionError("removeAllExpenses", async () => {
-    const { orgId } = await requireOrgAdmin();
+    const actor = await requireOrgAdmin();
+    const { orgId } = actor;
     const res = await db["expense"]["deleteMany"]({ where: { orgId } });
-    await revalidateOrg();
+    await finishBulkDelete(actor, "Expense", res["count"]);
     return { count: res["count"] };
   });
 }
 
 export async function removeAllProjects(): Promise<ActionResult> {
   return withActionError("removeAllProjects", async () => {
-    const { orgId } = await requireOrgAdmin();
+    const actor = await requireOrgAdmin();
+    const { orgId } = actor;
 
     const projects = await db["project"]["findMany"]({
       where: { orgId },
@@ -132,14 +175,15 @@ export async function removeAllProjects(): Promise<ActionResult> {
       await tx["project"]["deleteMany"]({ where: { orgId } });
     });
 
-    await revalidateOrg();
+    await finishBulkDelete(actor, "Project", projectIds["length"]);
     return { count: projectIds["length"] };
   });
 }
 
 export async function removeAllSubcontractors(): Promise<ActionResult> {
   return withActionError("removeAllSubcontractors", async () => {
-    const { orgId } = await requireOrgAdmin();
+    const actor = await requireOrgAdmin();
+    const { orgId } = actor;
 
     const subs = await db["subcontractor"]["findMany"]({
       where: { orgId },
@@ -156,14 +200,15 @@ export async function removeAllSubcontractors(): Promise<ActionResult> {
       await tx["subcontractor"]["deleteMany"]({ where: { orgId } });
     });
 
-    await revalidateOrg();
+    await finishBulkDelete(actor, "Subcontractor", subIds["length"]);
     return { count: subIds["length"] };
   });
 }
 
 export async function removeAllCustomers(): Promise<ActionResult> {
   return withActionError("removeAllCustomers", async () => {
-    const { orgId } = await requireOrgAdmin();
+    const actor = await requireOrgAdmin();
+    const { orgId } = actor;
 
     const customerCount = await db["customer"]["count"]({ where: { orgId } });
 
@@ -182,28 +227,30 @@ export async function removeAllCustomers(): Promise<ActionResult> {
       await tx["customer"]["deleteMany"]({ where: { orgId } });
     });
 
-    await revalidateOrg();
+    await finishBulkDelete(actor, "Customer", customerCount);
     return { count: customerCount };
   });
 }
 
 export async function removeAllTeamMembers(): Promise<ActionResult> {
   return withActionError("removeAllTeamMembers", async () => {
-    const { orgId, userId } = await requireOrgAdmin();
+    const actor = await requireOrgAdmin();
+    const { orgId, userId } = actor;
 
     const res = await db["user"]["updateMany"]({
       where: { organizationId: orgId, id: { not: userId } },
       data: { organizationId: null },
     });
 
-    await revalidateOrg();
+    await finishBulkDelete(actor, "TeamMember", res["count"]);
     return { count: res["count"] };
   });
 }
 
 export async function deleteOrganization(): Promise<ActionResult> {
   return withActionError("deleteOrganization", async () => {
-    const { orgId, userId } = await requireOrgAdmin();
+    const actor = await requireOrgAdmin();
+    const { orgId, userId } = actor;
 
     try {
       await db["$transaction"](async (tx) => {
@@ -259,8 +306,21 @@ export async function deleteOrganization(): Promise<ActionResult> {
         throw err;
       }
     }
-
     await revalidateOrg();
+
+    // AuditLog has no FK to Organization precisely so this entry survives the
+    // deletion it records.
+    await recordAudit({
+      category: "DATA",
+      action: "ORG_DELETED",
+      orgId,
+      actorId: userId,
+      actorEmail: actor["email"],
+      actorRole: actor["role"],
+      targetType: "Organization",
+      targetId: orgId,
+    });
+
     return { count: 1 };
   });
 }

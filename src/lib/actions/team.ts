@@ -8,6 +8,7 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { checkRateLimit } from "@/lib/action-rate-limit";
+import { recordAudit } from "@/lib/audit";
 
 export interface InviteTeamMemberInput {
   email: string;
@@ -23,7 +24,7 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
     }
     const orgId = user.organizationId;
 
-    if (!checkRateLimit(`team-invite:${user.email}`, 10, 60 * 60 * 1000)) {
+    if (!(await checkRateLimit(`team-invite:${user.email}`, 10, 60 * 60 * 1000))) {
       actionError("Too many team invitations. Please try again later.");
     }
 
@@ -50,8 +51,9 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
     const tempPassword = randomBytes(16).toString("hex");
     const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
+    let invitedUserId: string | undefined;
     try {
-      await db["user"]["create"]({
+      const created = await db["user"]["create"]({
         data: {
           email: normalizedEmail,
           name: input.name.trim(),
@@ -59,7 +61,9 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
           organizationId: orgId,
           role: input.role,
         },
+        select: { id: true },
       });
+      invitedUserId = created["id"];
     } catch (err) {
       if (isMissingColumnError(err)) {
         actionError(
@@ -116,6 +120,18 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
     });
 
     revalidatePath("/dashboard/team");
+
+    await recordAudit({
+      category: "ADMIN",
+      action: "USER_INVITED",
+      orgId,
+      actorId: user.id,
+      actorEmail: user.email,
+      actorRole: user.role,
+      targetType: "User",
+      targetId: invitedUserId,
+      metadata: { invitedEmail: normalizedEmail, role: input.role },
+    });
 
     return { success: true, email: normalizedEmail };
   });

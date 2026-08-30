@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureVerified } from "@/lib/org";
 import { checkRateLimit } from "@/lib/action-rate-limit";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,13 +28,20 @@ export async function POST(req: NextRequest) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!checkRateLimit(`check-expiration:${session.user.email}`, 10, 60 * 1000)) {
+    if (!(await checkRateLimit(`check-expiration:${session.user.email}`, 10, 60 * 1000))) {
       return NextResponse["json"]({ error: "Too many requests. Please try again later." }, { status: 429 });
     }
 
     const result = await checkExpiredEstimates();
     return NextResponse["json"](result);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }

@@ -19,6 +19,12 @@ export const TYPE_VARIANTS: Record<InvoiceType, { color: string; bg: string; bor
     border: "border-emerald-200",
     labelKey: "recurring",
   },
+  EXPENSE: {
+    color: "text-amber-700",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    labelKey: "expense",
+  },
 };
 
 export function getTypeLabel(type: InvoiceType, t: (key: string) => string): string {

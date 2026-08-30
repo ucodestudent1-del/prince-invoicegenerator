@@ -105,8 +105,9 @@ export async function createInvoice(input: CreateInvoiceInput) {
       0
     );
     const taxAmount = (subtotal * input["taxRate"]) / 100;
-    const total = subtotal + taxAmount - input["discount"];
-    const retainageAmount = (total * input["retainageRate"]) / 100;
+    const totalBeforeRetainage = subtotal + taxAmount - input["discount"];
+    const retainageAmount = (totalBeforeRetainage * input["retainageRate"]) / 100;
+    const total = totalBeforeRetainage - retainageAmount;
 
     let number = input["invoiceNumber"];
     if (!number) {

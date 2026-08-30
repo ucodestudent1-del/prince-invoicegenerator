@@ -6,9 +6,59 @@ import { db } from "@/lib/db";
 import { APP_NAME } from "@/lib/app-name";
 import { isMissingColumnError } from "@/lib/org";
 import { logServerError } from "@/lib/errors";
+import { recordAudit } from "@/lib/audit";
 import bcrypt from "bcryptjs";
 
 export { APP_NAME };
+
+// ---------------------------------------------------------------------------
+// Session lifetime (Plan 2.8)
+// ---------------------------------------------------------------------------
+// With the database strategy, `expires` is stamped at sign-in and pushed
+// forward whenever a request arrives more than `updateAge` after the last
+// refresh. The effective inactivity timeout therefore equals `maxAge`: a session
+// that goes unused for that long can no longer be refreshed and is rejected.
+//
+// Defaults: 7-day inactivity window, refreshed at most once per hour so active
+// users are not logged out mid-session. For a stricter 24-hour inactivity
+// timeout set SESSION_MAX_AGE_SECONDS=86400.
+const DEFAULT_SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+const DEFAULT_SESSION_UPDATE_AGE_SECONDS = 60 * 60;
+
+function positiveIntEnv(name: string, fallback: number): number {
+  const raw = process["env"][name];
+  if (!raw) return fallback;
+  const parsed = Number["parseInt"](raw, 10);
+  return Number["isFinite"](parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const sessionMaxAge = positiveIntEnv("SESSION_MAX_AGE_SECONDS", DEFAULT_SESSION_MAX_AGE_SECONDS);
+const sessionUpdateAge = Math["min"](
+  positiveIntEnv("SESSION_UPDATE_AGE_SECONDS", DEFAULT_SESSION_UPDATE_AGE_SECONDS),
+  sessionMaxAge
+);
+
+/**
+ * Force `Secure` cookies (and the `__Secure-` name prefix) whenever the
+ * canonical URL is HTTPS, instead of relying on NODE_ENV. This keeps local HTTP
+ * development working while guaranteeing secure cookies on any HTTPS host.
+ */
+function shouldUseSecureCookies(): boolean {
+  const url = process["env"]["NEXTAUTH_URL"] || process["env"]["NEXT_PUBLIC_BASE_URL"];
+  if (url) return url["startsWith"]("https://");
+  return process["env"]["NODE_ENV"] === "production";
+}
+
+/** Best-effort client attribution from the NextAuth internal request. */
+function requestAttribution(req: unknown): { ip?: string; userAgent?: string } {
+  const headers = (req as { headers?: Record<string, string | undefined> } | undefined)?.["headers"];
+  if (!headers) return {};
+  const forwarded = headers["x-forwarded-for"];
+  return {
+    ip: forwarded?.["split"](",")[0]?.["trim"]() || headers["x-real-ip"] || undefined,
+    userAgent: headers["user-agent"],
+  };
+}
 
 // All supported locales
 const LOCALES = ["en", "fr", "es", "de"] as const;
@@ -56,25 +106,53 @@ providers["push"](
       email: { label: "Email", type: "email" },
       password: { label: "Password", type: "password" },
     },
-    async authorize(credentials) {
+    async authorize(credentials, req) {
       if (!credentials?.["email"] || !credentials?.["password"]) {
         return null;
       }
 
       const normalizedEmail = credentials["email"]["toLowerCase"]();
+      const attribution = requestAttribution(req);
+
+      // Audit every failure path with the same shape so brute-force attempts
+      // are visible without disclosing which factor was wrong.
+      const auditFailure = (reason: string) =>
+        void recordAudit({
+          category: "AUTH",
+          action: "LOGIN_FAILED",
+          outcome: "FAILURE",
+          actorEmail: normalizedEmail,
+          targetType: "User",
+          metadata: { reason, provider: "credentials" },
+          ...attribution,
+        });
 
       const user = await db["user"]["findUnique"]({
         where: { email: normalizedEmail },
       });
 
       if (!user || !user["password"]) {
+        auditFailure(user ? "no-password-credential" : "unknown-account");
         return null;
       }
 
       const isValid = await bcrypt["compare"](credentials["password"], user["password"]);
       if (!isValid) {
+        auditFailure("bad-password");
         return null;
       }
+
+      void recordAudit({
+        category: "AUTH",
+        action: "LOGIN_SUCCESS",
+        actorId: user["id"],
+        actorEmail: user["email"],
+        orgId: user["organizationId"],
+        targetType: "User",
+        targetId: user["id"],
+        metadata: { provider: "credentials" },
+        ...attribution,
+      });
 
       return {
         id: user["id"],
@@ -89,10 +167,41 @@ providers["push"](
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   providers,
-  session: { strategy: "database" },
+  session: {
+    strategy: "database",
+    maxAge: sessionMaxAge,
+    updateAge: sessionUpdateAge,
+  },
+  useSecureCookies: shouldUseSecureCookies(),
   theme: {
     brandColor: "#ea5804",
     colorScheme: "auto",
+  },
+  events: {
+    // OAuth sign-ins never reach the credentials provider, so they are audited
+    // here. Credentials sign-ins are audited in `authorize` where the failure
+    // reason is known; this event records the successful completion for both.
+    async signIn({ user, account, isNewUser }) {
+      void recordAudit({
+        category: "AUTH",
+        action: isNewUser ? "SIGNUP" : "LOGIN_SUCCESS",
+        actorId: user?.["id"],
+        actorEmail: user?.["email"],
+        targetType: "User",
+        targetId: user?.["id"],
+        metadata: { provider: account?.["provider"] ?? "unknown", isNewUser: Boolean(isNewUser) },
+      });
+    },
+    async signOut({ session }) {
+      const userId = (session as { userId?: string } | undefined)?.["userId"];
+      void recordAudit({
+        category: "AUTH",
+        action: "LOGOUT",
+        actorId: userId,
+        targetType: "User",
+        targetId: userId,
+      });
+    },
   },
   callbacks: {
     async session({ session, user }) {

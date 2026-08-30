@@ -102,8 +102,9 @@ export function InvoiceForm({
 
   const subtotal = items["reduce"]((a, i) => a + i["quantity"] * (Number(i["unitPrice"]) || 0), 0);
   const taxAmount = ((subtotal * (Number(taxRate) || 0)) / 100);
-  const total = subtotal + taxAmount - (Number(discount) || 0);
-  const retainageAmount = canRetainage ? ((total * (Number(retainageRate) || 0)) / 100) : 0;
+  const totalBeforeRetainage = subtotal + taxAmount - (Number(discount) || 0);
+  const retainageAmount = canRetainage ? ((totalBeforeRetainage * (Number(retainageRate) || 0)) / 100) : 0;
+  const total = totalBeforeRetainage - retainageAmount;
 
   function updateItem(idx: number, field: string, value: any) {
     setItems((prev) =>

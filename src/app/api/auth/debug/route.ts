@@ -16,7 +16,7 @@ export async function GET() {
     });
   } catch (err: any) {
     return NextResponse["json"](
-      { error: err["message"] || "Failed to check auth status" },
+      { error: "Failed to check auth status" },
       { status: 500 }
     );
   }

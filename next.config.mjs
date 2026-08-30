@@ -1,8 +1,28 @@
 import createNextIntlPlugin from "next-intl/plugin";
 
+/**
+ * Static security headers (Plan 1.5).
+ *
+ * Content-Security-Policy is intentionally absent here: it is emitted per
+ * request by `src/middleware.ts` so it can carry a nonce. Declaring it in both
+ * places would send two CSP headers, and browsers enforce the intersection.
+ */
+const securityHeaders = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-DNS-Prefetch-Control", value: "off" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+  // HSTS: browsers ignore this over plain HTTP, so it is safe in local dev.
+  // "preload" is deliberately omitted — submitting to the preload list is a
+  // long-lived commitment that should be a explicit deployment decision.
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
   experimental: {
     esmExternals: true,
   },
@@ -16,20 +36,41 @@ const nextConfig = {
     return [
       {
         source: "/(.*)",
+        headers: securityHeaders,
+      },
+      {
+        // The service worker must not be cached, or clients get stuck on an
+        // old asset manifest after a deploy.
+        source: "/sw.js",
         headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-          {
-            key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.stripe.com https://*.r2.cloudflarestorage.com https://*.r2.dev; frame-src 'self' https://*.stripe.com https://accounts.google.com https://*.google.com; form-action 'self' https://accounts.google.com https://*.google.com; navigate-to 'self' https://accounts.google.com https://*.google.com;",
-          },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
         ],
+      },
+      {
+        source: "/.well-known/security.txt",
+        headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }],
       },
     ];
   },
 };
 
 const withNextIntl = createNextIntlPlugin();
-export default withNextIntl(nextConfig);
+
+/**
+ * Bundle analysis (Plan 3.3). Opt-in and dependency-free at runtime:
+ * `ANALYZE=true npm run build` after `npm i -D @next/bundle-analyzer`.
+ * When the package is absent the build proceeds unchanged.
+ */
+async function withOptionalAnalyzer(config) {
+  if (process.env.ANALYZE !== "true") return config;
+  try {
+    const { default: withBundleAnalyzer } = await import("@next/bundle-analyzer");
+    return withBundleAnalyzer({ enabled: true, openAnalyzer: false })(config);
+  } catch {
+    console.warn("[next.config] ANALYZE=true but @next/bundle-analyzer is not installed — skipping.");
+    return config;
+  }
+}
+
+export default await withOptionalAnalyzer(withNextIntl(nextConfig));

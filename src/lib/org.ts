@@ -246,7 +246,11 @@ export async function getActivePlan(user?: AppUser): Promise<SubscriptionPlan> {
 export async function requireFeature(feature: FeatureKey) {
   const user = await requireUser();
   const orgId = user["organizationId"];
-  if (!orgId) return;
+  if (!orgId) {
+    const locale = await getLocaleSafe();
+    redirect({ href: "/login?error=no-org", locale });
+    throw new Error("Unreachable: redirect should have exited");
+  }
   try {
     const org = await withRetry(() =>
       db["organization"]["findUnique"]({

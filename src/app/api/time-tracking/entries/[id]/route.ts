@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureVerified } from "@/lib/org";
 import { getTimeEntry, updateTimeEntry, deleteTimeEntry, approveTimeEntries, setTimeEntryInvoice, getTimeEntriesForInvoice } from "@/lib/actions/time-tracking";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +36,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const entry = await getTimeEntry(params["id"]);
     return NextResponse["json"](entry);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["message"] === "Unauthorized") {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
 
@@ -64,11 +75,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       hourlyRate: body["hourlyRate"],
       amount: body["amount"],
       isManual: body["isManual"],
-      status: body["status"],
+       status: body["status"],
     });
     return NextResponse["json"](entry);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["message"] === "Unauthorized") {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
 
@@ -78,6 +99,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     const result = await deleteTimeEntry(params["id"]);
     return NextResponse["json"](result);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["message"] === "Unauthorized") {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }

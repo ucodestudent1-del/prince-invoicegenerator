@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureVerified } from "@/lib/org";
 import { getOutstandingReport } from "@/lib/actions/reports";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +18,14 @@ export async function GET(req: NextRequest) {
     const report = await getOutstandingReport();
     return NextResponse["json"](report);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
+

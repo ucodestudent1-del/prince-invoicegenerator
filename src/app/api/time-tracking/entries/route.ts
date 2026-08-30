@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getTimeEntries, createManualTimeEntry } from "@/lib/actions/time-tracking";
 import { isMissingColumnError, ensureVerified } from "@/lib/org";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +42,17 @@ export async function GET(req: NextRequest) {
     if (isMissingColumnError(err)) {
       return NextResponse["json"]([], { status: 200 });
     }
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["message"] === "Unauthorized") {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
 
@@ -63,6 +74,17 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse["json"](entry, { status: 201 });
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["message"] === "Unauthorized") {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
+

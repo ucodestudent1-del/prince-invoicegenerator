@@ -54,7 +54,7 @@ export async function GET(
       const msg = genErr?.["message"] ?? "Failed to generate PDF";
       const retryable = /Chromium|launch/i["test"](msg);
       return NextResponse["json"](
-        { error: msg, retryable },
+        { error: retryable ? "PDF service unavailable" : "Failed to generate PDF", retryable },
         { status: retryable ? 503 : 500 }
       );
     }
@@ -71,10 +71,13 @@ export async function GET(
     });
   } catch (err: any) {
     logError("GET /api/documents/[type]/[id]/pdf", err);
-    return NextResponse["json"](
-      { error: err?.["message"] ?? "Failed to generate PDF" },
-      { status: 500 }
-    );
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    return NextResponse["json"]({ error: "Failed to generate PDF" }, { status: 500 });
   }
 }
 

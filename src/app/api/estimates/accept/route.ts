@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { acceptEstimate } from "@/lib/actions/estimates";
 import { checkRateLimit } from "@/lib/action-rate-limit";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = req["headers"]["get"]("x-forwarded-for") || req["headers"]["get"]("x-real-ip") || "unknown";
-  if (!checkRateLimit(`estimate-accept:${ip}`, 10, 60 * 1000)) {
+  if (!(await checkRateLimit(`estimate-accept:${ip}`, 10, 60 * 1000))) {
     return NextResponse["json"]({ error: "Too many requests. Please try again later." }, { status: 429 });
   }
 
@@ -22,6 +23,10 @@ export async function POST(req: NextRequest) {
     const result = await acceptEstimate(token, body["comment"]);
     return NextResponse["json"](result);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }

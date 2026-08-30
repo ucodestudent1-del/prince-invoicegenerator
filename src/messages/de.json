@@ -313,6 +313,7 @@
     "standard": "Standard",
     "progress": "Fortschritt (AIA-Stil)",
     "recurring": "Wiederkehrend",
+    "expense": "Ausgabe",
     "invoiceName": "Rechnungsname / -nummer",
     "invoiceNamePlaceholder": "z.B. RECH-001 oder benutzerdefinierter Name",
     "issueDate": "Ausstellungsdatum",
@@ -369,6 +370,7 @@
       "standard": "Standard",
       "progress": "Fortschritt (AIA-Stil)",
       "recurring": "Wiederkehrend",
+      "expense": "Ausgabe",
       "invoice": "Rechnung"
     }
   },

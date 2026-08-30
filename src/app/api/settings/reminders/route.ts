@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureVerified } from "@/lib/org";
 import { getReminderConfig, saveReminderConfig, getReminders, type ReminderStageInput } from "@/lib/actions/invoices";
+import { auditContextFromRequest, recordAudit } from "@/lib/audit";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,13 +32,23 @@ export async function GET(req: NextRequest) {
     const config = await getReminderConfig();
     return NextResponse["json"](config);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["message"] === "Unauthorized") {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAuth();
+    const session = await requireAuth();
     const body = await req["json"]();
 
     const stages: ReminderStageInput[] = (body["stages"] || [])["map"]((s: any) => ({
@@ -62,8 +74,36 @@ export async function POST(req: NextRequest) {
       stages,
     });
 
+    await recordAudit({
+      category: "SETTINGS",
+      action: "REMINDER_SETTINGS_CHANGED",
+      orgId: session["user"]["organizationId"],
+      actorId: session["user"]["id"],
+      actorEmail: session["user"]["email"],
+      actorRole: session["user"]["role"],
+      targetType: "ReminderConfig",
+      metadata: {
+        enabled: body["enabled"] ?? true,
+        frequencyHours: Number(body["frequencyHours"]) || 24,
+        maxReminders: Number(body["maxReminders"]) || 5,
+        stageCount: stages["length"],
+      },
+      ...auditContextFromRequest(req),
+    });
+
     return NextResponse["json"](config);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["message"] === "Unauthorized") {
+      return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
+

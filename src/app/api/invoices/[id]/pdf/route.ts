@@ -6,7 +6,6 @@ import { generateInvoicePdf } from "@/lib/pdf-generator";
 import { uploadPdfToR2 } from "@/lib/r2-storage";
 import { logError } from "@/lib/logging";
 import { hasFeature } from "@/lib/plans";
-import { revalidateWithLocale } from "@/lib/revalidate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,7 +48,7 @@ export async function GET(
   } catch (err: any) {
     logError("GET /api/invoices/[id]/pdf", err);
     return NextResponse["json"](
-      { error: err["message"] || "Failed to generate PDF" },
+      { error: "Failed to generate PDF" },
       { status: 500 }
     );
   }
@@ -111,7 +110,7 @@ export async function POST(
   } catch (err: any) {
     logError("POST /api/invoices/[id]/pdf", err);
     return NextResponse["json"](
-      { error: err["message"] || "Failed to generate PDF" },
+      { error: "Failed to generate PDF" },
       { status: 500 }
     );
   }

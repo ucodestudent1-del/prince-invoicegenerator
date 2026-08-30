@@ -1,40 +1,48 @@
-import { NextRequest, NextResponse } from "next/server";
+/**
+ * Per-IP request rate limiting for API routes (Plan 2.2).
+ *
+ * Backed by the shared limiter in `action-rate-limit`, so it uses Redis when
+ * configured and the in-process map otherwise.
+ *
+ * `rateLimit` is async. Callers MUST await it.
+ */
+
+import type { NextRequest } from "next/server";
+import { consumeRateLimit } from "@/lib/action-rate-limit";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 20;
 
-const hits = new Map<string, { count: number; reset: number }>();
-
-function cleanup() {
-  const now = Date["now"]();
-  for (const [key, entry] of hits["entries"]()) {
-    if (now > entry["reset"]) hits["delete"](key);
+/** Best-effort client IP from the usual proxy headers. */
+export function clientIp(req: NextRequest | Request): string {
+  const headers = req["headers"];
+  const forwarded = headers["get"]("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded["split"](",")[0]?.["trim"]();
+    if (first) return first;
   }
+  return (
+    headers["get"]("x-real-ip") ||
+    headers["get"]("cf-connecting-ip") ||
+    headers["get"]("x-vercel-forwarded-for") ||
+    "unknown"
+  );
 }
 
-export function rateLimit(req: NextRequest): { ok: boolean; remaining: number } {
+export async function rateLimit(
+  req: NextRequest,
+  options?: { max?: number; windowMs?: number }
+): Promise<{ ok: boolean; remaining: number; resetAt: number }> {
+  const max = options?.["max"] ?? RATE_LIMIT_MAX;
+  const windowMs = options?.["windowMs"] ?? RATE_LIMIT_WINDOW_MS;
   try {
-    cleanup();
-    const ip =
-      (req["headers"]["get"]("x-forwarded-for")?.["split"](",")[0]?.["trim"]() as string | undefined) ||
-      (req["headers"]["get"]("x-real-ip") as string | undefined) ||
-      "unknown";
-    const pathname = req["nextUrl"]?.["pathname"] || req["headers"]["get"]("x-pathname") || "/";
-    const key = `${ip}:${pathname}`;
-    const now = Date["now"]();
-    const entry = hits["get"](key);
-
-    if (!entry || now > entry["reset"]) {
-      hits["set"](key, { count: 1, reset: now + RATE_LIMIT_WINDOW_MS });
-      return { ok: true, remaining: RATE_LIMIT_MAX - 1 };
-    }
-
-    entry["count"] += 1;
-    if (entry["count"] > RATE_LIMIT_MAX) {
-      return { ok: false, remaining: 0 };
-    }
-    return { ok: true, remaining: RATE_LIMIT_MAX - entry["count"] };
+    const ip = clientIp(req);
+    const pathname =
+      (req as NextRequest)["nextUrl"]?.["pathname"] || req["headers"]["get"]("x-pathname") || "/";
+    const result = await consumeRateLimit(`ip:${ip}:${pathname}`, max, windowMs);
+    return { ok: result["ok"], remaining: result["remaining"], resetAt: result["resetAt"] };
   } catch {
-    return { ok: true, remaining: RATE_LIMIT_MAX };
+    // Fail open: a limiter fault must not block legitimate traffic.
+    return { ok: true, remaining: max, resetAt: Date["now"]() + windowMs };
   }
 }

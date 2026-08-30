@@ -9,6 +9,7 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { checkRateLimit } from "@/lib/action-rate-limit";
 import { isMissingColumnError } from "@/lib/org";
+import { recordAudit } from "@/lib/audit";
 
 const VERIFICATION_TOKEN_EXPIRY_MINUTES = 24 * 60;
 const VERIFICATION_RESEND_COOLDOWN_SECONDS = 60;
@@ -37,7 +38,7 @@ export async function signup(data: {
 
     const normalizedEmail = data["email"]["toLowerCase"]()["trim"]();
 
-    if (!checkRateLimit(`signup:${normalizedEmail}`, 5, 60 * 60 * 1000)) {
+    if (!(await checkRateLimit(`signup:${normalizedEmail}`, 5, 60 * 60 * 1000))) {
       actionError("Too many signup attempts. Please try again later.");
     }
 
@@ -125,6 +126,16 @@ export async function signup(data: {
       text: `Verify your email: ${verifyUrl}\n\nThis link expires in 24 hours.`,
     });
 
+    await recordAudit({
+      category: "AUTH",
+      action: "SIGNUP",
+      actorId: user["id"],
+      actorEmail: normalizedEmail,
+      targetType: "User",
+      targetId: user["id"],
+      metadata: { marketingOptIn: Boolean(data["marketing"]) },
+    });
+
     return { success: true, userId: user["id"] };
   });
 }
@@ -135,7 +146,7 @@ export async function verifyEmail(token: string) {
       actionError("Invalid token");
     }
 
-    if (!checkRateLimit(`verify-email:${token["slice"](0, 8)}`, 10, 60 * 1000)) {
+    if (!(await checkRateLimit(`verify-email:${token["slice"](0, 8)}`, 10, 60 * 1000))) {
       actionError("Too many attempts. Please try again later.");
     }
 
@@ -187,6 +198,15 @@ export async function verifyEmail(token: string) {
       // Token may have already been deleted by a concurrent request
     }
 
+    await recordAudit({
+      category: "AUTH",
+      action: "EMAIL_VERIFIED",
+      actorId: user["id"],
+      actorEmail: record["identifier"],
+      targetType: "User",
+      targetId: user["id"],
+    });
+
     return { success: true };
   });
 }
@@ -195,7 +215,7 @@ export async function requestPasswordReset(email: string) {
   return withActionError("requestPasswordReset", async () => {
     const normalizedEmail = email["toLowerCase"]()["trim"]();
 
-    if (!checkRateLimit(`password-reset:${normalizedEmail}`, 3, 60 * 60 * 1000)) {
+    if (!(await checkRateLimit(`password-reset:${normalizedEmail}`, 3, 60 * 60 * 1000))) {
       actionError("Too many password reset requests. Please try again later.");
     }
 
@@ -251,6 +271,15 @@ export async function requestPasswordReset(email: string) {
       text: `Reset your password: ${resetUrl}\n\nThis link expires in 1 hour.`,
     });
 
+    await recordAudit({
+      category: "AUTH",
+      action: "PASSWORD_RESET_REQUESTED",
+      actorId: user["id"],
+      actorEmail: normalizedEmail,
+      targetType: "User",
+      targetId: user["id"],
+    });
+
     return { success: true };
   });
 }
@@ -261,7 +290,7 @@ export async function resetPassword(token: string, newPassword: string) {
       actionError("Invalid token");
     }
 
-    if (!checkRateLimit(`reset-password:${token["slice"](0, 8)}`, 10, 60 * 1000)) {
+    if (!(await checkRateLimit(`reset-password:${token["slice"](0, 8)}`, 10, 60 * 1000))) {
       actionError("Too many attempts. Please try again later.");
     }
 
@@ -298,7 +327,7 @@ export async function resetPassword(token: string, newPassword: string) {
 
     const hashedPassword = await bcrypt["hash"](newPassword, 12);
 
-    await db["user"]["update"]({
+    const updated = await db["user"]["update"]({
       where: { email: record["identifier"] },
       data: { password: hashedPassword },
       select: { id: true },
@@ -309,6 +338,15 @@ export async function resetPassword(token: string, newPassword: string) {
     } catch {
       // Token may have already been deleted by a concurrent request
     }
+
+    await recordAudit({
+      category: "AUTH",
+      action: "PASSWORD_RESET_COMPLETED",
+      actorId: updated["id"],
+      actorEmail: record["identifier"],
+      targetType: "User",
+      targetId: updated["id"],
+    });
 
     return { success: true };
   });
@@ -322,7 +360,7 @@ export async function resendVerificationEmail() {
       actionError("You must be logged in to resend verification.");
     }
 
-    if (!checkRateLimit(`verify-email:${session["user"]["email"]}`, 3, 60 * 60 * 1000)) {
+    if (!(await checkRateLimit(`verify-email:${session["user"]["email"]}`, 3, 60 * 60 * 1000))) {
       actionError("Too many verification requests. Please try again later.");
     }
 
@@ -393,6 +431,16 @@ export async function resendVerificationEmail() {
         </div>
       `,
       text: `Verify your email: ${verifyUrl}\n\nThis link expires in 24 hours.`,
+    });
+
+    await recordAudit({
+      category: "AUTH",
+      action: "VERIFICATION_EMAIL_RESENT",
+      actorId: session["user"]["id"],
+      actorEmail: session["user"]["email"],
+      orgId: session["user"]["organizationId"],
+      targetType: "User",
+      targetId: session["user"]["id"],
     });
 
     return { success: true };

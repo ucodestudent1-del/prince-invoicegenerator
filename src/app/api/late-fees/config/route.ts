@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureVerified } from "@/lib/org";
 import { getLateFeeConfig, saveLateFeeConfig } from "@/lib/actions/late-fees";
+import { auditContextFromRequest, recordAudit } from "@/lib/audit";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +19,14 @@ export async function GET() {
     const config = await getLateFeeConfig();
     return NextResponse["json"](config);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
 
@@ -36,8 +45,36 @@ export async function POST(req: NextRequest) {
       fixedFee: Number(body["fixedFee"]) || 0,
       maxFee: body["maxFee"] ? Number(body["maxFee"]) : null,
     });
+
+    // Late fees change what customers are charged, so changes are audited.
+    await recordAudit({
+      category: "SETTINGS",
+      action: "LATE_FEE_SETTINGS_CHANGED",
+      orgId: session["user"]["organizationId"],
+      actorId: session["user"]["id"],
+      actorEmail: session["user"]["email"],
+      actorRole: session["user"]["role"],
+      targetType: "LateFeeConfig",
+      metadata: {
+        enabled: body["enabled"] ?? false,
+        rate: Number(body["rate"]) || 0,
+        graceDays: Number(body["graceDays"]) || 0,
+        fixedFee: Number(body["fixedFee"]) || 0,
+        maxFee: body["maxFee"] ? Number(body["maxFee"]) : null,
+      },
+      ...auditContextFromRequest(req),
+    });
+
     return NextResponse["json"](config);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
+

@@ -358,7 +358,7 @@ export function DocumentTemplate({
               {retainage > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "#6b7280" }}>{t["retainage"]}</span>
-                  <span>{formatCurrency(retainage, currency)}</span>
+                  <span>-{formatCurrency(retainage, currency)}</span>
                 </div>
               )}
               <div

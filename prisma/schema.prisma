@@ -50,6 +50,7 @@ enum InvoiceType {
   STANDARD
   PROGRESS
   RECURRING
+  EXPENSE
 }
 
 enum PaymentMethod {
@@ -123,6 +124,7 @@ enum TemplateStyle {
   MODERN
   MINIMAL
   CLASSIC
+  PROFESSIONAL
 }
 
 // ---------------------------------------------------------------------------
@@ -1024,4 +1026,52 @@ model LocalizedString {
 
   @@unique([orgId, entityType, entityId, field, locale])
   @@index([orgId, entityType, entityId])
+}
+
+// ---------------------------------------------------------------------------
+// Security / compliance audit trail
+// ---------------------------------------------------------------------------
+//
+// Append-only record of security-relevant events: authentication, admin
+// actions, settings changes, data exports and destructive operations.
+// Complements InvoiceAudit / EstimateAudit, which cover financial documents.
+//
+// Deliberately has NO foreign key to Organization. Audit history must outlive
+// the records it describes, and a cascade (or SET NULL) would let an
+// application-level delete mutate immutable rows. `orgId` is a plain indexed
+// column; rows for a deleted organization are retained for their retention
+// period. The migration also installs a trigger rejecting UPDATE and DELETE, so
+// entries cannot be altered by application code.
+
+model AuditLog {
+  id         String @id @default(cuid())
+  /// Organization the event belongs to. Null for pre-organization auth events.
+  orgId      String?
+  /// User id of the actor. Null for anonymous or system-initiated events.
+  actorId    String?
+  actorEmail String?
+  actorRole  String?
+  /// AUTH | ADMIN | SETTINGS | DATA | BILLING | SECURITY
+  category   String
+  /// Specific event, e.g. LOGIN_SUCCESS, ROLE_CHANGED, DATA_EXPORTED.
+  action     String
+  /// Entity the action targeted, e.g. "User" / "Organization".
+  targetType String?
+  targetId   String?
+  /// SUCCESS | FAILURE
+  outcome    String @default("SUCCESS")
+
+  ip        String?
+  userAgent String?
+  /// Correlation ID from the x-request-id header.
+  requestId String?
+  /// Additional non-sensitive context. Never store credentials here.
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([category, action])
+  @@index([createdAt])
 }

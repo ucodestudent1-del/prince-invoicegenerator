@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, PRICE_TO_PLAN } from "@/lib/stripe";
 import { db } from "@/lib/db";
+import { recordAudit } from "@/lib/audit";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +44,14 @@ export async function POST(req: NextRequest) {
             data: { plan: "FREE", subscriptionStatus: "CANCELED", stripeSubscriptionId: null },
             select: { id: true },
           });
+          await recordAudit({
+            category: "BILLING",
+            action: "PLAN_CHANGED",
+            orgId: sub["metadata"]["orgId"],
+            targetType: "Organization",
+            targetId: sub["metadata"]["orgId"],
+            metadata: { plan: "FREE", subscriptionStatus: "CANCELED", source: "stripe-webhook" },
+          });
         }
         break;
       }
@@ -49,7 +59,7 @@ export async function POST(req: NextRequest) {
         break;
     }
   } catch (err) {
-    console["error"]("Stripe webhook handler error", err);
+    logError("stripe.webhook", err, { eventType: event["type"] });
     return new NextResponse("Handler error", { status: 500 });
   }
 
@@ -72,6 +82,18 @@ async function updateSubscription(sub: any, orgIdOverride?: string) {
   const priceId = sub["items"]?.["data"]?.[0]?.["price"]?.["id"];
   const plan = PRICE_TO_PLAN[priceId] ?? "FREE";
 
+  // Capture the prior plan so the audit entry shows the transition.
+  let previousPlan: string | undefined;
+  try {
+    const existing = await db["organization"]["findUnique"]({
+      where: { id: orgId },
+      select: { plan: true },
+    });
+    previousPlan = existing?.["plan"];
+  } catch {
+    // Non-fatal: the audit entry simply omits the previous plan.
+  }
+
   await db["organization"]["update"]({
     where: { id: orgId },
     data: {
@@ -85,4 +107,20 @@ async function updateSubscription(sub: any, orgIdOverride?: string) {
     },
     select: { id: true },
   });
+
+  if (previousPlan !== plan) {
+    await recordAudit({
+      category: "BILLING",
+      action: "PLAN_CHANGED",
+      orgId,
+      targetType: "Organization",
+      targetId: orgId,
+      metadata: {
+        fromPlan: previousPlan ?? null,
+        toPlan: plan,
+        subscriptionStatus: sub["status"]?.["toUpperCase"]() ?? null,
+        source: "stripe-webhook",
+      },
+    });
+  }
 }

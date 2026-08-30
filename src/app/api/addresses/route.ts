@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { ensureVerified } from "@/lib/org";
 import { createAddress, getCustomerAddresses } from "@/lib/actions/addresses";
 import { checkRateLimit } from "@/lib/action-rate-limit";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,14 @@ export async function GET(req: NextRequest) {
     const addresses = await getCustomerAddresses(customerId);
     return NextResponse["json"](addresses);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
 
@@ -35,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
     await ensureVerified();
 
-    if (!checkRateLimit(`api:addresses:${session.user.email}`, 30, 60 * 1000)) {
+    if (!(await checkRateLimit(`api:addresses:${session.user.email}`, 30, 60 * 1000))) {
       return NextResponse["json"]({ error: "Too many requests. Please try again later." }, { status: 429 });
     }
 
@@ -54,6 +62,14 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse["json"](address);
   } catch (err: any) {
-    return NextResponse["json"]({ error: err["message"] }, { status: (err && err["name"] === "EmailVerificationError") ? 403 : 400 });
+    if (err && err["name"] === "EmailVerificationError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 403 });
+    }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
+    logError("api:error", err);
+    return NextResponse["json"]({ error: "An unexpected error occurred" }, { status: 500 });
   }
 }
+

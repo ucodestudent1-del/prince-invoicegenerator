@@ -208,7 +208,7 @@ export function InvoiceTemplate({ invoice, org, paperSize = "A4", locale = "en" 
           {invoice["retainageAmount"] > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: "#6b7280" }}>{t["retainage"]}</span>
-              <span>{formatCurrency(invoice["retainageAmount"], invoice["currency"])}</span>
+              <span>-{formatCurrency(invoice["retainageAmount"], invoice["currency"])}</span>
             </div>
           )}
           <div

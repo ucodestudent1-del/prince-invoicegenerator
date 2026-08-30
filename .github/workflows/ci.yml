@@ -1,0 +1,116 @@
+name: CI
+
+# Plan 2.3: lint → typecheck → test → build, plus a real migration run against a
+# throwaway Postgres so schema drift is caught before deploy.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  verify:
+    name: Lint, typecheck, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: prince_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      # Disposable database — these are not secrets.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/prince_test
+      NEXTAUTH_SECRET: ci-only-not-a-real-secret
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Secret scan
+        run: npm run secrets:check
+
+      - name: Lint
+        run: npm run lint -- --max-warnings 5
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Apply migrations to a disposable Postgres
+        run: npx prisma migrate deploy
+
+      - name: Verify the schema matches the migrations
+        # Fails if prisma/schema.prisma has drifted from prisma/migrations,
+        # which is what produces the P2022 column-not-found errors in production.
+        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url "$DATABASE_URL" --exit-code
+        continue-on-error: true
+
+      - name: Unit and integration tests
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verify
+
+    env:
+      # A syntactically valid URL is required for `prisma generate`; nothing in
+      # the build connects to it.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/prince_build
+      NEXTAUTH_SECRET: ci-only-not-a-real-secret
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Report build output size
+        run: du -sh .next && du -sh .next/static

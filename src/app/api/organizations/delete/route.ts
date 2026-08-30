@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureVerified } from "@/lib/org";
 import { deleteOrganization } from "@/lib/actions/data";
+import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,8 +22,12 @@ export async function POST(req: NextRequest) {
     if (error && error["name"] === "EmailVerificationError") {
       return NextResponse["json"]({ error: error["message"] }, { status: 403 });
     }
+    if (error && error["name"] === "ActionError") {
+      return NextResponse["json"]({ error: error["message"] }, { status: 400 });
+    }
+    logError("api.organizations.delete", error);
     return NextResponse["json"](
-      { success: false, error: error["message"] || "Failed to delete organization" },
+      { success: false, error: "Failed to delete organization" },
       { status: 500 }
     );
   }

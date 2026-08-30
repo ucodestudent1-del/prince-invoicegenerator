@@ -7,7 +7,7 @@ import { rateLimit } from "@/lib/rate-limit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
-  const limit = rateLimit(req);
+  const limit = await rateLimit(req);
   if (!limit["ok"]) {
     return NextResponse["json"]({ error: "Too many requests" }, { status: 429 });
   }

@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const limit = rateLimit(req);
+  const limit = await rateLimit(req);
   if (!limit["ok"]) {
     return NextResponse["json"]({ error: "Too many requests" }, { status: 429 });
   }
@@ -80,11 +80,13 @@ export async function POST(req: NextRequest) {
     return NextResponse["json"]({ url: session["url"] });
   } catch (err: any) {
     logError("stripe-checkout", err);
-    const message = err?.["message"] || "Checkout failed";
     if (err && err["name"] === "EmailVerificationError") {
       return NextResponse["json"]({ error: "Email verification required" }, { status: 403 });
     }
+    if (err && err["name"] === "ActionError") {
+      return NextResponse["json"]({ error: err["message"] }, { status: 400 });
+    }
     const status = err?.["statusCode"] === 400 ? 400 : 500;
-    return NextResponse["json"]({ error: message }, { status });
+    return NextResponse["json"]({ error: "Checkout failed" }, { status });
   }
 }
