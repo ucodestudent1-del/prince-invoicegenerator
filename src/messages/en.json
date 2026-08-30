@@ -521,6 +521,7 @@
     "failed": "Failed.",
     "amount": "Amount",
     "enterProjectName": "Enter project name",
+    "noProject": "None",
     "notes": "Notes"
   },
   "customers": {

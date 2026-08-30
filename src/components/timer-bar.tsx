@@ -101,7 +101,7 @@ export function TimerBar({ projects }: { projects: Project[] }) {
 
   const saveEntry = async () => {
     try {
-      const duration = timer["isRunning"] ? timer["elapsed"] : timer["elapsed"];
+      const duration = timer["elapsed"];
       await createManualTimeEntry({
         projectId: timer["selectedProject"],
         startTime: new Date()["toISOString"](),

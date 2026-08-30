@@ -471,6 +471,7 @@
     "failed": "Échec.",
     "amount": "Montant",
     "enterProjectName": "Entrez le nom du projet",
+    "noProject": "Aucun",
     "notes": "Notes"
   },
   "customers": {

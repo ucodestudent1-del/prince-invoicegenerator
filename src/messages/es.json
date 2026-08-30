@@ -463,6 +463,7 @@
     "failed": "Fallido.",
     "amount": "Importe",
     "enterProjectName": "Ingrese el nombre del proyecto",
+    "noProject": "Ninguno",
     "notes": "Notas"
   },
   "customers": {

@@ -21,8 +21,10 @@ const CATEGORIES = [
 
 export function ExpenseForm({
   r2Enabled,
+  projects = [],
 }: {
   r2Enabled: boolean;
+  projects: { id: string; name: string }[];
 }) {
   const t = useTranslations("expenses");
   const router = useRouter();
@@ -56,7 +58,7 @@ export function ExpenseForm({
         amount: Number(fd["get"]("amount") || 0),
         date: String(fd["get"]("date") || "") || null,
         notes: String(fd["get"]("notes") || "") || undefined,
-        projectId: String(fd["get"]("projectId") || "") || null,
+        projectId: (String(fd["get"]("projectId") || "") || "") || null,
         photoId,
       });
       router["push"]("/dashboard/expenses");
@@ -101,10 +103,20 @@ export function ExpenseForm({
               <Input id="date" name="date" type="date" defaultValue={new Date()["toISOString"]()["slice"](0, 10)} />
             </div>
           </div>
-<div className="space-y-1">
-              <Label htmlFor="projectId">{t("project")}</Label>
-              <Input id="projectId" name="projectId" placeholder={t("enterProjectName")} />
-            </div>
+          <div className="space-y-1">
+            <Label htmlFor="projectId">{t("project")}</Label>
+            <select
+              id="projectId"
+              name="projectId"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+              defaultValue=""
+            >
+              <option value="">— {t("noProject")} —</option>
+              {projects["map"]((p) => (
+                <option key={p["id"]} value={p["id"]}>{p["name"]}</option>
+              ))}
+            </select>
+          </div>
           {r2Enabled && (
             <div className="space-y-1">
               <Label htmlFor="photo">{t("photo")} (R2)</Label>
