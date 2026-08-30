@@ -211,8 +211,9 @@ async function createRecurringInvoiceEntry(p: CreateInvoiceParams): Promise<any>
       return await db["invoice"]["create"]({ data: baseData() });
     } catch (err: any) {
       if (isMissingColumnError(err)) {
-        // Schema drift: billToAddress / shipToAddress / createdById may not exist.
+        // Schema drift: logoUrl / billToAddress / shipToAddress / createdById may not exist.
         const drift: any = baseData();
+        delete drift["logoUrl"];
         delete drift["billToAddress"];
         delete drift["shipToAddress"];
         delete drift["createdById"];
@@ -268,7 +269,7 @@ async function validateTemplateInvoice(
           notes: true,
           recurringConfigId: true,
           createdById: true,
-          items: { orderBy: { sortOrder: "asc" } },
+          items: { orderBy: { sortOrder: "asc" }, select: { id: true, description: true, quantity: true, unitPrice: true, amount: true, sortOrder: true } },
         },
       });
     } else {
