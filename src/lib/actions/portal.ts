@@ -69,7 +69,7 @@ export async function requestPortalAccess(email: string) {
     });
 
     // Build magic link URL
-    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "https://app.princeinvoice.com";
+    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || process["env"]["NEXTAUTH_URL"] || "http://localhost:3000";
     const magicLink = `${baseUrl}/portal/auth/verify?token=${token}`;
 
     // Send email with magic link

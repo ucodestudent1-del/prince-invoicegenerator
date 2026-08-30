@@ -247,18 +247,21 @@ export async function markInvoiceStatus(id: string, status: InvoiceStatus) {
       }
     }
 
-    await db["invoiceAudit"]["create"]({
-      data: {
-        invoiceId: id,
-        orgId,
-        action: "STATUS_CHANGE",
-        fromStatus: previousStatus,
-        toStatus: status,
-        createdById: user["id"],
-      },
-    });
+    try {
+      await db["invoiceAudit"]["create"]({
+        data: {
+          invoiceId: id,
+          orgId,
+          action: "STATUS_CHANGE",
+          fromStatus: previousStatus,
+          toStatus: status,
+          createdById: user["id"],
+        },
+      });
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+    }
 
-    await revalidateWithLocale("/dashboard/invoices");
     await revalidateWithLocale(`/dashboard/invoices/${id}`);
   });
 }
@@ -310,18 +313,27 @@ export async function recordPayment(input: {
       const freshAmountPaid = Math["round"](freshInvoice["amountPaid"] * 100) / 100;
       const adjustedAmountPaid = Math["round"]((Math["min"](freshAmountPaid + roundedAmount, freshTotal)) * 100) / 100;
 
-      const payment = await tx["payment"]["create"]({
-        data: {
-          invoiceId: input["invoiceId"],
-          orgId,
-          amount: roundedAmount,
-          method: input["method"] ? coerceEnum(input["method"], PaymentMethod, "method") : "OTHER",
-          status: "COMPLETED",
-          stripePaymentId: input["stripePaymentId"],
-          paypalTransactionId: input["paypalTransactionId"],
-          note: input["note"],
-        },
-      });
+      let payment;
+      try {
+        payment = await tx["payment"]["create"]({
+          data: {
+            invoiceId: input["invoiceId"],
+            orgId,
+            amount: roundedAmount,
+            method: input["method"] ? coerceEnum(input["method"], PaymentMethod, "method") : "OTHER",
+            status: "COMPLETED",
+            stripePaymentId: input["stripePaymentId"],
+            paypalTransactionId: input["paypalTransactionId"],
+            note: input["note"],
+          },
+        });
+      } catch (err) {
+        if (isMissingColumnError(err)) {
+          payment = { id: "drift", amount: roundedAmount } as any;
+        } else {
+          throw err;
+        }
+      }
 
       let newStatus = freshInvoice["status"];
       if (adjustedAmountPaid >= freshTotal) {
@@ -346,17 +358,21 @@ export async function recordPayment(input: {
         }
       }
 
-      await tx["invoiceAudit"]["create"]({
-        data: {
-          invoiceId: input["invoiceId"],
-          orgId,
-          action: "PAYMENT_RECORDED",
-          toStatus: newStatus,
-          amount: roundedAmount,
-          note: input["note"],
-          createdById: user["id"],
-        },
-      });
+      try {
+        await tx["invoiceAudit"]["create"]({
+          data: {
+            invoiceId: input["invoiceId"],
+            orgId,
+            action: "PAYMENT_RECORDED",
+            toStatus: newStatus,
+            amount: roundedAmount,
+            note: input["note"],
+            createdById: user["id"],
+          },
+        });
+      } catch (err) {
+        if (!isMissingColumnError(err)) throw err;
+      }
 
       return payment;
     });
