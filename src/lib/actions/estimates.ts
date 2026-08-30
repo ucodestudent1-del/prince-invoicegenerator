@@ -110,7 +110,7 @@ export async function sendEstimate(estimateId: string, input: SendEstimateInput)
     if (estimate["status"] !== "DRAFT") actionError("Only draft estimates can be sent");
 
     const shareToken = randomUUID();
-    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "https://app.example.com";
+    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || process["env"]["NEXTAUTH_URL"] || "http://localhost:3000";
     const shareUrl = `${baseUrl}/estimate/${estimate["number"]}?token=${shareToken}`;
 
     await db["estimate"]["update"]({

@@ -7,6 +7,7 @@ import { sendEmail } from "@/lib/email";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { checkRateLimit } from "@/lib/action-rate-limit";
 
 export interface InviteTeamMemberInput {
   email: string;
@@ -64,9 +65,35 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
       throw err;
     }
 
+    const token = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    try {
+      await db["verificationToken"]["create"]({
+        data: {
+          identifier: normalizedEmail,
+          token,
+          expires: expiresAt,
+          type: "PASSWORD_RESET",
+        },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await db["verificationToken"]["create"]({
+          data: {
+            identifier: normalizedEmail,
+            token,
+            expires: expiresAt,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
+
     const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const loginUrl = `${baseUrl}/login`;
+      process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
     await sendEmail({
       to: normalizedEmail,
@@ -77,11 +104,11 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
           <p>${
             input.name.trim() || "Someone"
           } has invited you to join their organization on Prince.</p>
-          <a href="${loginUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">Sign In</a>
-          <p style="color: #6b7280; font-size: 14px;">Your temporary password is: <strong>${tempPassword}</strong> (use it on first sign-in)</p>
-          </div>
+          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">Set Your Password</a>
+          <p style="color: #6b7280; font-size: 14px;">Click the button above to set your password and access your account. This link expires in 7 days.</p>
+        </div>
       `,
-      text: `You've been invited to join an organization. Sign in at ${loginUrl} with your email and password: ${tempPassword}`,
+      text: `You've been invited to join an organization. Set your password at ${resetUrl}\n\nThis link expires in 7 days.`,
     });
 
     revalidatePath("/dashboard/team");

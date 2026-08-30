@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createCatalogItem, getCatalogItems, duplicateCatalogItem, toggleCatalogItemFavorite } from "@/lib/actions/catalog";
 import { isMissingColumnError, ensureVerified } from "@/lib/org";
+import { checkRateLimit } from "@/lib/action-rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +39,11 @@ export async function POST(req: NextRequest) {
       return NextResponse["json"]({ error: "Unauthorized" }, { status: 401 });
     }
     await ensureVerified();
+
+    if (!checkRateLimit(`api:catalog:${session.user.email}`, 30, 60 * 1000)) {
+      return NextResponse["json"]({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
+
     const body = await req["json"]();
     const item = await createCatalogItem({
       name: body["name"],

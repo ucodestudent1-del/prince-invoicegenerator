@@ -108,7 +108,7 @@ export async function signup(data: {
       }
     }
 
-    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "http://localhost:3000";
+    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || process["env"]["NEXTAUTH_URL"] || "http://localhost:3000";
     const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
 
     await sendEmail({
@@ -230,7 +230,7 @@ export async function requestPasswordReset(email: string) {
       }
     }
 
-    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || "http://localhost:3000";
+    const baseUrl = process["env"]["NEXT_PUBLIC_BASE_URL"] || process["env"]["NEXTAUTH_URL"] || "http://localhost:3000";
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
     await sendEmail({
