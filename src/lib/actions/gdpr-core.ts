@@ -578,24 +578,24 @@ export async function deleteCustomerData(
       await txRecord["customer"]["delete"]({ where: { id: customerId }, select: { id: true } });
     });
 
-    void recordAudit({
-      category: "DATA",
-      action: "USER_ANONYMIZED",
-      orgId: actor["orgId"],
-      actorId: actor["userId"],
-      actorEmail: actor["email"],
-      actorRole: actor["role"],
-      targetType: "Customer",
-      targetId: customerId,
-      metadata: {
-        basis: "gdpr-article-17",
-        mode: "hard-delete",
-        deletedInvoices: invoiceIds["length"],
-        deletedEstimates: estimateIds["length"],
-      },
-    });
+     void recordAudit({
+       category: "DATA",
+       action: "CUSTOMER_DATA_DELETED",
+       orgId: actor["orgId"],
+       actorId: actor["userId"],
+       actorEmail: actor["email"],
+       actorRole: actor["role"],
+       targetType: "Customer",
+       targetId: customerId,
+       metadata: {
+         basis: "gdpr-article-17",
+         mode: "hard-delete",
+         deletedInvoices: invoiceIds["length"],
+         deletedEstimates: estimateIds["length"],
+       },
+     });
 
-    void revalidateWithLocale("/dashboard/customers");
-    return { count: 1 };
-  });
+     void revalidateWithLocale("/dashboard/customers");
+     return { count: 1 };
+   });
 }

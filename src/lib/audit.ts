@@ -46,6 +46,7 @@ export type AuditAction =
   | "BULK_DELETE"
   | "ORG_DELETED"
   | "USER_ANONYMIZED"
+  | "CUSTOMER_DATA_DELETED"
   // SECURITY
   | "CSRF_REJECTED"
   | "RATE_LIMITED";
