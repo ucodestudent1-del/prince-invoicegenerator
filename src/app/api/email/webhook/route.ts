@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 // Resend signs webhooks with an HMAC-SHA256 (hex) of the raw request body using
 // RESEND_WEBHOOK_SECRET. Any request whose signature doesn't match is rejected.
 function verifySignature(rawBody: string, req: NextRequest, provider: string): boolean {
-  if (provider !== "resend") return true;
+  if (provider !== "resend") return false;
   const secret = process["env"]["RESEND_WEBHOOK_SECRET"];
   if (!secret) return false;
   const signature = req["headers"]["get"]("x-resend-signature");

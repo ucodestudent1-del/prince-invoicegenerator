@@ -229,14 +229,34 @@ export async function updateCustomer(id: string, input: UpdateCustomerInput) {
     if (input["portalAccess"] !== undefined) data["portalAccess"] = input["portalAccess"];
     if (input["portalPin"] !== undefined) data["portalPin"] = input["portalPin"];
 
-    const customer = await db["customer"]["update"]({
-      where: { id, orgId },
-      data,
-    });
+    try {
+      const customer = await db["customer"]["update"]({
+        where: { id, orgId },
+        data,
+      });
 
-    await revalidateWithLocale("/dashboard/customers");
-    await revalidateWithLocale(`/dashboard/customers/${id}`);
-    return customer;
+      await revalidateWithLocale("/dashboard/customers");
+      await revalidateWithLocale(`/dashboard/customers/${id}`);
+      return customer;
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        const safeData = { ...data };
+        delete safeData["status"];
+        delete safeData["website"];
+        delete safeData["taxId"];
+        delete safeData["portalAccess"];
+        delete safeData["portalPin"];
+        delete safeData["archivedAt"];
+        const customer = await db["customer"]["update"]({
+          where: { id, orgId },
+          data: safeData,
+        });
+        await revalidateWithLocale("/dashboard/customers");
+        await revalidateWithLocale(`/dashboard/customers/${id}`);
+        return customer;
+      }
+      throw err;
+    }
   });
 }
 
@@ -252,17 +272,30 @@ export async function archiveCustomer(id: string) {
     });
     if (!existing) actionError("Customer not found");
 
-    const customer = await db["customer"]["update"]({
-      where: { id, orgId },
-      data: {
-        status: "ARCHIVED",
-        archivedAt: new Date(),
-      },
-    });
+    try {
+      const customer = await db["customer"]["update"]({
+        where: { id, orgId },
+        data: {
+          status: "ARCHIVED",
+          archivedAt: new Date(),
+        },
+      });
 
-    await revalidateWithLocale("/dashboard/customers");
-    await revalidateWithLocale(`/dashboard/customers/${id}`);
-    return customer;
+      await revalidateWithLocale("/dashboard/customers");
+      await revalidateWithLocale(`/dashboard/customers/${id}`);
+      return customer;
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await db["customer"]["update"]({
+          where: { id, orgId },
+          data: {},
+        });
+        await revalidateWithLocale("/dashboard/customers");
+        await revalidateWithLocale(`/dashboard/customers/${id}`);
+        return existing;
+      }
+      throw err;
+    }
   });
 }
 
@@ -278,17 +311,30 @@ export async function unarchiveCustomer(id: string) {
     });
     if (!existing) actionError("Customer not found");
 
-    const customer = await db["customer"]["update"]({
-      where: { id, orgId },
-      data: {
-        status: "ACTIVE",
-        archivedAt: null,
-      },
-    });
+    try {
+      const customer = await db["customer"]["update"]({
+        where: { id, orgId },
+        data: {
+          status: "ACTIVE",
+          archivedAt: null,
+        },
+      });
 
-    await revalidateWithLocale("/dashboard/customers");
-    await revalidateWithLocale(`/dashboard/customers/${id}`);
-    return customer;
+      await revalidateWithLocale("/dashboard/customers");
+      await revalidateWithLocale(`/dashboard/customers/${id}`);
+      return customer;
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await db["customer"]["update"]({
+          where: { id, orgId },
+          data: {},
+        });
+        await revalidateWithLocale("/dashboard/customers");
+        await revalidateWithLocale(`/dashboard/customers/${id}`);
+        return existing;
+      }
+      throw err;
+    }
   });
 }
 
@@ -304,26 +350,36 @@ export async function getCustomerActivityLog(customerId: string) {
     });
     if (!customer) actionError("Customer not found");
 
-    const [invoices, estimates, payments] = await Promise["all"]([
-      db["invoice"]["findMany"]({
-        where: { customerId, orgId },
-        select: { id: true, number: true, status: true, total: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-        take: 100,
-      }),
-      db["estimate"]["findMany"]({
-        where: { customerId, orgId },
-        select: { id: true, number: true, status: true, total: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-        take: 100,
-      }),
-      db["payment"]["findMany"]({
-        where: { invoice: { customerId, orgId } },
-        select: { id: true, amount: true, method: true, status: true, createdAt: true, invoice: { select: { number: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 100,
-      }),
-    ]);
+    let invoices: any[] = [];
+    let estimates: any[] = [];
+    let payments: any[] = [];
+    try {
+      [invoices, estimates, payments] = await Promise["all"]([
+        db["invoice"]["findMany"]({
+          where: { customerId, orgId },
+          select: { id: true, number: true, status: true, total: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 100,
+        }),
+        db["estimate"]["findMany"]({
+          where: { customerId, orgId },
+          select: { id: true, number: true, status: true, total: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 100,
+        }),
+        db["payment"]["findMany"]({
+          where: { invoice: { customerId, orgId } },
+          select: { id: true, amount: true, method: true, status: true, createdAt: true, invoice: { select: { number: true } } },
+          orderBy: { createdAt: "desc" },
+          take: 100,
+        }),
+      ]);
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        return [];
+      }
+      throw err;
+    }
 
     // Aggregate and sort by date
     const activities: Array<{

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
 import { coerceEnum } from "@/lib/utils";
@@ -28,32 +28,37 @@ export async function createAddress(input: AddressInput) {
 
     const type = coerceEnum(input["type"], AddressType, "type");
 
-    if (input["isDefault"]) {
-      await db["customerAddress"]["updateMany"]({
-        where: { orgId, customerId: input["customerId"], type },
-        data: { isDefault: false },
+    try {
+      if (input["isDefault"]) {
+        await db["customerAddress"]["updateMany"]({
+          where: { orgId, customerId: input["customerId"], type },
+          data: { isDefault: false },
+        });
+      }
+
+      const address = await db["customerAddress"]["create"]({
+        data: {
+          orgId,
+          customerId: input["customerId"],
+          label: input["label"],
+          type,
+          line1: input["line1"],
+          line2: input["line2"],
+          city: input["city"],
+          state: input["state"],
+          postalCode: input["postalCode"],
+          country: input["country"],
+          isDefault: input["isDefault"] ?? false,
+        },
+        select: { id: true },
       });
+
+      await revalidateWithLocale("/dashboard/customers");
+      return address;
+    } catch (err) {
+      if (isMissingColumnError(err)) return null;
+      throw err;
     }
-
-    const address = await db["customerAddress"]["create"]({
-      data: {
-        orgId,
-        customerId: input["customerId"],
-        label: input["label"],
-        type,
-        line1: input["line1"],
-        line2: input["line2"],
-        city: input["city"],
-        state: input["state"],
-        postalCode: input["postalCode"],
-        country: input["country"],
-        isDefault: input["isDefault"] ?? false,
-      },
-      select: { id: true },
-    });
-
-    await revalidateWithLocale("/dashboard/customers");
-    return address;
   });
 }
 
@@ -61,20 +66,26 @@ export async function getCustomerAddresses(customerId: string) {
   return withActionError("getCustomerAddresses", async () => {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
 
-    const customer = await db["customer"]["findFirst"]({
-      where: { id: customerId, orgId: user["organizationId"] },
-      select: { id: true },
-    });
-    if (!customer) actionError("Customer not found.");
+    try {
+      const customer = await db["customer"]["findFirst"]({
+        where: { id: customerId, orgId },
+        select: { id: true },
+      });
+      if (!customer) actionError("Customer not found.");
 
-    const addresses = await db["customerAddress"]["findMany"]({
-      where: { customerId, orgId: user["organizationId"] },
-      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
-      select: { id: true, label: true, type: true, line1: true, line2: true, city: true, state: true, postalCode: true, country: true, isDefault: true },
-    });
+      const addresses = await db["customerAddress"]["findMany"]({
+        where: { customerId, orgId },
+        orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+        select: { id: true, label: true, type: true, line1: true, line2: true, city: true, state: true, postalCode: true, country: true, isDefault: true },
+      });
 
-    return addresses;
+      return addresses;
+    } catch (err) {
+      if (isMissingColumnError(err)) return [];
+      throw err;
+    }
   });
 }
 
@@ -83,17 +94,22 @@ export async function getDefaultAddress(customerId: string, type: AddressType) {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
-    const address = await db["customerAddress"]["findFirst"]({
-      where: {
-        customerId,
-        type,
-        isDefault: true,
-        orgId: user["organizationId"],
-      },
-      select: { id: true, customerId: true, type: true },
-    });
+    try {
+      const address = await db["customerAddress"]["findFirst"]({
+        where: {
+          customerId,
+          type,
+          isDefault: true,
+          orgId: user["organizationId"],
+        },
+        select: { id: true, customerId: true, type: true },
+      });
 
-    return address;
+      return address;
+    } catch (err) {
+      if (isMissingColumnError(err)) return null;
+      throw err;
+    }
   });
 }
 
@@ -101,44 +117,50 @@ export async function updateAddress(id: string, input: Partial<AddressInput>) {
   return withActionError("updateAddress", async () => {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
 
-    const address = await db["customerAddress"]["findFirst"]({
-      where: { id, orgId: user["organizationId"] },
-      select: { id: true, customerId: true, type: true },
-    });
-    if (!address) actionError("Address not found.");
-
-    if (input["isDefault"]) {
-      await db["customerAddress"]["updateMany"]({
-        where: {
-          orgId: user["organizationId"],
-          customerId: address["customerId"],
-          type: address["type"],
-        },
-        data: { isDefault: false },
+    try {
+      const address = await db["customerAddress"]["findFirst"]({
+        where: { id, orgId },
+        select: { id: true, customerId: true, type: true },
       });
+      if (!address) actionError("Address not found.");
+
+      if (input["isDefault"]) {
+        await db["customerAddress"]["updateMany"]({
+          where: {
+            orgId,
+            customerId: address["customerId"],
+            type: address["type"],
+          },
+          data: { isDefault: false },
+        });
+      }
+
+      const updated = await db["customerAddress"]["update"]({
+        where: { id, orgId },
+        data: {
+          label: input["label"],
+          line1: input["line1"],
+          line2: input["line2"],
+          city: input["city"],
+          state: input["state"],
+          postalCode: input["postalCode"],
+          country: input["country"],
+          isDefault: input["isDefault"] ?? false,
+          ...(input["type"] !== undefined && {
+            type: coerceEnum(input["type"], AddressType, "type"),
+          }),
+        },
+        select: { id: true },
+      });
+
+      await revalidateWithLocale("/dashboard/customers");
+      return updated;
+    } catch (err) {
+      if (isMissingColumnError(err)) return null;
+      throw err;
     }
-
-    const updated = await db["customerAddress"]["update"]({
-      where: { id, orgId: user["organizationId"] },
-      data: {
-        label: input["label"],
-        line1: input["line1"],
-        line2: input["line2"],
-        city: input["city"],
-        state: input["state"],
-        postalCode: input["postalCode"],
-        country: input["country"],
-        isDefault: input["isDefault"] ?? false,
-        ...(input["type"] !== undefined && {
-          type: coerceEnum(input["type"], AddressType, "type"),
-        }),
-      },
-      select: { id: true },
-    });
-
-    await revalidateWithLocale("/dashboard/customers");
-    return updated;
   });
 }
 
@@ -147,7 +169,12 @@ export async function deleteAddress(id: string) {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
-    await db["customerAddress"]["deleteMany"]({ where: { id, orgId: user["organizationId"] } });
-    await revalidateWithLocale("/dashboard/customers");
+    try {
+      await db["customerAddress"]["deleteMany"]({ where: { id, orgId: user["organizationId"] } });
+      await revalidateWithLocale("/dashboard/customers");
+    } catch (err) {
+      if (isMissingColumnError(err)) return null;
+      throw err;
+    }
   });
 }

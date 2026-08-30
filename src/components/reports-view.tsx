@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -214,12 +215,12 @@ export function ReportsView() {
                         {outstandingData["invoices"]["map"]((inv: any) => (
                           <tr key={inv["id"]} className="border-b">
                             <td className="py-2">
-                              <a
+                              <Link
                                 href={`/dashboard/invoices/${inv["id"]}`}
                                 className="font-medium text-primary hover:underline"
                               >
                                 {inv["number"]}
-                              </a>
+                              </Link>
                             </td>
                             <td>{inv["customerName"]}</td>
                             <td>{formatDate(inv["dueDate"])}</td>

@@ -69,16 +69,20 @@ export async function saveBrandColors(input: {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
-    await db["organization"]["update"]({
-      where: { id: user["organizationId"] },
-      data: {
-        brandColor: input["brandColor"],
-        accentColor: input["accentColor"],
-      },
-    });
+    try {
+      await db["organization"]["update"]({
+        where: { id: user["organizationId"] },
+        data: {
+          brandColor: input["brandColor"],
+          accentColor: input["accentColor"],
+        },
+      });
 
-    await revalidateWithLocale("/dashboard/invoices");
-    await revalidateWithLocale("/dashboard");
+      await revalidateWithLocale("/dashboard/invoices");
+      await revalidateWithLocale("/dashboard");
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+    }
   });
 }
 
@@ -87,15 +91,20 @@ export async function getBrandColors() {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
-    const org = await db["organization"]["findUnique"]({
-      where: { id: user["organizationId"] },
-      select: { brandColor: true, accentColor: true },
-    });
+    try {
+      const org = await db["organization"]["findUnique"]({
+        where: { id: user["organizationId"] },
+        select: { brandColor: true, accentColor: true },
+      });
 
-    return {
-      brandColor: org?.["brandColor"] ?? "#ea5804",
-      accentColor: org?.["accentColor"] ?? "#ea5804",
-    };
+      return {
+        brandColor: org?.["brandColor"] ?? "#ea5804",
+        accentColor: org?.["accentColor"] ?? "#ea5804",
+      };
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+      return { brandColor: "#ea5804", accentColor: "#ea5804" };
+    }
   });
 }
 
@@ -104,12 +113,16 @@ export async function saveFontSettings(fontFamily: string) {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
-    await db["organization"]["update"]({
-      where: { id: user["organizationId"] },
-      data: { fontFamily: fontFamily || null },
-    });
+    try {
+      await db["organization"]["update"]({
+        where: { id: user["organizationId"] },
+        data: { fontFamily: fontFamily || null },
+      });
 
-    await revalidateWithLocale("/dashboard/invoices");
+      await revalidateWithLocale("/dashboard/invoices");
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+    }
   });
 }
 
@@ -118,12 +131,17 @@ export async function getFontSettings() {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
-    const org = await db["organization"]["findUnique"]({
-      where: { id: user["organizationId"] },
-      select: { fontFamily: true },
-    });
+    try {
+      const org = await db["organization"]["findUnique"]({
+        where: { id: user["organizationId"] },
+        select: { fontFamily: true },
+      });
 
-    return org?.["fontFamily"] ?? "";
+      return org?.["fontFamily"] ?? "";
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+      return "";
+    }
   });
 }
 
@@ -132,12 +150,16 @@ export async function saveLayoutSettings(layout: string) {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
-    await db["organization"]["update"]({
-      where: { id: user["organizationId"] },
-      data: { layout },
-    });
+    try {
+      await db["organization"]["update"]({
+        where: { id: user["organizationId"] },
+        data: { layout },
+      });
 
-    await revalidateWithLocale("/dashboard/invoices");
+      await revalidateWithLocale("/dashboard/invoices");
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+    }
   });
 }
 
@@ -146,11 +168,16 @@ export async function getLayoutSettings() {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
 
-    const org = await db["organization"]["findUnique"]({
-      where: { id: user["organizationId"] },
-      select: { layout: true },
-    });
+    try {
+      const org = await db["organization"]["findUnique"]({
+        where: { id: user["organizationId"] },
+        select: { layout: true },
+      });
 
-    return org?.["layout"] ?? "default";
+      return org?.["layout"] ?? "default";
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+      return "default";
+    }
   });
 }

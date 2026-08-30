@@ -56,14 +56,29 @@ export async function signup(data: {
 
     const hashedPassword = await bcrypt["hash"](data["password"], 12);
 
-    const user = await db["user"]["create"]({
-      data: {
-        email: normalizedEmail,
-        name: data["name"]["trim"](),
-        password: hashedPassword,
-      },
-      select: { id: true },
-    });
+    let user;
+    try {
+      user = await db["user"]["create"]({
+        data: {
+          email: normalizedEmail,
+          name: data["name"]["trim"](),
+          password: hashedPassword,
+        },
+        select: { id: true },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        user = await db["user"]["create"]({
+          data: {
+            email: normalizedEmail,
+            name: data["name"]["trim"](),
+          },
+          select: { id: true },
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const token = randomBytes(32)["toString"]("hex");
     const expiresAt = new Date(

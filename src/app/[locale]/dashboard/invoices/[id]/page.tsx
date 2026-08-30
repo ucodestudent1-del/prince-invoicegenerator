@@ -128,12 +128,12 @@ export default async function InvoiceDetailPage({
         </Button>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href={`/dashboard/invoices/${invoice["id"]}/print`} target="_blank">
+            <Link href={`/dashboard/invoices/${invoice["id"]}/print`} target="_blank" aria-label={t("exportPdf")}>
               <Printer className="mr-2 h-4 w-4" /> {t("exportPdf")}
             </Link>
           </Button>
           <Button asChild variant="outline">
-            <a href={`/api/documents/invoices/${invoice["id"]}/pdf`} target="_blank" download>
+            <a href={`/api/documents/invoices/${invoice["id"]}/pdf`} target="_blank" download aria-label={t("exportPdf")}>
               <Download className="mr-2 h-4 w-4" /> Download PDF
             </a>
           </Button>
@@ -222,17 +222,18 @@ export default async function InvoiceDetailPage({
                 </div>
               </div>
 
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="py-2 w-8">#</th>
-                    <th className="py-2">{t("description")}</th>
-                    <th className="py-2 text-right">{t("quantity")}</th>
-                    <th className="py-2 text-right">{t("unitPrice")}</th>
-                    <th className="py-2 text-right">{t("amount")}</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="py-2 w-8">#</th>
+                      <th className="py-2">{t("description")}</th>
+                      <th className="py-2 text-right">{t("quantity")}</th>
+                      <th className="py-2 text-right">{t("unitPrice")}</th>
+                      <th className="py-2 text-right">{t("amount")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                   {invoice["items"]["map"]((it: any, idx: any) => (
                     <tr key={it["id"]} className="border-b">
                       <td className="py-2 text-gray-400">{idx + 1}</td>
@@ -248,8 +249,9 @@ export default async function InvoiceDetailPage({
                   ))}
                 </tbody>
               </table>
+            </div>
 
-              <div className="flex justify-end">
+            <div className="flex justify-end">
                 <div className="w-72 space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("subtotal")}</span>

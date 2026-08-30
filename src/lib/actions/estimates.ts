@@ -653,7 +653,7 @@ export async function getEstimateAuditLogs(estimateId: string) {
 
     try {
        const logs = await db["estimateAudit"]["findMany"]({
-         where: { estimateId },
+         where: { estimateId, orgId },
          orderBy: { createdAt: "desc" },
          select: { id: true, action: true, fromStatus: true, toStatus: true, note: true, createdAt: true },
        });

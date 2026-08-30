@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/org";
+import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
 
@@ -205,39 +205,60 @@ export async function deleteOrganization(): Promise<ActionResult> {
   return withActionError("deleteOrganization", async () => {
     const { orgId, userId } = await requireOrgAdmin();
 
-    await db["$transaction"](async (tx) => {
-      await tx["invoiceAudit"]["deleteMany"]({ where: { orgId } });
-      await tx["payment"]["deleteMany"]({ where: { orgId } });
-      await tx["reminder"]["deleteMany"]({ where: { orgId } });
-      await tx["reminderConfig"]["deleteMany"]({ where: { orgId } });
-      await tx["lateFeeConfig"]["deleteMany"]({ where: { orgId } });
-      await tx["recurringInvoiceConfig"]["deleteMany"]({ where: { orgId } });
-      await tx["invoiceItem"]["deleteMany"]({
-        where: { invoice: { orgId } },
-      } as any);
-      await tx["invoice"]["deleteMany"]({ where: { orgId } });
-      await tx["estimateItem"]["deleteMany"]({
-        where: { estimate: { orgId } },
-      } as any);
-      await tx["estimate"]["deleteMany"]({ where: { orgId } });
-      await tx["changeOrder"]["deleteMany"]({ where: { orgId } });
-      await tx["expense"]["deleteMany"]({ where: { orgId } });
-      await tx["project"]["deleteMany"]({ where: { orgId } });
-      await tx["subcontractorProject"]["deleteMany"]({
-        where: {
-          project: { orgId },
-        } as any,
+    try {
+      await db["$transaction"](async (tx) => {
+        await tx["invoiceAudit"]["deleteMany"]({ where: { orgId } });
+        await tx["payment"]["deleteMany"]({ where: { orgId } });
+        await tx["reminder"]["deleteMany"]({ where: { orgId } });
+        await tx["reminderConfig"]["deleteMany"]({ where: { orgId } });
+        await tx["lateFeeConfig"]["deleteMany"]({ where: { orgId } });
+        await tx["recurringInvoiceConfig"]["deleteMany"]({ where: { orgId } });
+        await tx["invoiceItem"]["deleteMany"]({
+          where: { invoice: { orgId } },
+        } as any);
+        await tx["invoice"]["deleteMany"]({ where: { orgId } });
+        await tx["estimateItem"]["deleteMany"]({
+          where: { estimate: { orgId } },
+        } as any);
+        await tx["estimate"]["deleteMany"]({ where: { orgId } });
+        await tx["changeOrder"]["deleteMany"]({ where: { orgId } });
+        await tx["expense"]["deleteMany"]({ where: { orgId } });
+        await tx["project"]["deleteMany"]({ where: { orgId } });
+        await tx["subcontractorProject"]["deleteMany"]({
+          where: {
+            project: { orgId },
+          } as any,
+        });
+        await tx["subcontractor"]["deleteMany"]({ where: { orgId } });
+        await tx["customerAddress"]["deleteMany"]({ where: { orgId } });
+        await tx["customer"]["deleteMany"]({ where: { orgId } });
+        await tx["photoAttachment"]["deleteMany"]({ where: { orgId } });
+        await tx["user"]["updateMany"]({
+          where: { organizationId: orgId, id: { not: userId } },
+          data: { organizationId: null },
+        });
+        await tx["organization"]["delete"]({ where: { id: orgId }, select: { id: true } });
       });
-      await tx["subcontractor"]["deleteMany"]({ where: { orgId } });
-      await tx["customerAddress"]["deleteMany"]({ where: { orgId } });
-      await tx["customer"]["deleteMany"]({ where: { orgId } });
-      await tx["photoAttachment"]["deleteMany"]({ where: { orgId } });
-      await tx["user"]["updateMany"]({
-        where: { organizationId: orgId, id: { not: userId } },
-        data: { organizationId: null },
-      });
-      await tx["organization"]["delete"]({ where: { id: orgId }, select: { id: true } });
-    });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await db["$transaction"](async (tx) => {
+          await tx["invoice"]["deleteMany"]({ where: { orgId } });
+          await tx["estimate"]["deleteMany"]({ where: { orgId } });
+          await tx["changeOrder"]["deleteMany"]({ where: { orgId } });
+          await tx["expense"]["deleteMany"]({ where: { orgId } });
+          await tx["project"]["deleteMany"]({ where: { orgId } });
+          await tx["subcontractor"]["deleteMany"]({ where: { orgId } });
+          await tx["customer"]["deleteMany"]({ where: { orgId } });
+          await tx["user"]["updateMany"]({
+            where: { organizationId: orgId, id: { not: userId } },
+            data: { organizationId: null },
+          });
+          await tx["organization"]["delete"]({ where: { id: orgId }, select: { id: true } });
+        });
+      } else {
+        throw err;
+      }
+    }
 
     await revalidateOrg();
     return { count: 1 };

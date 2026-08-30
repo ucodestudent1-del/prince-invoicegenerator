@@ -238,30 +238,32 @@ export default async function EstimateDetailPage({
             )}
           </div>
 
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 w-8">#</th>
-                <th className="py-2">{t("description")}</th>
-                <th className="py-2 text-right">{t("quantity")}</th>
-                <th className="py-2 text-right">{t("unitPrice")}</th>
-                <th className="py-2 text-right">{t("amount")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {estimate["items"]["map"]((item: any, idx: number) => (
-                <tr key={item["id"]} className="border-b">
-                  <td className="py-2 text-gray-400">{idx + 1}</td>
-                  <td className="py-2">{item["description"]}</td>
-                  <td className="py-2 text-right">{item["quantity"]}</td>
-                  <td className="py-2 text-right">{formatCurrency(item["unitPrice"], estimate["currency"])}</td>
-                  <td className="py-2 text-right font-medium">{formatCurrency(item["amount"], estimate["currency"])}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-muted-foreground">
+                    <th className="py-2 w-8">#</th>
+                    <th className="py-2">{t("description")}</th>
+                    <th className="py-2 text-right">{t("quantity")}</th>
+                    <th className="py-2 text-right">{t("unitPrice")}</th>
+                    <th className="py-2 text-right">{t("amount")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {estimate["items"]["map"]((item: any, idx: number) => (
+                    <tr key={item["id"]} className="border-b">
+                      <td className="py-2 text-gray-400">{idx + 1}</td>
+                      <td className="py-2">{item["description"]}</td>
+                      <td className="py-2 text-right">{item["quantity"]}</td>
+                      <td className="py-2 text-right">{formatCurrency(item["unitPrice"], estimate["currency"])}</td>
+                      <td className="py-2 text-right font-medium">{formatCurrency(item["amount"], estimate["currency"])}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          <div className="flex justify-end">
+            <div className="flex justify-end">
             <div className="w-72 space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("subtotal")}</span>
@@ -343,6 +345,7 @@ export default async function EstimateDetailPage({
               href={`/dashboard/estimates/${estimate["id"]}/print`}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label={t("exportPdf")}
             >
               <Printer className="mr-2 h-4 w-4" /> {t("exportPdf")}
             </Link>
@@ -353,6 +356,7 @@ export default async function EstimateDetailPage({
               target="_blank"
               download
               rel="noopener noreferrer"
+              aria-label={t("exportPdf")}
             >
               <Download className="mr-2 h-4 w-4" /> Download PDF
             </a>

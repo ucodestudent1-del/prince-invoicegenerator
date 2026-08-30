@@ -379,7 +379,7 @@ export async function getInvoicePayments(invoiceId: string) {
     if (!invoice) actionError("Not found");
 
     const payments = await db["payment"]["findMany"]({
-      where: { invoiceId },
+      where: { invoiceId, orgId },
       orderBy: { createdAt: "desc" },
     });
 
@@ -399,7 +399,7 @@ export async function getInvoiceAuditLogs(invoiceId: string) {
     if (!invoice) actionError("Not found");
 
     const logs = await db["invoiceAudit"]["findMany"]({
-      where: { invoiceId },
+      where: { invoiceId, orgId: user["organizationId"] },
       orderBy: { createdAt: "desc" },
     });
 
@@ -493,44 +493,55 @@ export async function saveReminderConfig(input: {
         stageIdsToKeep["add"](stage["name"]);
 
         if (stage["id"]) {
-          await db["reminderStage"]["update"]({
-            where: { id: stage["id"] },
-            data: {
-              configId: config["id"],
-              name: stage["name"],
-              type: stage["type"],
-              enabled: stage["enabled"],
-              daysOffset: stage["daysOffset"],
-              timeOfDay: stage["timeOfDay"] ?? null,
-              subjectTemplate: stage["subjectTemplate"] ?? null,
-              bodyTemplate: stage["bodyTemplate"] ?? null,
-              channel: stage["channel"] ?? "EMAIL",
-            },
-          })["catch"](() => {});
+          try {
+            await db["reminderStage"]["update"]({
+              where: { id: stage["id"] },
+              data: {
+                configId: config["id"],
+                name: stage["name"],
+                type: stage["type"],
+                enabled: stage["enabled"],
+                daysOffset: stage["daysOffset"],
+                timeOfDay: stage["timeOfDay"] ?? null,
+                subjectTemplate: stage["subjectTemplate"] ?? null,
+                bodyTemplate: stage["bodyTemplate"] ?? null,
+                channel: stage["channel"] ?? "EMAIL",
+              },
+            });
+          } catch (err) {
+            if (!isMissingColumnError(err)) throw err;
+          }
         } else {
-          await db["reminderStage"]["create"]({
-            data: {
-              configId: config["id"],
-              name: stage["name"],
-              type: stage["type"],
-              enabled: stage["enabled"],
-              daysOffset: stage["daysOffset"],
-              timeOfDay: stage["timeOfDay"] ?? null,
-              subjectTemplate: stage["subjectTemplate"] ?? null,
-              bodyTemplate: stage["bodyTemplate"] ?? null,
-              channel: stage["channel"] ?? "EMAIL",
-            },
-          })["catch"](() => {});
+          try {
+            await db["reminderStage"]["create"]({
+              data: {
+                configId: config["id"],
+                name: stage["name"],
+                type: stage["type"],
+                enabled: stage["enabled"],
+                daysOffset: stage["daysOffset"],
+                timeOfDay: stage["timeOfDay"] ?? null,
+                subjectTemplate: stage["subjectTemplate"] ?? null,
+                bodyTemplate: stage["bodyTemplate"] ?? null,
+                channel: stage["channel"] ?? "EMAIL",
+              },
+            });
+          } catch (err) {
+            if (!isMissingColumnError(err)) throw err;
+          }
         }
       }
 
-      // Remove stages that were not in the payload
-      await db["reminderStage"]["deleteMany"]({
-        where: {
-          configId: config["id"],
-          name: { notIn: Array["from"](stageIdsToKeep) },
-        },
-      })["catch"](() => {});
+      try {
+        await db["reminderStage"]["deleteMany"]({
+          where: {
+            configId: config["id"],
+            name: { notIn: Array["from"](stageIdsToKeep) },
+          },
+        });
+      } catch (err) {
+        if (!isMissingColumnError(err)) throw err;
+      }
     }
 
     await revalidateWithLocale("/dashboard/settings/reminders");
