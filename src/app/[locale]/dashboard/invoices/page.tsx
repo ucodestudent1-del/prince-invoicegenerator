@@ -28,24 +28,35 @@ const statusVariant: Record<string, any> = {
   VOID: "outline",
 };
 
-export default async function InvoicesPage({ params }: { params: { locale: string } }) {
+export default async function InvoicesPage({ params, searchParams }: { params: { locale: string }; searchParams: { page?: string } }) {
   const user = await requireUser();
   if (!user || !user["organizationId"]) return null;
   const orgId = user["organizationId"];
   const t = await getTranslations("invoices");
 
-  let invoices;
+  const page = Math.max(1, parseInt(searchParams["page"] || "1", 10) || 1);
+  const take = 20;
+  const skip = (page - 1) * take;
+
+  let invoices: any[] = [];
+  let total = 0;
   try {
-    invoices = await db["invoice"]["findMany"]({
+    const data = await db["invoice"]["findMany"]({
       where: { orgId },
       orderBy: { createdAt: "desc" },
       include: { customer: true },
+      take,
+      skip,
     });
+    invoices = data;
+    total = await db["invoice"]["count"]({ where: { orgId } });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      invoices = await db["invoice"]["findMany"]({
+      const data = await db["invoice"]["findMany"]({
         where: { orgId },
         orderBy: { createdAt: "desc" },
+        take,
+        skip,
         select: {
           id: true,
           number: true,
@@ -85,11 +96,15 @@ export default async function InvoicesPage({ params }: { params: { locale: strin
           },
         },
       });
+      invoices = data;
+      total = await db["invoice"]["count"]({ where: { orgId } });
     } else {
       logServerError("InvoicesPage", err);
       throw err;
     }
   }
+
+  const totalPages = Math.max(1, Math.ceil(total / take));
 
   return (
     <div className="space-y-6">
@@ -162,6 +177,25 @@ export default async function InvoicesPage({ params }: { params: { locale: strin
                 })}
               </TableBody>
             </Table>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                {page > 1 && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/dashboard/invoices?page=${page - 1}`}>Previous</Link>
+                  </Button>
+                )}
+                {page < totalPages && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/dashboard/invoices?page=${page + 1}`}>Next</Link>
+                  </Button>
+                )}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

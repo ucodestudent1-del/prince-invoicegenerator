@@ -726,21 +726,26 @@ export async function setInvoiceReminderSuppression(
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
-    await db["$transaction"](async (tx) => {
-      await tx["invoiceReminderSuppression"]["upsert"]({
-        where: { orgId_invoiceId: { orgId, invoiceId } },
-        update: {
-          suppressedAll: input["suppressedAll"] ?? false,
-          snoozedUntil: input["snoozedUntil"] ? new Date(input["snoozedUntil"]) : null,
-        },
-        create: {
-          orgId,
-          invoiceId,
-          suppressedAll: input["suppressedAll"] ?? false,
-          snoozedUntil: input["snoozedUntil"] ? new Date(input["snoozedUntil"]) : null,
-        },
+    try {
+      await db["$transaction"](async (tx) => {
+        await tx["invoiceReminderSuppression"]["upsert"]({
+          where: { orgId_invoiceId: { orgId, invoiceId } },
+          update: {
+            suppressedAll: input["suppressedAll"] ?? false,
+            snoozedUntil: input["snoozedUntil"] ? new Date(input["snoozedUntil"]) : null,
+          },
+          create: {
+            orgId,
+            invoiceId,
+            suppressedAll: input["suppressedAll"] ?? false,
+            snoozedUntil: input["snoozedUntil"] ? new Date(input["snoozedUntil"]) : null,
+          },
+        });
       });
-    });
+    } catch (err) {
+      if (isMissingColumnError(err)) return null;
+      throw err;
+    }
 
     await revalidateWithLocale(`/dashboard/invoices/${invoiceId}`);
   });

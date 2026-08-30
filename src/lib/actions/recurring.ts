@@ -856,7 +856,7 @@ export async function processRecurringInvoices() {
     const now = new Date();
 
     for (const org of orgs) {
-      const orgPlan = (org as any)["plan"];
+      const orgPlan = (org as any)["plan"] ?? "FREE";
       if (orgPlan && !hasFeature(orgPlan, "recurring")) continue;
       for (const config of org["recurringConfigs"]) {
         if (now["getTime"]() < new Date(config["nextRunDate"])["getTime"]()) continue;

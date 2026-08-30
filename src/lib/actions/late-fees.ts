@@ -1,8 +1,8 @@
 "use server";
 
 import { addDays } from "date-fns";
-import { db, withRetry } from "@/lib/db";
-import { requireUser, isInvalidEnumValueError } from "@/lib/org";
+import { db } from "@/lib/db";
+import { requireUser, isInvalidEnumValueError, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
 
@@ -63,22 +63,30 @@ export async function applyLateFees() {
   return withActionError("applyLateFees", async () => {
     const now = new Date();
 
-    const orgs = await db["organization"]["findMany"]({
-      where: { lateFeeConfig: { isNot: null } },
-      select: {
-        id: true,
-        lateFeeConfig: {
-          select: {
-            id: true,
-            enabled: true,
-            rate: true,
-            graceDays: true,
-            fixedFee: true,
-            maxFee: true,
+    let orgs;
+    try {
+      orgs = await db["organization"]["findMany"]({
+        where: { lateFeeConfig: { isNot: null } },
+        select: {
+          id: true,
+          lateFeeConfig: {
+            select: {
+              id: true,
+              enabled: true,
+              rate: true,
+              graceDays: true,
+              fixedFee: true,
+              maxFee: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        return [];
+      }
+      throw err;
+    }
 
     const results: { invoiceId: string; number: string; lateFee: number }[] = [];
 
@@ -106,13 +114,22 @@ export async function applyLateFees() {
             },
             select: { id: true, number: true, total: true, amountPaid: true, status: true, lateFeeAmount: true },
           });
+        } else if (isMissingColumnError(err)) {
+          invoices = await db["invoice"]["findMany"]({
+            where: {
+              orgId: org["id"],
+              status: { in: ["UNPAID", "OVERDUE", "SENT", "VIEWED"] },
+              dueDate: { lte: addDays(now, -cfg["graceDays"]) },
+            },
+            select: { id: true, number: true, total: true, amountPaid: true, status: true },
+          });
         } else {
           throw err;
         }
       }
 
       for (const invoice of invoices) {
-        if (invoice["lateFeeAmount"] > 0) continue;
+        if ((invoice as any)["lateFeeAmount"] > 0) continue;
 
         const remaining = invoice["total"] - invoice["amountPaid"];
         if (remaining <= 0) continue;
@@ -121,15 +138,30 @@ export async function applyLateFees() {
         let lateFee = percentageFee + cfg["fixedFee"];
         if (cfg["maxFee"] && lateFee > cfg["maxFee"]) lateFee = cfg["maxFee"];
 
-        await db["invoice"]["update"]({
-          where: { id: invoice["id"], orgId: org["id"] },
-          data: {
-            lateFeeAmount: lateFee,
-            total: invoice["total"] + lateFee,
-            status: "OVERDUE",
-          },
-          select: { id: true },
-        });
+        try {
+          await db["invoice"]["update"]({
+            where: { id: invoice["id"], orgId: org["id"] },
+            data: {
+              lateFeeAmount: lateFee,
+              total: invoice["total"] + lateFee,
+              status: "OVERDUE",
+            },
+            select: { id: true },
+          });
+        } catch (err) {
+          if (isMissingColumnError(err)) {
+            await db["invoice"]["update"]({
+              where: { id: invoice["id"], orgId: org["id"] },
+              data: {
+                total: invoice["total"] + lateFee,
+                status: "OVERDUE",
+              },
+              select: { id: true },
+            });
+          } else {
+            throw err;
+          }
+        }
 
         await db["invoiceAudit"]["create"]({
           data: {

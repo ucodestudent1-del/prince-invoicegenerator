@@ -1,11 +1,12 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { requireUser, isMissingColumnError } from "@/lib/org";
+import { requireUser, isMissingColumnError, getActivePlan } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextEstimateNumber, getNextChangeOrderNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
 import { coerceEnum } from "@/lib/utils";
+import { hasFeature } from "@/lib/plans";
 import { ExpenseCategory, type EstimateStatus } from "@prisma/client";
 
 // --------------------------- Estimates ---------------------------
@@ -23,6 +24,8 @@ export async function createEstimate(input: {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "estimates")) actionError("Estimates require a paid plan.");
 
     const validItems = input["items"]["filter"](
       (it) => it["description"] && it["quantity"] > 0 && it["unitPrice"] > 0
@@ -121,6 +124,8 @@ export async function createChangeOrder(input: {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "changeOrders")) actionError("Change orders require a paid plan.");
 
     if (!input["title"]) actionError("Title is required.");
 
@@ -153,6 +158,8 @@ export async function createProject(input: {
   return withActionError("createProject", async () => {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "projectManagement")) actionError("Project management requires a paid plan.");
 
     if (!input["name"]) actionError("Name is required.");
 
@@ -185,6 +192,8 @@ export async function createExpense(input: {
   return withActionError("createExpense", async () => {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "expenseTracking")) actionError("Expense tracking requires a paid plan.");
     const expense = await db["expense"]["create"]({
       data: {
         orgId: user["organizationId"],
@@ -215,6 +224,8 @@ export async function createSubcontractor(input: {
   return withActionError("createSubcontractor", async () => {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "subcontractorTracking")) actionError("Subcontractor tracking requires a paid plan.");
 
     if (!input["name"]) actionError("Name is required.");
 

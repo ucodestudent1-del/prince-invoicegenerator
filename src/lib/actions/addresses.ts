@@ -1,6 +1,6 @@
 "use server";
 
-import { db, withRetry } from "@/lib/db";
+import { db } from "@/lib/db";
 import { requireUser } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";

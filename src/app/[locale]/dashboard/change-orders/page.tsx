@@ -24,23 +24,36 @@ const variant: Record<string, any> = {
   INVOICED: "default",
 };
 
-export default async function ChangeOrdersPage({ params }: { params: { locale: string } }) {
+export default async function ChangeOrdersPage({ params, searchParams }: { params: { locale: string }; searchParams: { page?: string } }) {
   await requireFeature("changeOrders");
   const user = await requireUser();
   if (!user || !user["organizationId"]) return null;
   const t = await getTranslations("changeOrders");
+  const orgId = user["organizationId"];
+
+  const page = Math.max(1, parseInt(searchParams["page"] || "1", 10) || 1);
+  const take = 20;
+  const skip = (page - 1) * take;
+
   let cos: any[] = [];
+  let total = 0;
   try {
-    cos = await db["changeOrder"]["findMany"]({
-      where: { orgId: user["organizationId"] },
+    const data = await db["changeOrder"]["findMany"]({
+      where: { orgId },
       orderBy: { createdAt: "desc" },
       include: { project: true },
+      take,
+      skip,
     });
+    cos = data;
+    total = await db["changeOrder"]["count"]({ where: { orgId } });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      cos = await db["changeOrder"]["findMany"]({
-        where: { orgId: user["organizationId"] },
+      const data = await db["changeOrder"]["findMany"]({
+        where: { orgId },
         orderBy: { createdAt: "desc" },
+        take,
+        skip,
         select: {
           id: true,
           number: true,
@@ -53,11 +66,15 @@ export default async function ChangeOrdersPage({ params }: { params: { locale: s
           project: { select: { id: true, name: true } },
         },
       });
+      cos = data;
+      total = await db["changeOrder"]["count"]({ where: { orgId } });
     } else {
       logServerError("ChangeOrdersPage", err);
       throw err;
     }
   }
+
+  const totalPages = Math.max(1, Math.ceil(total / take));
 
   return (
     <div className="space-y-6">
@@ -102,6 +119,25 @@ export default async function ChangeOrdersPage({ params }: { params: { locale: s
                 ))}
               </TableBody>
             </Table>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                {page > 1 && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/dashboard/change-orders?page=${page - 1}`}>Previous</Link>
+                  </Button>
+                )}
+                {page < totalPages && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/dashboard/change-orders?page=${page + 1}`}>Next</Link>
+                  </Button>
+                )}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
