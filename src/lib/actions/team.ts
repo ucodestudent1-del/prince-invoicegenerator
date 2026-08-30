@@ -23,6 +23,10 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
     }
     const orgId = user.organizationId;
 
+    if (!checkRateLimit(`team-invite:${user.email}`, 10, 60 * 60 * 1000)) {
+      actionError("Too many team invitations. Please try again later.");
+    }
+
     const normalizedEmail = input.email.toLowerCase().trim();
 
     if (!normalizedEmail) {

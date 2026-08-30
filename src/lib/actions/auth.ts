@@ -181,7 +181,11 @@ export async function verifyEmail(token: string) {
       select: { id: true },
     });
 
-    await db["verificationToken"]["delete"]({ where: { token } });
+    try {
+      await db["verificationToken"]["delete"]({ where: { token } });
+    } catch {
+      // Token may have already been deleted by a concurrent request
+    }
 
     return { success: true };
   });
@@ -284,7 +288,11 @@ export async function resetPassword(token: string, newPassword: string) {
     }
 
     if (record && (record as any)["expires"] < new Date()) {
-      await db["verificationToken"]["delete"]({ where: { token } });
+      try {
+        await db["verificationToken"]["delete"]({ where: { token } });
+      } catch {
+        // Token may have already been deleted
+      }
       actionError("Token has expired. Please request a new one.");
     }
 
@@ -296,7 +304,11 @@ export async function resetPassword(token: string, newPassword: string) {
       select: { id: true },
     });
 
-    await db["verificationToken"]["delete"]({ where: { token } });
+    try {
+      await db["verificationToken"]["delete"]({ where: { token } });
+    } catch {
+      // Token may have already been deleted by a concurrent request
+    }
 
     return { success: true };
   });

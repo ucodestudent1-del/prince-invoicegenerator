@@ -97,7 +97,18 @@ export function formatDate(date: Date | string | null | undefined): string {
 
 export async function sendEmail(params: EmailParams): Promise<EmailResult> {
   const provider = process["env"]["EMAIL_PROVIDER"] || "console";
-  const from = params["from"] || process["env"]["FROM_EMAIL"] || "noreply@example.com";
+  const from =
+    params["from"] ||
+    process["env"]["FROM_EMAIL"] ||
+    (() => {
+      const base = process["env"]["NEXT_PUBLIC_BASE_URL"] || process["env"]["NEXTAUTH_URL"] || "http://localhost:3000";
+      try {
+        const hostname = new URL(base).hostname;
+        return `noreply@${hostname}`;
+      } catch {
+        return "noreply@localhost";
+      }
+    })();
 
   try {
     if (provider === "console" || provider === undefined) {
