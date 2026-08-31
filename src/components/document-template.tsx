@@ -153,22 +153,22 @@ export function DocumentTemplate({
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
-          {doc?.["logoUrl"] && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={doc["logoUrl"]} alt={t["poweredBy"]} style={{ height: "4rem", width: "auto", objectFit: "contain" }} />
-          )}
-          <div>
-            <p
-              style={{
-                fontSize: "1.125rem",
-                fontWeight: 600,
-                color: org?.["brandColor"] ?? undefined,
-              }}
-            >
-              {t["title"]}
-            </p>
-            <p style={{ fontSize: "0.75rem", color: "#6b7280" }}>Prince</p>
-          </div>
+           {doc?.["logoUrl"] && (
+             // eslint-disable-next-line @next/next/no-img-element
+             <img src={doc["logoUrl"]} alt={org?.["name"] ?? t["title"]} style={{ height: "4rem", width: "auto", objectFit: "contain" }} />
+           )}
+           <div>
+             <p
+               style={{
+                 fontSize: "1.125rem",
+                 fontWeight: 600,
+                 color: org?.["brandColor"] ?? undefined,
+               }}
+             >
+               {t["title"]}
+             </p>
+             <p style={{ fontSize: "0.75rem", color: "#6b7280" }}>{org?.["name"] ?? "Prince"}</p>
+           </div>
         </div>
         <div style={{ textAlign: "right" }}>
           <span

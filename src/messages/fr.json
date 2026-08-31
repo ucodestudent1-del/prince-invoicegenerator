@@ -347,6 +347,7 @@
     "selectCustomerError": "Veuillez sélectionner un client.",
     "print": {
       "watermark": "Passez à Pro pour supprimer le filigrane « Propulsé par Prince » et débloquer toutes les fonctionnalités.",
+      "print": "Imprimer",
       "brandName": "Prince",
       "brandTagline": "Facturation Construction",
       "poweredBy": "Propulsé par Prince",

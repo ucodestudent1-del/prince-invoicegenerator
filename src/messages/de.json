@@ -347,6 +347,7 @@
     "selectCustomerError": "Bitte wähle einen Kunden aus.",
     "print": {
       "watermark": "Upgrade auf Pro, um das Wasserzeichen „Powered by Prince“ zu entfernen und alle Funktionen freizuschalten.",
+      "print": "Drucken",
       "brandName": "Prince",
       "brandTagline": "Bauabrechnung",
       "poweredBy": "Powered by Prince",

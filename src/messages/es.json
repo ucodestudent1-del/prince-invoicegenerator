@@ -347,6 +347,7 @@
     "selectCustomerError": "Por favor, selecciona un cliente.",
     "print": {
       "watermark": "Mejora a Pro para eliminar la marca de agua «Desarrollado por Prince» y desbloquear todas las funcionalidades.",
+      "print": "Imprimir",
       "brandName": "Prince",
       "brandTagline": "Facturación para Construcción",
       "poweredBy": "Desarrollado por Prince",

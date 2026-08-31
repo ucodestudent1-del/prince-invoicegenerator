@@ -153,8 +153,8 @@ async function getInvoiceData(invoiceId: string, orgId: string) {
           notes: true,
           customerId: true,
           projectId: true,
-          customer: true,
-          project: true,
+          customer: { select: { id: true, name: true, company: true, email: true, address: true } },
+          project: { select: { id: true, name: true } },
           items: { orderBy: { sortOrder: "asc" } },
         },
       });

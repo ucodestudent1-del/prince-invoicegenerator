@@ -20,18 +20,18 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
   return withActionError("inviteTeamMember", async () => {
     const user = await requireUser();
     if (!user.organizationId) {
-      actionError("No organization");
+      return { success: false, error: "No organization" };
     }
     const orgId = user.organizationId;
 
     if (!(await checkRateLimit(`team-invite:${user.email}`, 10, 60 * 60 * 1000))) {
-      actionError("Too many team invitations. Please try again later.");
+      return { success: false, error: "Too many team invitations. Please try again later." };
     }
 
     const normalizedEmail = input.email.toLowerCase().trim();
 
     if (!normalizedEmail) {
-      actionError("Email is required.");
+      return { success: false, error: "Email is required." };
     }
 
     const existingUser = await db["user"]["findUnique"]({
@@ -64,9 +64,10 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
       invitedUserId = created["id"];
     } catch (err) {
       if (isMissingColumnError(err)) {
-        actionError(
-          "Database schema is out of date. Please run migrations and try again."
-        );
+        return {
+          success: false,
+          error: "Database schema is out of date. Please run migrations and try again.",
+        };
       }
       throw err;
     }

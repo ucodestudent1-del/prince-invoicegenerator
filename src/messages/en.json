@@ -351,6 +351,7 @@
     "selectCustomerError": "Please select a customer.",
     "print": {
       "watermark": "Upgrade to Pro to remove the \"Powered by Prince\" watermark and unlock all features.",
+      "print": "Print",
       "brandName": "Prince",
       "brandTagline": "Construction Invoicing",
       "poweredBy": "Powered by Prince",
