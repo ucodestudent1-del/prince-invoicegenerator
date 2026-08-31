@@ -83,7 +83,7 @@ export async function getCustomers(params?: {
       ];
     }
     if (params?.["status"] && params["status"] !== "ALL") {
-      where["status"] = params["status"];
+      where["status"] = coerceEnum(params["status"], CustomerStatus, "status");
     }
 
     try {

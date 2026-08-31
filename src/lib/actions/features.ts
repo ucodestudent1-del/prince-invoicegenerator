@@ -129,6 +129,22 @@ export async function createChangeOrder(input: {
 
     if (!input["title"]) actionError("Title is required.");
 
+    if (input["projectId"]) {
+      const projectExists = await db["project"]["findFirst"]({
+        where: { id: input["projectId"]!, orgId },
+        select: { id: true },
+      });
+      if (!projectExists) actionError("Selected project does not exist or has been deleted.");
+    }
+
+    if (input["invoiceId"]) {
+      const invoiceExists = await db["invoice"]["findFirst"]({
+        where: { id: input["invoiceId"]!, orgId },
+        select: { id: true },
+      });
+      if (!invoiceExists) actionError("Selected invoice does not exist or has been deleted.");
+    }
+
     const number = await getNextChangeOrderNumber(db, orgId);
     const co = await db["changeOrder"]["create"]({
       data: {

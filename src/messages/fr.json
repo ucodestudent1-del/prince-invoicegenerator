@@ -358,6 +358,7 @@
       "subtotal": "Sous-total",
       "tax": "Taxe",
       "discount": "Remise",
+     "amount": "Montant",
       "retainage": "Retenue",
       "total": "Total",
       "notes": "Notes",
@@ -491,7 +492,8 @@
     "save": "Enregistrer le client",
     "saving": "Enregistrement…",
     "failed": "Échec de l'enregistrement.",
-    "failedToSave": "Échec de l'enregistrement."
+     "failedToSave": "Échec de l'enregistrement.",
+     "back": "Retour"
   },
   "subcontractors": {
     "title": "Sous-traitants",
@@ -619,7 +621,9 @@
     "teamMembers": "Membres de l'équipe",
     "deleteOrganization": "Supprimer l'organisation",
     "ownerRequired": "Accès propriétaire ou administrateur requis.",
-    "deleteWarning": "Seuls les propriétaires et administrateurs peuvent supprimer l'organisation."
+     "deleteWarning": "Seuls les propriétaires et administrateurs peuvent supprimer l'organisation.",
+     "confirm": "Confirmer",
+     "remove": "Supprimer"
   },
   "reminders": {
     "title": "Rappels automatisés",

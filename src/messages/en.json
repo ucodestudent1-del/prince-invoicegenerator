@@ -459,8 +459,9 @@
     "alreadyActioned": "Already processed",
     "billTo": "Bill To",
     "estimateDetails": "Estimate Details",
-    "currency": "Currency",
-    "noItems": "No items found."
+     "currency": "Currency",
+     "amount": "Amount",
+     "noItems": "No items found."
   },
   "changeOrders": {
     "title": "Title",
@@ -541,7 +542,8 @@
     "save": "Save customer",
     "saving": "Saving…",
     "failed": "Failed to save.",
-    "failedToSave": "Failed to save."
+     "failedToSave": "Failed to save.",
+     "back": "Back"
   },
   "subcontractors": {
     "title": "Subcontractors",
@@ -790,7 +792,9 @@
     "teamMembers": "Team members",
     "deleteOrganization": "Delete organization",
     "ownerRequired": "Owner or admin access required.",
-    "deleteWarning": "Only owners and admins can delete the organization."
+     "deleteWarning": "Only owners and admins can delete the organization.",
+     "confirm": "Confirm",
+     "remove": "Remove"
   },
   "reminders": {
     "title": "Automated reminders",

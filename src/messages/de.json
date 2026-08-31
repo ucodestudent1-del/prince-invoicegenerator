@@ -358,6 +358,7 @@
       "subtotal": "Zwischensumme",
       "tax": "Steuer",
       "discount": "Rabatt",
+     "amount": "Betrag",
       "retainage": "Einbehalt",
       "total": "Gesamt",
       "notes": "Notizen",
@@ -483,7 +484,8 @@
     "save": "Kunde speichern",
     "saving": "Speichern…",
     "failed": "Speichern fehlgeschlagen.",
-    "failedToSave": "Speichern fehlgeschlagen."
+     "failedToSave": "Speichern fehlgeschlagen.",
+     "back": "Zurück"
   },
   "subcontractors": {
     "title": "Subunternehmer",
@@ -611,7 +613,9 @@
     "teamMembers": "Teammitglieder",
     "deleteOrganization": "Organisation löschen",
     "ownerRequired": "Zugriff als Eigentümer oder Administrator erforderlich.",
-    "deleteWarning": "Nur Eigentümer und Administratoren können die Organisation löschen."
+     "deleteWarning": "Nur Eigentümer und Administratoren können die Organisation löschen.",
+     "confirm": "Bestätigen",
+     "remove": "Entfernen"
   },
   "reminders": {
     "title": "Automatische Erinnerungen",

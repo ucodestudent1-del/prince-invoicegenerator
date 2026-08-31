@@ -358,6 +358,7 @@
       "subtotal": "Subtotal",
       "tax": "Impuesto",
       "discount": "Descuento",
+     "amount": "Importe",
       "retainage": "Retención",
       "total": "Total",
       "notes": "Notas",
@@ -483,7 +484,8 @@
     "save": "Guardar cliente",
     "saving": "Guardando…",
     "failed": "Error al guardar.",
-    "failedToSave": "Error al guardar."
+     "failedToSave": "Error al guardar.",
+     "back": "Atrás"
   },
   "subcontractors": {
     "title": "Subcontratistas",
@@ -611,7 +613,9 @@
     "teamMembers": "Miembros del equipo",
     "deleteOrganization": "Eliminar organización",
     "ownerRequired": "Se requiere acceso de propietario o administrador.",
-    "deleteWarning": "Solo los propietarios y administradores pueden eliminar la organización."
+     "deleteWarning": "Solo los propietarios y administradores pueden eliminar la organización.",
+     "confirm": "Confirmar",
+     "remove": "Eliminar"
   },
   "reminders": {
     "title": "Recordatorios automatizados",
