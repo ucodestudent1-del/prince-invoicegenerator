@@ -381,52 +381,67 @@ export async function getCustomerActivityLog(customerId: string) {
       throw err;
     }
 
-    // Aggregate and sort by date
-    const activities: Array<{
+    type Activity = {
       id: string;
-      type: string;
+      type: "INVOICE" | "ESTIMATE" | "PAYMENT";
       description: string;
       amount?: number;
       status?: string;
       date: Date;
-    }> = [];
+    };
 
-    invoices["forEach"]((inv) => {
-      activities["push"]({
-        id: inv["id"],
-        type: "INVOICE",
-        description: `Invoice ${inv["number"]}`,
-        amount: inv["total"],
-        status: inv["status"],
-        date: inv["createdAt"],
-      });
-    });
+    // K-way merge of three pre-sorted streams. O(n) instead of O(n log n)
+    // and never holds more than `limit` rows.
+    const limit = 100;
+    const merged: Activity[] = [];
+    let i = 0, j = 0, k = 0;
+    while (
+      merged.length < limit &&
+      (i < invoices.length || j < estimates.length || k < payments.length)
+    ) {
+      const inv = i < invoices.length ? invoices[i] : null;
+      const est = j < estimates.length ? estimates[j] : null;
+      const pay = k < payments.length ? payments[k] : null;
 
-    estimates["forEach"]((est) => {
-      activities["push"]({
-        id: est["id"],
-        type: "ESTIMATE",
-        description: `Estimate ${est["number"]}`,
-        amount: est["total"],
-        status: est["status"],
-        date: est["createdAt"],
-      });
-    });
+      const invTime = inv ? new Date(inv["createdAt"])["getTime"]() : -Infinity;
+      const estTime = est ? new Date(est["createdAt"])["getTime"]() : -Infinity;
+      const payTime = pay ? new Date(pay["createdAt"])["getTime"]() : -Infinity;
 
-    payments["forEach"]((pay) => {
-      activities["push"]({
-        id: pay["id"],
-        type: "PAYMENT",
-        description: `Payment for ${pay["invoice"]?.["number"] || "invoice"}`,
-        amount: pay["amount"],
-        status: pay["status"],
-        date: pay["createdAt"],
-      });
-    });
+      if (invTime >= estTime && invTime >= payTime && inv) {
+        merged["push"]({
+          id: inv["id"],
+          type: "INVOICE",
+          description: `Invoice ${inv["number"]}`,
+          amount: inv["total"],
+          status: inv["status"],
+          date: inv["createdAt"],
+        });
+        i++;
+      } else if (estTime >= payTime && est) {
+        merged["push"]({
+          id: est["id"],
+          type: "ESTIMATE",
+          description: `Estimate ${est["number"]}`,
+          amount: est["total"],
+          status: est["status"],
+          date: est["createdAt"],
+        });
+        j++;
+      } else if (pay) {
+        merged["push"]({
+          id: pay["id"],
+          type: "PAYMENT",
+          description: `Payment for ${pay["invoice"]?.["number"] || "invoice"}`,
+          amount: pay["amount"],
+          status: pay["status"],
+          date: pay["createdAt"],
+        });
+        k++;
+      } else {
+        break;
+      }
+    }
 
-    // Sort by date descending
-    activities["sort"]((a, b) => new Date(b["date"])["getTime"]() - new Date(a["date"])["getTime"]());
-
-    return activities["slice"](0, 100);
+    return merged;
   });
 }

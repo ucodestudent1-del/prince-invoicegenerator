@@ -1,35 +1,57 @@
 import { PrismaClient } from "@prisma/client";
 
-export async function getNextInvoiceNumber(prisma: PrismaClient, orgId: string): Promise<string> {
-  const last = await prisma["invoice"]["findFirst"]({
+const MAX_PAD = 7;
+
+export async function getNextInvoiceNumber(
+  prisma: PrismaClient,
+  orgId: string
+): Promise<string> {
+  const last = await prisma.invoice.findFirst({
     select: { number: true },
-    where: { orgId },
-    orderBy: { createdAt: "desc" },
+    where: { orgId, number: { startsWith: "INV-" } },
+    orderBy: { number: "desc" },
   });
-  const lastNum = last ? parseInt(last?.["number"]?.["replace"](/^INV-/, ""), 10) : 0;
-  const nextNum = Number.isNaN(lastNum) ? 1 : lastNum + 1;
-  return `INV-${String(nextNum)["padStart"](4, "0")}`;
+  return nextFromLast("INV-", last?.number, MAX_PAD);
 }
 
-export async function getNextEstimateNumber(prisma: PrismaClient, orgId: string): Promise<string> {
-  const last = await prisma["estimate"]["findFirst"]({
+export async function getNextEstimateNumber(
+  prisma: PrismaClient,
+  orgId: string
+): Promise<string> {
+  const last = await prisma.estimate.findFirst({
     select: { number: true },
-    where: { orgId },
-    orderBy: { createdAt: "desc" },
+    where: { orgId, number: { startsWith: "EST-" } },
+    orderBy: { number: "desc" },
   });
-  const lastNum = last ? parseInt(last?.["number"]?.["replace"](/^EST-/, ""), 10) : 0;
-  const nextNum = Number.isNaN(lastNum) ? 1 : lastNum + 1;
-  return `EST-${String(nextNum)["padStart"](4, "0")}`;
+  return nextFromLast("EST-", last?.number, MAX_PAD);
 }
 
-export async function getNextChangeOrderNumber(prisma: PrismaClient, orgId: string): Promise<string> {
-  const last = await prisma["changeOrder"]["findFirst"]({
+export async function getNextChangeOrderNumber(
+  prisma: PrismaClient,
+  orgId: string
+): Promise<string> {
+  const last = await prisma.changeOrder.findFirst({
     select: { number: true },
-    where: { orgId },
-    orderBy: { createdAt: "desc" },
+    where: { orgId, number: { startsWith: "CO-" } },
+    orderBy: { number: "desc" },
   });
-  const lastNum = last ? parseInt(last?.["number"]?.["replace"](/^CO-/, ""), 10) : 0;
-  const nextNum = Number.isNaN(lastNum) ? 1 : lastNum + 1;
-  return `CO-${String(nextNum)["padStart"](4, "0")}`;
+  return nextFromLast("CO-", last?.number, MAX_PAD);
+}
+
+function nextFromLast(
+  prefix: string,
+  lastNumber: string | undefined,
+  pad: number
+): string {
+  const lastNum = lastNumber
+    ? parseInt(lastNumber.replace(new RegExp(`^${prefix}`), ""), 10)
+    : 0;
+  const nextNum = Number.isFinite(lastNum) ? lastNum + 1 : 1;
+  if (nextNum >= 10 ** pad) {
+    throw new Error(
+      `Numbering limit reached for ${prefix} (max ${10 ** pad - 1}). Contact support to extend the sequence.`
+    );
+  }
+  return `${prefix}${String(nextNum).padStart(pad, "0")}`;
 }
 

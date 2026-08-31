@@ -70,24 +70,30 @@ function isRecurrenceExhausted(
   generatedCount: number,
   now: Date
 ): boolean {
-  if (endDate && now["getTime"]() >= endDate["getTime"]()) return true;
-  if (occurrences && generatedCount >= occurrences) return true;
+  if (endDate && now["getTime"]() > endDate["getTime"]()) return true;
+  if (occurrences != null && generatedCount >= occurrences) return true;
   return false;
+}
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
 }
 
 function normalizeDefaultItems(json: unknown): InvoiceItemInput[] {
   if (!Array["isArray"](json)) return [];
   return json
     ["map"]((it: any) => {
-      const quantity = Number(it["quantity"]) ?? 0;
-      const unitPrice = Number(it["unitPrice"]) ?? 0;
-      const amount = Number(it["amount"]) ?? quantity * unitPrice;
+      const quantity = toFiniteNumber(it?.["quantity"]);
+      const unitPrice = toFiniteNumber(it?.["unitPrice"]);
+      const amount = toFiniteNumber(it?.["amount"], quantity * unitPrice);
+      const sortOrder = toFiniteNumber(it?.["sortOrder"]);
       return {
-        description: String(it["description"] ?? ""),
+        description: String(it?.["description"] ?? ""),
         quantity,
         unitPrice,
         amount,
-        sortOrder: Number(it["sortOrder"]) ?? 0,
+        sortOrder,
       };
     })
     ["filter"]((it) => it["description"] && it["quantity"] > 0 && it["unitPrice"] > 0);
@@ -96,10 +102,10 @@ function normalizeDefaultItems(json: unknown): InvoiceItemInput[] {
 function normalizeTemplateItems(items: any[]): InvoiceItemInput[] {
   return (items ?? [])["map"]((it) => ({
     description: it["description"],
-    quantity: Number(it["quantity"]),
-    unitPrice: Number(it["unitPrice"]),
-    amount: Number(it["amount"]),
-    sortOrder: Number(it["sortOrder"] ?? 0),
+    quantity: toFiniteNumber(it?.["quantity"]),
+    unitPrice: toFiniteNumber(it?.["unitPrice"]),
+    amount: toFiniteNumber(it?.["amount"]),
+    sortOrder: toFiniteNumber(it?.["sortOrder"] ?? 0),
   }));
 }
 
@@ -172,13 +178,60 @@ interface CreateInvoiceParams {
 }
 
 async function createRecurringInvoiceEntry(p: CreateInvoiceParams): Promise<any> {
+  const MAX_ATTEMPTS = 3;
   let number = p["number"];
-  const baseData = () => ({
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const data = buildInvoiceData(p, number);
+    try {
+      return await db["invoice"]["create"]({ data: data as any });
+    } catch (err: any) {
+      const msg = err?.["message"] ?? "";
+
+      // Schema drift: newer columns may not exist on this database.
+      if (isMissingColumnError(err)) {
+        return await db["invoice"]["create"]({
+          data: buildInvoiceData(p, number, { omitModernColumns: true }) as any,
+        });
+      }
+
+      // Unique constraint on (orgId, number): retry with a fresh number.
+      // Check both message and Prisma error code P2002 for portability.
+      const isUniqueViolation =
+        msg["includes"]("Unique constraint failed") ||
+        err?.["code"] === "P2002";
+      if (isUniqueViolation && attempt < MAX_ATTEMPTS) {
+        number = await getNextInvoiceNumber(db, p["orgId"]);
+        continue;
+      }
+
+      throw err;
+    }
+  }
+
+  // Unreachable: the loop either returns or throws. Make TS happy.
+  throw new Error(
+    `createRecurringInvoiceEntry exhausted ${MAX_ATTEMPTS} attempts without throwing.`
+  );
+}
+
+/**
+ * Build the invoice-create payload. The shape is the same in both the normal
+ * and schema-drift paths; `omitModernColumns` strips the fields that may be
+ * missing from a pre-migration database.
+ */
+function buildInvoiceData(
+  p: CreateInvoiceParams,
+  number: string,
+  opts: { omitModernColumns?: boolean } = {}
+): Record<string, any> {
+  const modern = !opts["omitModernColumns"];
+  return {
     orgId: p["orgId"],
     number,
     customerId: p["customerId"],
     projectId: p["projectId"] ?? null,
-    type: "RECURRING" as const,
+    type: "RECURRING",
     status: p["status"],
     issueDate: p["issueDate"],
     dueDate: p["dueDate"],
@@ -192,45 +245,21 @@ async function createRecurringInvoiceEntry(p: CreateInvoiceParams): Promise<any>
     total: p["total"],
     amountPaid: 0,
     notes: p["notes"],
-    logoUrl: p["logoUrl"],
+    ...(modern ? { logoUrl: p["logoUrl"] } : {}),
     recurringConfigId: p["configId"],
-    ...(p["userId"] ? { createdById: p["userId"] } : {}),
+    ...(modern && p["userId"] ? { createdById: p["userId"] } : {}),
+    ...(modern ? { billToAddress: p["billToAddress"] } : {}),
+    ...(modern ? { shipToAddress: p["shipToAddress"] } : {}),
     items: {
-      create: p["items"]["map"]((i) => ({
+      create: p["items"]["map"]((i, idx) => ({
         description: i["description"],
         quantity: i["quantity"],
         unitPrice: i["unitPrice"],
         amount: i["amount"],
-        sortOrder: i["sortOrder"],
+        sortOrder: i["sortOrder"] ?? idx,
       })),
     },
-  });
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      return await db["invoice"]["create"]({ data: baseData() });
-    } catch (err: any) {
-      if (isMissingColumnError(err)) {
-        // Schema drift: logoUrl / billToAddress / shipToAddress / createdById may not exist.
-        const drift: any = baseData();
-        delete drift["logoUrl"];
-        delete drift["billToAddress"];
-        delete drift["shipToAddress"];
-        delete drift["createdById"];
-        return await db["invoice"]["create"]({ data: drift });
-      }
-      if (
-        err instanceof Error &&
-        err["message"]["includes"]("Unique constraint failed") &&
-        attempt < 3
-      ) {
-        number = await getNextInvoiceNumber(db, p["orgId"]);
-        continue;
-      }
-      throw err;
-    }
-  }
-  actionError("Failed to create invoice after 3 attempts.");
+  };
 }
 
 async function validateTemplateInvoice(
@@ -244,32 +273,62 @@ async function validateTemplateInvoice(
   try {
     template = await db["invoice"]["findFirst"]({
       where: { id: config["lastInvoiceId"]!, orgId: config["orgId"] },
-      include: { items: true },
+      select: {
+        id: true,
+        number: true,
+        type: true,
+        taxRate: true,
+        discount: true,
+        retainageRate: true,
+        retainageAmount: true,
+        subtotal: true,
+        taxAmount: true,
+        total: true,
+        notes: true,
+        logoUrl: true,
+        billToAddress: true,
+        shipToAddress: true,
+        items: {
+          orderBy: { sortOrder: "asc" },
+          select: {
+            id: true,
+            description: true,
+            quantity: true,
+            unitPrice: true,
+            amount: true,
+            sortOrder: true,
+          },
+        },
+      },
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
+      // Schema drift: modern columns (logoUrl, billToAddress, shipToAddress,
+      // items.sortOrder) may not exist on this database yet. Fall back to a
+      // minimal select that only requests guaranteed-to-exist columns.
       template = await db["invoice"]["findFirst"]({
         where: { id: config["lastInvoiceId"]!, orgId: config["orgId"] },
         select: {
           id: true,
           number: true,
           type: true,
-          status: true,
-          issueDate: true,
-          dueDate: true,
-          currency: true,
-          subtotal: true,
           taxRate: true,
-          taxAmount: true,
           discount: true,
           retainageRate: true,
           retainageAmount: true,
+          subtotal: true,
+          taxAmount: true,
           total: true,
-          amountPaid: true,
           notes: true,
-          recurringConfigId: true,
-          createdById: true,
-          items: { orderBy: { sortOrder: "asc" }, select: { id: true, description: true, quantity: true, unitPrice: true, amount: true, sortOrder: true } },
+          items: {
+            select: {
+              id: true,
+              description: true,
+              quantity: true,
+              unitPrice: true,
+              amount: true,
+            },
+          },
         },
       });
     } else {
@@ -575,7 +634,11 @@ export async function createRecurringConfig(input: RecurringConfigInput) {
       : addMonths(startDate, 1);
 
     // Map the form's taxRate/discount/items onto the new default columns.
-    // A zero value is treated as "not set" (-> use the template on generation).
+    // Treat only `null` / `undefined` as "not set" — an explicit 0 (tax-exempt
+    // customer, no discount) is a valid value that must round-trip to the DB.
+    const hasTaxRate = input["taxRate"] != null;
+    const hasDiscount = input["discount"] != null;
+
     const fullData = {
       orgId,
       customerId: input["customerId"],
@@ -590,8 +653,8 @@ export async function createRecurringConfig(input: RecurringConfigInput) {
       paymentTerms: input["paymentTerms"] ?? "NET_30",
       autoSend: input["autoSend"] ?? true,
       autoCharge: input["autoCharge"] ?? false,
-      defaultTaxRate: input["taxRate"] ? Number(input["taxRate"]) : null,
-      defaultDiscount: input["discount"] ? Number(input["discount"]) : null,
+      defaultTaxRate: hasTaxRate ? Number(input["taxRate"]) : null,
+      defaultDiscount: hasDiscount ? Number(input["discount"]) : null,
       defaultItems:
         validItems["length"] > 0 ? validItems : undefined,
     };
