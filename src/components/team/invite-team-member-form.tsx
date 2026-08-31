@@ -27,6 +27,8 @@ export function InviteTeamMemberForm() {
           setEmail("");
           setName("");
           setRole("MEMBER");
+        } else if (result?.error) {
+          setError(result.error);
         }
       } catch (err: any) {
         setError(err?.message ?? "Failed to send invitation.");

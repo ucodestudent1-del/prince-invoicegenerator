@@ -40,12 +40,10 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
     });
 
     if (existingUser) {
-      if (existingUser.organizationId === orgId) {
-        actionError("This user is already a member of your organization.");
+      if (existingUser["organizationId"] === orgId) {
+        return { success: false, error: "This user is already a member of your organization." };
       }
-      actionError(
-        "An account with this email already exists. Ask them to contact their current org admin."
-      );
+      return { success: false, error: "An account with this email already exists. Ask them to contact their current org admin." };
     }
 
     const tempPassword = randomBytes(16).toString("hex");
