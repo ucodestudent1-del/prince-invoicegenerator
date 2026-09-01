@@ -2,7 +2,8 @@
 
 import { format as formatDateFn } from "date-fns";
 import { db } from "@/lib/db";
-import { requireUser, isMissingColumnError, isInvalidEnumValueError } from "@/lib/org";
+import { requireUser } from "@/lib/org";
+import { isMissingColumnError, isInvalidEnumValueError } from "@/lib/db-drift";
 import { withActionError, actionError } from "@/lib/action-errors";
 
 export async function getRevenueReport(year?: number) {

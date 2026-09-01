@@ -69,6 +69,8 @@ export async function POST(req: NextRequest) {
 
     const session = await stripe["checkout"]["sessions"]["create"]({
       customer: customerId,
+      customer_email: user["email"] ?? undefined,
+      customer_update: { address: "auto", name: "auto" },
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${appUrl}/dashboard/billing?success=1`,

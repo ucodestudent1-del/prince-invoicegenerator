@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getTimeEntries, createManualTimeEntry } from "@/lib/actions/time-tracking";
-import { isMissingColumnError, ensureVerified } from "@/lib/org";
+import { ensureVerified } from "@/lib/org";
+import { isMissingColumnError } from "@/lib/db-drift";
 import { logError } from "@/lib/logging";
 
 export const runtime = "nodejs";

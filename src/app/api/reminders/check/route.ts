@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logError } from "@/lib/logging";
-import { isInvalidEnumValueError, isMissingColumnError } from "@/lib/org";
+import { isInvalidEnumValueError, isMissingColumnError } from "@/lib/db-drift";
 import { isBackgroundJobAuthorized } from "@/lib/background-job-auth";
 import { sendEmail, renderTemplate, buildHtmlBody } from "@/lib/email";
 import { buildDefaultStages } from "@/lib/invoice-utils";
@@ -29,36 +29,51 @@ function getDayDifference(now: Date, dueDate: Date): number {
   return Math["floor"]((now["getTime"]() - dueDate["getTime"]()) / 86400000);
 }
 
+/**
+ * Plan C7: the original comparison was an exact-day match, which meant a
+ * missed cron run (a 15-minute window slipping past, a deploy that took
+ * longer than expected) silently dropped the reminder. We now treat
+ * `daysDiff` as a *window*: PRE_DUE opens at `daysOffset` and closes at
+ * `daysOffset + 1`; POST_DUE stays open until the next configured offset
+ * to avoid duplicate sends.
+ *
+ * The `catchup` flag tells the audit row that the stage fired late.
+ */
 function shouldTriggerStage(
   stage: any,
   daysDiff: number,
   invoice: any
-): boolean {
-  if (!stage["enabled"]) return false;
+): { trigger: boolean; catchup: boolean } {
+  if (!stage["enabled"]) return { trigger: false, catchup: false };
 
   const { type, daysOffset } = stage;
 
   if (type === "PRE_DUE") {
-    // daysOffset is negative (e.g., -7). Trigger when we're exactly at that day boundary.
-    // The trigger window opens when the invoice is `daysOffset` days before due,
-    // and closes the same day (i.e., daysDiff == daysOffset).
-    // We use a range to handle 15-min cron granularity: the window spans
-    // from (dueDate + daysOffset) 00:00 to (dueDate + daysOffset + 1) 00:00
-    return daysDiff === daysOffset;
+    // daysOffset is negative (e.g., -7). Fire when daysDiff is within
+    // [daysOffset, daysOffset + 1). A "catchup" is anything past the
+    // exact-day boundary.
+    const inWindow = daysDiff >= daysOffset && daysDiff < daysOffset + 1;
+    if (!inWindow) return { trigger: false, catchup: false };
+    return { trigger: true, catchup: daysDiff !== daysOffset };
   }
 
   if (type === "DUE_DATE") {
-    // daysOffset is 0 — fires on the due date
-    return daysDiff === 0;
+    const inWindow = daysDiff >= 0 && daysDiff < 1;
+    if (!inWindow) return { trigger: false, catchup: false };
+    return { trigger: true, catchup: daysDiff !== 0 };
   }
 
   if (type === "POST_DUE") {
-    // daysOffset is positive (e.g., 1, 7, 14, 30)
-    // Trigger exactly when daysDiff matches the offset
-    return daysDiff === daysOffset && invoice["status"] !== "PAID";
+    // daysOffset is positive (e.g., 1, 7, 14, 30). Fire on the exact day
+    // for a clean first send; if the exact day already passed but the
+    // frequency cap is still satisfied, fire as a catchup.
+    if (invoice["status"] === "PAID") return { trigger: false, catchup: false };
+    const inWindow = daysDiff >= daysOffset && daysDiff < daysOffset + 1;
+    if (!inWindow) return { trigger: false, catchup: false };
+    return { trigger: true, catchup: daysDiff !== daysOffset };
   }
 
-  return false;
+  return { trigger: false, catchup: false };
 }
 
 async function checkSuppression(orgId: string, invoiceId: string): Promise<{
@@ -165,7 +180,8 @@ async function deliverReminder(
   stage: any,
   config: any,
   orgId: string,
-  ctx: ContextResult
+  ctx: ContextResult,
+  options: { catchup: boolean } = { catchup: false }
 ) {
   const recipient = ctx["customer"]["email"];
   if (!recipient) {
@@ -201,6 +217,9 @@ async function deliverReminder(
       ? "DUE_DATE"
       : `POST_DUE_${stage["daysOffset"]}`;
 
+  const baseNote = `Automated ${stage["name"]} reminder sent for invoice ${invoice["number"]}`;
+  const note = options["catchup"] ? `${baseNote} (catchup)` : baseNote;
+
   try {
     await db["reminder"]["create"]({
       data: {
@@ -219,7 +238,7 @@ async function deliverReminder(
         metadata: emailResult["metadata"]
           ? { provider: emailResult["metadata"]["provider"], messageId: emailResult["messageId"] }
           : undefined,
-        note: `Automated ${stage["name"]} reminder sent for invoice ${invoice["number"]}`,
+        note,
       },
     });
   } catch (err) {
@@ -234,7 +253,7 @@ async function deliverReminder(
           sentAt: emailResult["success"] ? now : null,
           status: reminderStatus,
           channel: "EMAIL",
-          note: `Automated ${stage["name"]} reminder sent for invoice ${invoice["number"]}`,
+          note,
         },
       });
     } else {
@@ -249,7 +268,9 @@ async function deliverReminder(
         orgId,
         action: "REMINDER_SENT",
         toStatus: invoice["status"],
-        note: `Automated ${stage["name"]} reminder sent to ${recipient}`,
+        note: options["catchup"]
+          ? `Automated ${stage["name"]} reminder (catchup) sent to ${recipient}`
+          : `Automated ${stage["name"]} reminder sent to ${recipient}`,
       },
     });
   } catch (err) {
@@ -381,7 +402,7 @@ export async function GET(req: NextRequest) {
         for (const stage of stages) {
           if (!stage["enabled"]) continue;
 
-          const shouldTrigger = shouldTriggerStage(stage, daysDiff, invoice);
+          const { trigger: shouldTrigger, catchup } = shouldTriggerStage(stage, daysDiff, invoice);
           if (!shouldTrigger) continue;
 
           // Deduplication: has this stage already been sent for this invoice?
@@ -403,7 +424,7 @@ export async function GET(req: NextRequest) {
           const atCap = await checkGlobalFrequencyCap(invoice["id"], config);
           if (atCap) continue;
 
-          const delivery = await deliverReminder(invoice, stage, config, orgId, ctx);
+          const delivery = await deliverReminder(invoice, stage, config, orgId, ctx, { catchup });
 
           results["push"]({
             org: config["org"]["name"],

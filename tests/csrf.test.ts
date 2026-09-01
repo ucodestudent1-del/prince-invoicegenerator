@@ -189,6 +189,25 @@ describe("verifyCsrf — origin validation", () => {
     expect(result)["toMatchObject"]({ ok: false, reason: "origin-missing" });
   });
 
+  it("fails closed on an internal fault (e.g. malformed URL)", () => {
+    // Force `evaluate` to throw by handing it a request whose `nextUrl`
+    // throws when its pathname is read. With the new contract, an internal
+    // fault is a rejection, not a silent allow.
+    const faulty = {
+      method: "POST",
+      headers: new Headers(),
+      cookies: { get: () => undefined },
+      nextUrl: {
+        get pathname() {
+          throw new Error("boom");
+        },
+      },
+    } as unknown as NextRequest;
+    const result = verifyCsrf(faulty);
+    expect(result["ok"])["toBe"](false);
+    expect(result["reason"])["toBe"]("internal-fault");
+  });
+
   it("covers every state-changing method", () => {
     for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
       const result = verifyCsrf(

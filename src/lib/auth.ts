@@ -4,7 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 import { APP_NAME } from "@/lib/app-name";
-import { isMissingColumnError } from "@/lib/org";
+import { isMissingColumnError } from "@/lib/db-drift";
 import { logServerError } from "@/lib/errors";
 import { recordAudit } from "@/lib/audit";
 import bcrypt from "bcryptjs";
@@ -216,6 +216,10 @@ export const authOptions: NextAuthOptions = {
             where: { id: user["id"] },
             select: { organizationId: true, role: true, locale: true, emailVerified: true },
           });
+          // Coerce null DB values to typed null. `?? null` collapses
+          // `undefined` (when the row is missing) and the SQL NULL into a
+          // single observable shape so call sites do not have to defend
+          // against both.
           organizationId = dbUser?.["organizationId"] ?? null;
           role = dbUser?.["role"] ?? "OWNER";
           userLocale = dbUser?.["locale"] ?? null;
@@ -229,10 +233,14 @@ export const authOptions: NextAuthOptions = {
               });
               organizationId = dbUser?.["organizationId"] ?? null;
               role = dbUser?.["role"] ?? "OWNER";
-              // Fail open: if the emailVerified column is missing (schema
-              // drift), treat the user as verified so the dashboard gate can
-              // never hard-lock the entire app.
-              emailVerified = new Date();
+              // Fail closed on the verification flag: when the column is
+              // missing (schema drift) we must NOT mark the user as
+              // verified, because that would let any account through the
+              // `ensureVerified()` gate. Route-level checks (e.g.
+              // `ensureVerified()`) will surface the missing column as a
+              // 403 and the operator can fix the migration without
+              // silently downgrading security.
+              emailVerified = null;
              } catch (fallbackErr) {
               logServerError("auth session callback (fallback query)", fallbackErr);
             }

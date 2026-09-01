@@ -2,7 +2,8 @@
 
 import { withActionError, actionError } from "@/lib/action-errors";
 import { db } from "@/lib/db";
-import { requireUser, isMissingColumnError } from "@/lib/org";
+import { requireUser } from "@/lib/org";
+import { isMissingColumnError } from "@/lib/db-drift";
 import { randomBytes } from "crypto";
 import { Prisma } from "@prisma/client";
 

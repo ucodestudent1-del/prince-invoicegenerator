@@ -1,6 +1,7 @@
 "use server";
 
-import { requireUser, isMissingColumnError } from "@/lib/org";
+import { requireUser } from "@/lib/org";
+import { isMissingColumnError } from "@/lib/db-drift";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";

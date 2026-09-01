@@ -77,6 +77,10 @@ vi.mock("@/lib/db", () => {
     },
     invoiceItem: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
     estimateItem: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    payment: {
+      findMany: vi.fn().mockResolvedValue([]),
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
     recurringInvoiceConfig: {
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
@@ -178,6 +182,31 @@ describe("GDPR — customers", () => {
     expect(bundle["subjectType"])["toBe"]("Customer");
     expect(bundle["data"]["customer"]["email"])["toBe"]("billing@acme.com");
     expect(bundle["data"]["customer"]["portalPin"])["toBeUndefined"]();
+  });
+
+  it("includes payment rows in the Article 15 export (C3)", async () => {
+    const deps = makeDeps();
+    deps["db"]["customer"]["findFirst"]["mockResolvedValueOnce"]({ ...customer });
+    deps["db"]["payment"]["findMany"]["mockResolvedValueOnce"]([
+      { id: "pay_1", amount: 100, method: "BANK_TRANSFER", reference: "TX-1", createdAt: new Date(), invoice: { id: "inv_1", number: "INV-1" } },
+      { id: "pay_2", amount: 50, method: "CASH", reference: null, createdAt: new Date(), invoice: { id: "inv_2", number: "INV-2" } },
+    ]);
+    const bundle = await exportCustomerData(deps, owner, "c_1");
+    expect(bundle["data"]["payments"])["toHaveLength"](2);
+    expect(bundle["data"]["payments"][0]["id"])["toBe"]("pay_1");
+    expect(bundle["data"]["payments"][0]["amount"])["toBe"](100);
+  });
+
+  it("treats a missing portalSession table as drift, not an error (C2)", async () => {
+    const deps = makeDeps();
+    deps["db"]["customer"]["findFirst"]["mockResolvedValueOnce"]({ ...customer });
+    deps["db"]["portalSession"]["findMany"]["mockImplementationOnce"](() => {
+      throw new Error("relation portalSession does not exist in the current database");
+    });
+    // Without isDriftError the call would re-throw. With it, the export
+    // returns an empty portalSessions array and succeeds.
+    const bundle = await exportCustomerData(deps, owner, "c_1");
+    expect(bundle["data"]["portalSessions"])["toEqual"]([]);
   });
 
   it("anonymizes a customer, nulling personal identifiers", async () => {

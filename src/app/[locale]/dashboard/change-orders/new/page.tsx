@@ -1,6 +1,6 @@
-import { requireUser, requireFeature, isMissingColumnError } from "@/lib/org";
-import { db } from "@/lib/db";
-import { logServerError } from "@/lib/errors";
+import { requireUser, requireFeature } from "@/lib/org";
+import { isMissingColumnError } from "@/lib/db-drift";
+import { getAvailableInvoices } from "@/lib/actions/invoices";
 import { ChangeOrderForm } from "@/components/change-order-form";
 import { getTranslations } from "next-intl/server";
 
@@ -9,30 +9,12 @@ export default async function NewChangeOrderPage({ params }: { params: { locale:
   await requireFeature("changeOrders");
   const user = await requireUser();
   if (!user || !user["organizationId"]) return null;
-  let invoices;
-  try {
-    invoices = await db["invoice"]["findMany"]({
-      where: { orgId: user["organizationId"] },
-      orderBy: { number: "asc" },
-      select: {
-        id: true,
-        number: true,
-      },
-    });
-  } catch (err) {
-    if (isMissingColumnError(err)) {
-      invoices = await db["invoice"]["findMany"]({
-        where: { orgId: user["organizationId"] },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-        },
-      }) as any;
-    } else {
-      logServerError("NewChangeOrderPage", err);
-      throw err;
-    }
-  }
+
+  // Plan C4: use the bounded `getAvailableInvoices` action (take: 200) so
+  // the dropdown does not grow with the customer's history. A `q` search
+  // input on the page can narrow the list further.
+  const invoices = await getAvailableInvoices();
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t("newChangeOrder")}</h1>

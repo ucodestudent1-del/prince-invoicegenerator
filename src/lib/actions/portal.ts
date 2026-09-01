@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { isMissingColumnError } from "@/lib/org";
+import { isMissingColumnError } from "@/lib/db-drift";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { sendEmail } from "@/lib/email";
 import { randomBytes } from "crypto";

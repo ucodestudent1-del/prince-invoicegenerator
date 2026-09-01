@@ -3,9 +3,11 @@ import { requireUser } from "@/lib/org";
 import { db } from "@/lib/db";
 import { uploadToR2, isR2Configured } from "@/lib/r2";
 import { rateLimit } from "@/lib/rate-limit";
+import { MAX_PHOTO_BYTES, validatePhotoUpload } from "@/lib/photo-validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const limit = await rateLimit(req);
   if (!limit["ok"]) {
@@ -31,9 +33,11 @@ export async function POST(req: NextRequest) {
     return NextResponse["json"]({ error: "Expected multipart/form-data" }, { status: 400 });
   }
 
+  // Pre-flight size cap from the header. Streaming uploads may omit this, so
+  // we also re-check after buffering.
   const contentLength = req["headers"]["get"]("content-length");
-  if (contentLength && Number(contentLength) > 20 * 1024 * 1024) {
-    return NextResponse["json"]({ error: "Request too large" }, { status: 413 });
+  if (contentLength && Number(contentLength) > MAX_PHOTO_BYTES) {
+    return NextResponse["json"]({ error: "File too large" }, { status: 413 });
   }
 
   const form = await req["formData"]();
@@ -43,12 +47,24 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer["from"](await file["arrayBuffer"]());
-  const ext = file["name"]["split"](".")["pop"]() ?? "bin";
+
+  const validated = validatePhotoUpload({
+    filename: file["name"],
+    contentType: file["type"] || "",
+    size: buffer["length"],
+    buffer,
+  });
+  if (!validated["ok"]) {
+    return NextResponse["json"]({ error: validated["reason"] }, { status: 415 });
+  }
+
   const key = `org/${user["organizationId"]}/photos/${Date["now"]()}-${Math["random"]()
     ["toString"](36)
-    ["slice"](2)}.${ext}`;
+    ["slice"](2)}.${validated["extension"]}`;
 
-  const url = await uploadToR2(key, buffer, file["type"]);
+  // Use the normalized content-type so the public URL cannot be served with a
+  // misleading header (e.g., text/html pretending to be an image).
+  const url = await uploadToR2(key, buffer, validated["storedContentType"]);
 
   const photo = await db["photoAttachment"]["create"]({
     data: {
@@ -56,7 +72,7 @@ export async function POST(req: NextRequest) {
       key,
       url,
       filename: file["name"],
-      contentType: file["type"],
+      contentType: validated["storedContentType"],
       size: buffer["length"],
       uploadedById: user["id"],
     },

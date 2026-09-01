@@ -1075,3 +1075,19 @@ model AuditLog {
   @@index([category, action])
   @@index([createdAt])
 }
+
+/// Idempotency table for the Stripe webhook (Plan A11).
+/// `eventId` is unique so a duplicate delivery of the same Stripe event is
+/// detected and skipped before any state mutation runs.
+model ProcessedStripeEvent {
+  id            String   @id @default(cuid())
+  eventId       String   @unique
+  eventType     String
+  orgId         String?
+  /// "OK" | "INVALID_REQUEST" | "TRANSIENT_ERROR"
+  outcome       String   @default("OK")
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+}

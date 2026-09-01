@@ -18,7 +18,7 @@
 import { db } from "@/lib/db";
 import { logError, logWarn } from "@/lib/logging";
 import { getRequestId } from "@/lib/request-id";
-import { isMissingColumnError } from "@/lib/org";
+import { isMissingColumnError, isMissingTableError } from "@/lib/db-drift";
 
 export type AuditCategory = "AUTH" | "ADMIN" | "SETTINGS" | "DATA" | "BILLING" | "SECURITY";
 
@@ -131,15 +131,6 @@ export async function recordAudit(entry: AuditEntry): Promise<void> {
  * The audit table may be entirely absent before the migration runs, which
  * Prisma reports differently from a missing column.
  */
-function isMissingTableError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const msg = err["message"];
-  return (
-    msg["includes"]("does not exist in the current database") ||
-    msg["includes"]("relation") && msg["includes"]("does not exist") ||
-    msg["includes"]("42P01") // PostgreSQL undefined_table
-  );
-}
 
 /**
  * Extract client attribution from a request without pulling in a route-handler

@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { db, withRetry } from "@/lib/db";
 import type { SubscriptionPlan } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import { Prisma, isMissingColumnError } from "@/lib/db-drift";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
 import type { DefaultSession } from "next-auth";
 
@@ -217,25 +217,9 @@ export async function getCurrentOrg(user?: AppUser) {
 }
 
 // Detects Prisma errors where a database column is missing (schema drift).
-export function isMissingColumnError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const msg = err["message"];
-  return (
-    msg["includes"]("does not exist in the current database") ||
-    msg["includes"]("column") && msg["includes"]("does not exist") ||
-    msg["includes"]("42703") // PostgreSQL undefined_column error code
-  );
-}
-
-// Detects Prisma errors where an enum value is missing from the database (schema drift).
-export function isInvalidEnumValueError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const msg = err["message"];
-  return (
-    msg["includes"]("invalid input value for enum") ||
-    msg["includes"]("22P02") // PostgreSQL invalid_text_representation error code
-  );
-}
+// Re-exported from `@/lib/db-drift` for backwards compatibility; new code
+// should import directly from `@/lib/db-drift`.
+export { isMissingColumnError, isInvalidEnumValueError, isMissingTableError } from "@/lib/db-drift";
 
 export async function getActivePlan(user?: AppUser): Promise<SubscriptionPlan> {
   const org = await getCurrentOrg(user);

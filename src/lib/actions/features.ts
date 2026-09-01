@@ -1,7 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { requireUser, isMissingColumnError, getActivePlan } from "@/lib/org";
+import { requireUser, getActivePlan } from "@/lib/org";
+import { isMissingColumnError } from "@/lib/db-drift";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextEstimateNumber, getNextChangeOrderNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";

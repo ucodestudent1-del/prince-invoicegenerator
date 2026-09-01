@@ -13,6 +13,7 @@
 
 import type { AuditEntry } from "@/lib/audit";
 import { withActionError, actionError } from "@/lib/action-errors";
+import { isDriftError as driftError } from "@/lib/db-drift";
 
 export type Actor = {
   userId: string;
@@ -65,8 +66,11 @@ export type Db = {
     findMany: (args: unknown) => Promise<unknown>;
     deleteMany: (args: unknown) => Promise<unknown>;
   };
-  invoiceItem: { deleteMany: (args: unknown) => Promise<unknown> };
   estimateItem: { deleteMany: (args: unknown) => Promise<unknown> };
+  payment: {
+    findMany: (args: unknown) => Promise<unknown>;
+    deleteMany: (args: unknown) => Promise<unknown>;
+  };
   recurringInvoiceConfig: {
     updateMany: (args: unknown) => Promise<unknown>;
     deleteMany: (args: unknown) => Promise<unknown>;
@@ -88,12 +92,20 @@ export type Db = {
 export type AuditFn = (entry: AuditEntry) => Promise<void>;
 export type RevalidateFn = (path: string) => Promise<void>;
 export type IsMissingColumnErrorFn = (err: unknown) => boolean;
+export type IsDriftErrorFn = (err: unknown) => boolean;
 
 export type GDPRDeps = {
   db: Db;
   recordAudit: AuditFn;
   revalidateWithLocale: RevalidateFn;
   isMissingColumnError: IsMissingColumnErrorFn;
+  /**
+   * Symmetric drift coverage (Plan C2). Defaults to a predicate that
+   * considers both missing columns AND missing tables as "tolerate", so the
+   * `anonymizeCustomer` flow does not 500 on a not-yet-migrated
+   * `portalSession` table.
+   */
+  isDriftError?: IsDriftErrorFn;
 };
 
 /**
@@ -110,7 +122,7 @@ export function requireActorAdmin(actor: Actor | null): asserts actor is Actor {
 
 /** Tolerate tables that a drifted database has not migrated yet. */
 async function safely<T>(
-  deps: { isMissingColumnError: IsMissingColumnErrorFn },
+  deps: GDPRDeps,
   label: string,
   fn: () => Promise<T>,
   fallback: T
@@ -118,7 +130,7 @@ async function safely<T>(
   try {
     return await fn();
   } catch (err) {
-    if (deps["isMissingColumnError"](err)) {
+    if ((deps["isDriftError"] ?? driftError)(err)) {
       // logWarn is intentionally not wired here to keep this pure-testable.
       return fallback;
     }
@@ -401,6 +413,29 @@ export async function exportCustomerData(
       [] as unknown[]
     );
 
+    // Plan C3: Art. 15 completeness — every individual payment the customer
+    // made against this customer is part of the data subject's record. The
+    // invoice-level `amountPaid` is a denormalised roll-up; the row-level
+    // detail belongs in the export.
+    const payments = await safely(
+      deps,
+      "payments",
+      () =>
+        db["payment"]["findMany"]({
+          where: { invoice: { customerId, orgId: actor["orgId"] } },
+          select: {
+            id: true,
+            amount: true,
+            method: true,
+            reference: true,
+            createdAt: true,
+            invoice: { select: { id: true, number: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+      [] as unknown[]
+    );
+
     void recordAudit({
       category: "DATA",
       action: "DATA_EXPORTED",
@@ -414,6 +449,7 @@ export async function exportCustomerData(
         basis: "gdpr-article-15",
          invoices: (invoices as unknown[])["length"],
         estimates: (estimates as unknown[])["length"],
+        payments: (payments as unknown[])["length"],
       },
     });
 
@@ -428,6 +464,7 @@ export async function exportCustomerData(
         addresses,
         invoices,
         estimates,
+        payments,
         projects,
         portalSessions,
       },

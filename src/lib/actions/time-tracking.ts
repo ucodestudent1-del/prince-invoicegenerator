@@ -1,7 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { requireUser, isMissingColumnError, getActivePlan } from "@/lib/org";
+import { requireUser, getActivePlan } from "@/lib/org";
+import { isMissingColumnError } from "@/lib/db-drift";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
 import { hasFeature } from "@/lib/plans";
@@ -167,9 +168,12 @@ export async function updateTimeEntry(id: string, input: Partial<CreateTimeEntry
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
+    // Plan C8: read the previous `updatedAt` and use it in the `where`
+    // clause so a concurrent write (two tabs, two users) surfaces as a
+    // 409 instead of silently overwriting the other writer's edits.
     const existing = await db["timeEntry"]["findFirst"]({
       where: { id, orgId },
-      select: { id: true },
+      select: { id: true, updatedAt: true },
     });
     if (!existing) actionError("Time entry not found");
 
@@ -204,12 +208,19 @@ export async function updateTimeEntry(id: string, input: Partial<CreateTimeEntry
     };
 
     try {
-      const entry = await db["timeEntry"]["update"]({
-        where: { id, orgId },
+      const entry = await db["timeEntry"]["updateMany"]({
+        where: { id, orgId, updatedAt: existing["updatedAt"] },
         data,
       });
+      // `updateMany` returns a count; if zero, another writer beat us to it.
+      if (entry["count"] === 0) {
+        actionError("This time entry was modified by someone else. Please reload.");
+      }
+      const refreshed = await db["timeEntry"]["findFirst"]({
+        where: { id, orgId },
+      });
       await revalidateWithLocale("/dashboard/time-tracking");
-      return entry;
+      return refreshed;
     } catch (err) {
       if (isMissingColumnError(err)) {
         actionError("Time tracking tables are not fully migrated.");

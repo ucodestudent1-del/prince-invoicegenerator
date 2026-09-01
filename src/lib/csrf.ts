@@ -72,14 +72,36 @@ export function generateCsrfToken(): string {
 }
 
 /**
- * Validate a request. Never throws — an internal fault resolves to `ok: true`
- * so a bug here cannot lock every user out of the application.
+ * Validate a request. Never throws — an internal fault is treated as a
+ * rejection (`ok: false`, reason `internal-fault`) and logged so an operator
+ * can act on it. The previous behaviour silently allowed the request
+ * through, which turned a code defect into a CSRF bypass.
  */
 export function verifyCsrf(request: NextRequest): CsrfResult {
   try {
     return evaluate(request);
-  } catch {
-    return { ok: true, skipped: true, reason: "check-failed-open" };
+  } catch (err) {
+    // The middleware runs in the Edge runtime; pulling in the structured
+    // logger would drag Node-only modules into the bundle, so we emit a
+    // single console line. The schema includes the fields an operator
+    // needs (method, path, requestId-less identifier).
+    let pathname = "/";
+    try {
+      pathname = request["nextUrl"]?.["pathname"] || "/";
+    } catch {
+      // Same internal fault that brought us here; swallow so the response is
+      // still produced.
+    }
+    console["error"](
+      JSON["stringify"]({
+        level: "error",
+        context: "csrf:internal-fault",
+        message: err instanceof Error ? err["message"] : "unknown",
+        method: request["method"],
+        pathname,
+      })
+    );
+    return { ok: false, skipped: false, reason: "internal-fault" };
   }
 }
 

@@ -1,7 +1,9 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { requireUser, isMissingColumnError } from "@/lib/org";
+import { requireUser } from "@/lib/org";
+import { isMissingColumnError, isMissingTableError } from "@/lib/db-drift";
+import { logWarn } from "@/lib/logging";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
 import { CustomerStatus } from "@prisma/client";
@@ -353,33 +355,50 @@ export async function getCustomerActivityLog(customerId: string) {
     let invoices: any[] = [];
     let estimates: any[] = [];
     let payments: any[] = [];
-    try {
-      [invoices, estimates, payments] = await Promise["all"]([
-        db["invoice"]["findMany"]({
-          where: { customerId, orgId },
-          select: { id: true, number: true, status: true, total: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 34,
-        }),
-        db["estimate"]["findMany"]({
-          where: { customerId, orgId },
-          select: { id: true, number: true, status: true, total: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: 34,
-        }),
-        db["payment"]["findMany"]({
-          where: { invoice: { customerId, orgId } },
-          select: { id: true, amount: true, method: true, status: true, createdAt: true, invoice: { select: { number: true } } },
-          orderBy: { createdAt: "desc" },
-          take: 34,
-        }),
-      ]);
-    } catch (err) {
-      if (isMissingColumnError(err)) {
-        return [];
+    // Use allSettled so a single failing query does not lose the other two
+    // buckets. Drift errors (missing column / missing table) are absorbed and
+    // surfaced as a warning, not a 500: the page still renders the data we
+    // did get back.
+    const results = await Promise["allSettled"]([
+      db["invoice"]["findMany"]({
+        where: { customerId, orgId },
+        select: { id: true, number: true, status: true, total: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 34,
+      }),
+      db["estimate"]["findMany"]({
+        where: { customerId, orgId },
+        select: { id: true, number: true, status: true, total: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 34,
+      }),
+      db["payment"]["findMany"]({
+        where: { invoice: { customerId, orgId } },
+        select: { id: true, amount: true, method: true, status: true, createdAt: true, invoice: { select: { number: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 34,
+      }),
+    ]);
+
+    const labels = ["invoices", "estimates", "payments"] as const;
+    results["forEach"]((r, i) => {
+      if (r["status"] === "fulfilled") {
+        if (i === 0) invoices = r["value"] as any[];
+        else if (i === 1) estimates = r["value"] as any[];
+        else payments = r["value"] as any[];
+        return;
       }
-      throw err;
-    }
+      const reason = r["reason"];
+      if (isMissingColumnError(reason) || isMissingTableError(reason)) {
+        logWarn("clients.activity", `${labels[i]} unavailable (schema drift)`, {
+          customerId,
+          reason: reason instanceof Error ? reason["message"] : String(reason),
+        });
+        return;
+      }
+      // Anything else re-throws via withActionError, surfacing a clean 500.
+      throw reason;
+    });
 
     type Activity = {
       id: string;
@@ -390,58 +409,55 @@ export async function getCustomerActivityLog(customerId: string) {
       date: Date;
     };
 
-    // K-way merge of three pre-sorted streams. O(n) instead of O(n log n)
-    // and never holds more than `limit` rows.
-    const limit = 100;
+    // Plan C6: the previous K-way merge was O(n) but biased ties to the
+    // invoice bucket (`>=` with strict `if/else if`). For two events with
+    // identical timestamps the deterministic tie-break now is explicit
+    // (INVOICE < ESTIMATE < PAYMENT by type priority, then by id), and the
+    // ordering is a single `sort` over the flat array — less code, easier
+    // to reason about, and a stable secondary key.
+    const TYPE_PRIORITY: Record<Activity["type"], number> = {
+      INVOICE: 0,
+      ESTIMATE: 1,
+      PAYMENT: 2,
+    };
     const merged: Activity[] = [];
-    let i = 0, j = 0, k = 0;
-    while (
-      merged.length < limit &&
-      (i < invoices.length || j < estimates.length || k < payments.length)
-    ) {
-      const inv = i < invoices.length ? invoices[i] : null;
-      const est = j < estimates.length ? estimates[j] : null;
-      const pay = k < payments.length ? payments[k] : null;
-
-      const invTime = inv ? new Date(inv["createdAt"])["getTime"]() : -Infinity;
-      const estTime = est ? new Date(est["createdAt"])["getTime"]() : -Infinity;
-      const payTime = pay ? new Date(pay["createdAt"])["getTime"]() : -Infinity;
-
-      if (invTime >= estTime && invTime >= payTime && inv) {
-        merged["push"]({
-          id: inv["id"],
-          type: "INVOICE",
-          description: `Invoice ${inv["number"]}`,
-          amount: inv["total"],
-          status: inv["status"],
-          date: inv["createdAt"],
-        });
-        i++;
-      } else if (estTime >= payTime && est) {
-        merged["push"]({
-          id: est["id"],
-          type: "ESTIMATE",
-          description: `Estimate ${est["number"]}`,
-          amount: est["total"],
-          status: est["status"],
-          date: est["createdAt"],
-        });
-        j++;
-      } else if (pay) {
-        merged["push"]({
-          id: pay["id"],
-          type: "PAYMENT",
-          description: `Payment for ${pay["invoice"]?.["number"] || "invoice"}`,
-          amount: pay["amount"],
-          status: pay["status"],
-          date: pay["createdAt"],
-        });
-        k++;
-      } else {
-        break;
-      }
+    for (const inv of invoices) {
+      merged["push"]({
+        id: inv["id"],
+        type: "INVOICE",
+        description: `Invoice ${inv["number"]}`,
+        amount: inv["total"],
+        status: inv["status"],
+        date: inv["createdAt"],
+      });
     }
-
-    return merged;
+    for (const est of estimates) {
+      merged["push"]({
+        id: est["id"],
+        type: "ESTIMATE",
+        description: `Estimate ${est["number"]}`,
+        amount: est["total"],
+        status: est["status"],
+        date: est["createdAt"],
+      });
+    }
+    for (const pay of payments) {
+      merged["push"]({
+        id: pay["id"],
+        type: "PAYMENT",
+        description: `Payment for ${pay["invoice"]?.["number"] || "invoice"}`,
+        amount: pay["amount"],
+        status: pay["status"],
+        date: pay["createdAt"],
+      });
+    }
+    merged["sort"]((a, b) => {
+      const dt = new Date(b["date"])["getTime"]() - new Date(a["date"])["getTime"]();
+      if (dt !== 0) return dt;
+      const pt = TYPE_PRIORITY[a["type"]] - TYPE_PRIORITY[b["type"]];
+      if (pt !== 0) return pt;
+      return a["id"]["localeCompare"](b["id"]);
+    });
+    return merged["slice"](0, 100);
   });
 }

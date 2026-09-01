@@ -2,7 +2,8 @@
 
 import { addMonths, addDays, addWeeks, addYears } from "date-fns";
 import { db, withRetry } from "@/lib/db";
-import { requireUser, isMissingColumnError, getActivePlan } from "@/lib/org";
+import { requireUser, getActivePlan } from "@/lib/org";
+import { isMissingColumnError } from "@/lib/db-drift";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextInvoiceNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
@@ -117,11 +118,18 @@ function computeTotals(
   discount: number,
   retainageRate: number
 ) {
-  const subtotal = items["reduce"]((sum, i) => sum + (Number(i["amount"]) || 0), 0);
-  const taxAmount = (subtotal * taxRate) / 100;
-  const totalBeforeRetainage = subtotal + taxAmount - discount;
-  const retainageAmount = (totalBeforeRetainage * retainageRate) / 100;
-  const total = totalBeforeRetainage - retainageAmount;
+  // Same rounding discipline as `createInvoice` (Plan B2): never store a
+  // monetary value with more than 2 decimal places, and clamp the
+  // pre-retainage total at zero so a discount over the subtotal cannot
+  // produce a negative invoice.
+  const cents = (n: number) => Math["round"](n * 100) / 100;
+  const subtotal = cents(
+    items["reduce"]((sum, i) => sum + (Number(i["amount"]) || 0), 0)
+  );
+  const taxAmount = cents((subtotal * taxRate) / 100);
+  const totalBeforeRetainage = cents(Math["max"](0, subtotal + taxAmount - discount));
+  const retainageAmount = cents((totalBeforeRetainage * retainageRate) / 100);
+  const total = cents(totalBeforeRetainage - retainageAmount);
   return { subtotal, taxAmount, total, retainageAmount };
 }
 
@@ -712,6 +720,7 @@ export async function getRecurringConfigs() {
             frequency: true,
             nextRunDate: true,
             active: true,
+            lastInvoiceId: true,
             createdAt: true,
             updatedAt: true,
             customer: { select: { name: true, email: true } },
@@ -975,113 +984,5 @@ export async function linkInvoiceToRecurring(invoiceId: string, configId: string
     }
 
     await revalidateWithLocale("/dashboard/recurring");
-  });
-}
-
-export async function processScheduledInvoices() {
-  return withActionError("processScheduledInvoices", async () => {
-    const now = new Date();
-    let scheduled: any[];
-    try {
-      scheduled = await db["invoice"]["findMany"]({
-        where: {
-          scheduledFor: { lte: now },
-          status: "DRAFT",
-        },
-        select: {
-          id: true,
-          number: true,
-          orgId: true,
-        },
-        orderBy: { scheduledFor: "asc" },
-        take: 200,
-      });
-    } catch (err) {
-      if (isMissingColumnError(err)) {
-        scheduled = [];
-      } else {
-        throw err;
-      }
-    }
-
-    const results: { id: string; number: string; error?: boolean }[] = [];
-
-    for (const inv of scheduled) {
-      let failed = false;
-      try {
-        try {
-          await db["invoice"]["update"]({
-            where: { id: inv["id"] },
-            data: {
-              scheduledFor: null,
-              status: "SENT",
-            },
-          });
-        } catch (err) {
-          if (isMissingColumnError(err)) {
-            try {
-              await db["invoice"]["update"]({
-                where: { id: inv["id"] },
-                data: {
-                  status: "SENT",
-                },
-              });
-            } catch (retryErr) {
-              failed = true;
-            }
-          } else {
-            failed = true;
-          }
-        }
-
-        if (!failed) {
-          try {
-            await db["invoiceAudit"]["create"]({
-              data: {
-                invoiceId: inv["id"],
-                orgId: inv["orgId"],
-                action: "SCHEDULED_INVOICE_SENT",
-                fromStatus: "DRAFT",
-                toStatus: "SENT",
-                note: "Automatically sent from scheduled queue",
-              },
-            });
-          } catch (err) {
-            if (!isMissingColumnError(err)) {
-              failed = true;
-            }
-          }
-        }
-      } catch (err) {
-        failed = true;
-      }
-
-      results["push"]({ id: inv["id"], number: inv["number"], error: failed });
-    }
-
-    return results;
-  });
-}
-
-export async function scheduleInvoice(invoiceId: string, scheduledFor: string) {
-  return withActionError("scheduleInvoice", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
-
-    try {
-      await db["invoice"]["update"]({
-        where: { id: invoiceId, orgId: user["organizationId"] },
-        data: {
-          scheduledFor: new Date(scheduledFor),
-        },
-      });
-    } catch (err) {
-      if (isMissingColumnError(err)) {
-        actionError("The scheduled invoice feature is not available on your current database schema. Please run pending migrations.");
-      }
-      throw err;
-    }
-
-    await revalidateWithLocale("/dashboard/invoices");
   });
 }

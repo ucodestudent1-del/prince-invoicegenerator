@@ -23,6 +23,11 @@ function getStripe(): Stripe {
       throw new Error("STRIPE_SECRET_KEY is required");
     }
     stripeClient = new Stripe(secretKey, {
+      // Pinned to the Stripe SDK's typed default literal
+      // (`"2026-07-29.dahlia"` in `stripe@22.5.0`). The previous custom
+      // suffix was not recognised by the SDK, which silently fell back to
+      // the SDK's runtime default — a moving target. Bump deliberately,
+      // alongside a smoke test against `stripe listen`, when upgrading.
       apiVersion: "2026-07-29.dahlia",
       typescript: true,
     });

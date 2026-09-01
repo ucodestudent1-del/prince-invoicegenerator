@@ -1,7 +1,8 @@
 "use server";
 
 import { db, withRetry } from "@/lib/db";
-import { requireUser, isMissingColumnError, isInvalidEnumValueError, getActivePlan } from "@/lib/org";
+import { requireUser, getActivePlan } from "@/lib/org";
+import { isMissingColumnError, isInvalidEnumValueError } from "@/lib/db-drift";
 import { INVOICE_LIMITS } from "@/lib/plans";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { getNextInvoiceNumber } from "@/lib/numbering";
@@ -9,6 +10,8 @@ import { revalidateWithLocale } from "@/lib/revalidate";
 import { buildDefaultStages } from "@/lib/invoice-utils";
 import { InvoiceType, PaymentMethod, PaymentStatus, InvoiceStatus } from "@prisma/client";
 import { coerceEnum } from "@/lib/utils";
+import { CreateInvoiceSchema, RecordPaymentSchema, formatZodError } from "@/lib/schemas";
+import { computeInvoiceTotals } from "@/lib/invoice-totals";
 
 export interface InvoiceItemInput {
   description: string;
@@ -33,12 +36,15 @@ export interface CreateInvoiceInput {
   billToAddress?: string | null;
   shipToAddress?: string | null;
   items: InvoiceItemInput[];
-  scheduledFor?: string | null;
   estimateId?: string | null;
 }
 
 export async function createInvoice(input: CreateInvoiceInput) {
   return withActionError("createInvoice", async () => {
+    // Single source of truth (Plan B4). Zod rejects negative quantities,
+    // non-finite numbers, empty items, etc. before the handler runs.
+    const parsed = CreateInvoiceSchema["safeParse"](input);
+    if (!parsed["success"]) actionError(formatZodError(parsed["error"]));
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
@@ -100,14 +106,21 @@ export async function createInvoice(input: CreateInvoiceInput) {
       }
     }
 
-    const subtotal = validItems["reduce"](
-      (acc, it) => acc + it["quantity"] * it["unitPrice"],
-      0
-    );
-    const taxAmount = (subtotal * input["taxRate"]) / 100;
-    const totalBeforeRetainage = subtotal + taxAmount - input["discount"];
-    const retainageAmount = (totalBeforeRetainage * input["retainageRate"]) / 100;
-    const total = totalBeforeRetainage - retainageAmount;
+    // Money is integer cents in disguise. Float arithmetic on tax + discount
+    // + retainage can drift by a sub-cent, which then refuses to balance with
+    // the line-item amount. The pure helper `computeInvoiceTotals` enforces
+    // the rounding rules and the discount cap in one place; this handler
+    // just dispatches to it.
+    if (input["discount"] < 0) actionError("Discount cannot be negative.");
+    const { subtotal, taxAmount, retainageAmount, total } = computeInvoiceTotals({
+      items: validItems,
+      taxRate: input["taxRate"],
+      discount: input["discount"],
+      retainageRate: input["retainageRate"],
+    });
+    if (input["discount"] > subtotal + taxAmount) {
+      actionError("Discount cannot exceed the subtotal plus tax.");
+    }
 
     let number = input["invoiceNumber"];
     if (!number) {
@@ -138,7 +151,6 @@ export async function createInvoice(input: CreateInvoiceInput) {
             logoUrl: input["logoUrl"] ?? null,
             billToAddress: input["billToAddress"] ?? null,
             shipToAddress: input["shipToAddress"] ?? null,
-            scheduledFor: input["scheduledFor"] ? new Date(input["scheduledFor"]) : null,
             estimateId: input["estimateId"] ?? null,
             createdById: user["id"],
             items: {
@@ -164,7 +176,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
           continue;
         }
         if (isMissingColumnError(err)) {
-          // Schema drift: columns like billToAddress, shipToAddress, scheduledFor
+          // Schema drift: columns like billToAddress, shipToAddress
           // may not exist in the database if migrations haven't been applied.
           // Retry without those fields so invoice creation succeeds.
           invoice = await db["invoice"]["create"]({
@@ -280,11 +292,21 @@ export async function recordPayment(input: {
   paypalTransactionId?: string;
 }) {
   return withActionError("recordPayment", async () => {
+    // Zod rejects Infinity/NaN/negative amounts at the boundary (Plan B1 +
+    // B4). The previous code had to add a separate Number.isFinite check
+    // because the type itself permitted the bad value; now the type and
+    // the runtime agree.
+    const parsed = RecordPaymentSchema["safeParse"](input);
+    if (!parsed["success"]) actionError(formatZodError(parsed["error"]));
+
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
     if (!input["invoiceId"]) actionError("Invoice is required.");
+    if (!Number["isFinite"](input["amount"])) {
+      actionError("Payment amount must be a finite number.");
+    }
     const roundedAmount = Math["round"](input["amount"] * 100) / 100;
     if (!roundedAmount || roundedAmount <= 0) actionError("Payment amount must be greater than zero.");
 
@@ -300,8 +322,6 @@ export async function recordPayment(input: {
     if (roundedAmount > remaining + 0.01) {
       actionError(`Payment amount exceeds remaining balance of ${remaining["toFixed"](2)}.`);
     }
-
-    const newAmountPaid = Math["round"]((Math["min"](roundedAmountPaid + roundedAmount, roundedTotal)) * 100) / 100;
 
     await db["$transaction"](async (tx) => {
       const freshInvoice = await tx["invoice"]["findFirst"]({
@@ -711,18 +731,32 @@ export async function getReminders(input: { invoiceId?: string; status?: string 
       where["status"] = coerceEnum(input["status"], ReminderStatus, "status");
     }
 
-    const reminders = await db["reminder"]["findMany"]({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        invoice: {
-          select: { number: true, status: true },
+    let reminders: any[];
+    try {
+      reminders = await db["reminder"]["findMany"]({
+        where,
+        orderBy: { createdAt: "desc" },
+        include: {
+          invoice: {
+            select: { number: true, status: true },
+          },
+          stage: {
+            select: { name: true, type: true, daysOffset: true },
+          },
         },
-        stage: {
-          select: { name: true, type: true, daysOffset: true },
+      });
+    } catch (err) {
+      if (!isMissingColumnError(err)) throw err;
+      reminders = await db["reminder"]["findMany"]({
+        where,
+        orderBy: { createdAt: "desc" },
+        include: {
+          invoice: {
+            select: { number: true, status: true },
+          },
         },
-      },
-    });
+      });
+    }
 
     return reminders;
   });
@@ -801,51 +835,65 @@ export async function deleteInvoice(id: string) {
   return withActionError("deleteInvoice", async () => {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
-    await db["invoice"]["deleteMany"]({ where: { id, orgId: user["organizationId"] } });
+    const orgId = user["organizationId"];
+
+    // Run the cleanup + delete inside a single transaction so a partial
+    // failure cannot leave orphan references pointing at a now-missing
+    // invoice (changeOrder.invoiceId, recurringInvoiceConfig.lastInvoiceId).
+    // Each cleanup tolerates the column being missing on a drifted schema
+    // by falling back to the raw deleteMany.
+    await db["$transaction"](async (tx) => {
+      try {
+        await tx["changeOrder"]["updateMany"]({
+          where: { invoiceId: id, orgId },
+          data: { invoiceId: null },
+        });
+        await tx["recurringInvoiceConfig"]["updateMany"]({
+          where: { lastInvoiceId: id, orgId },
+          data: { lastInvoiceId: null },
+        });
+        await tx["invoice"]["deleteMany"]({ where: { id, orgId } });
+      } catch (err) {
+        if (isMissingColumnError(err)) {
+          // Pre-cleanup columns don't exist yet on this database; the
+          // legacy deleteMany path is still correct.
+          await tx["invoice"]["deleteMany"]({ where: { id, orgId } });
+          return;
+        }
+        throw err;
+      }
+    });
+
     await revalidateWithLocale("/dashboard/invoices");
   });
 }
 
-export async function getScheduledInvoices(orgId: string) {
-  return withActionError("getScheduledInvoices", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
-
-    let invoices: any[] = [];
-    try {
-      invoices = await db["invoice"]["findMany"]({
-        where: {
-          orgId: user["organizationId"],
-          status: "DRAFT",
-          scheduledFor: { not: null },
-        },
-        include: {
-          customer: { select: { name: true } },
-        },
-        orderBy: { scheduledFor: "asc" },
-      });
-    } catch (err: any) {
-      if (isMissingColumnError(err)) {
-        invoices = [];
-      } else {
-        throw err;
-      }
-    }
-
-    return invoices;
-  });
-}
-
-export async function getAvailableInvoices() {
+export async function getAvailableInvoices(query?: string) {
   return withActionError("getAvailableInvoices", async () => {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
+    // Plan C4: bound the result set so the change-order dropdown cannot
+    // grow unbounded for long-tenured customers. The optional `query`
+    // narrows by invoice number so the picker stays responsive.
+    const trimmed = query?.["trim"]();
     return await db["invoice"]["findMany"]({
-      where: { orgId, recurringConfigId: null },
-      select: { id: true, number: true, type: true },
+      where: {
+        orgId,
+        recurringConfigId: null,
+        ...(trimmed
+          ? {
+              OR: [
+                { number: { contains: trimmed, mode: "insensitive" } },
+                { customer: { name: { contains: trimmed, mode: "insensitive" } } },
+              ],
+            }
+          : {}),
+      },
+      select: { id: true, number: true, type: true, customer: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
+      take: 200,
     });
   });
 }

@@ -2,7 +2,8 @@
 
 import { addDays } from "date-fns";
 import { db } from "@/lib/db";
-import { requireUser, isInvalidEnumValueError, isMissingColumnError } from "@/lib/org";
+import { requireUser } from "@/lib/org";
+import { isInvalidEnumValueError, isMissingColumnError } from "@/lib/db-drift";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
 
@@ -138,23 +139,41 @@ export async function applyLateFees() {
         let lateFee = percentageFee + cfg["fixedFee"];
         if (cfg["maxFee"] && lateFee > cfg["maxFee"]) lateFee = cfg["maxFee"];
 
+        // Invariant: a paid invoice must never end up with a positive
+        // balance after a late fee. Two scenarios are possible:
+        //   1. amountPaid < total: the invoice was unpaid when the cron
+        //      ran, so the fee adds to `total` and the existing
+        //      `amountPaid` is left alone.
+        //   2. amountPaid >= total: the invoice was already paid when
+        //      this fee posts (e.g. a customer paid a moment ago). In
+        //      that case bump `amountPaid` to the new `total` so the
+        //      status remains PAID, and audit a separate note flagging
+        //      the unusual post-hoc fee.
+        const wasPaid = invoice["amountPaid"] >= invoice["total"];
+        const newTotal = invoice["total"] + lateFee;
+        const newAmountPaid = wasPaid ? newTotal : invoice["amountPaid"];
+        const newStatus: "OVERDUE" | "PAID" = wasPaid ? "PAID" : "OVERDUE";
+
         try {
           await db["invoice"]["update"]({
             where: { id: invoice["id"], orgId: org["id"] },
             data: {
               lateFeeAmount: lateFee,
-              total: invoice["total"] + lateFee,
-              status: "OVERDUE",
+              total: newTotal,
+              amountPaid: newAmountPaid,
+              status: newStatus,
             },
             select: { id: true },
           });
         } catch (err) {
           if (isMissingColumnError(err)) {
+            // Schema drift: the `lateFeeAmount` or `amountPaid` column
+            // doesn't exist yet. Best-effort: just update total + status.
             await db["invoice"]["update"]({
               where: { id: invoice["id"], orgId: org["id"] },
               data: {
-                total: invoice["total"] + lateFee,
-                status: "OVERDUE",
+                total: newTotal,
+                status: newStatus,
               },
               select: { id: true },
             });
@@ -169,9 +188,11 @@ export async function applyLateFees() {
             orgId: org["id"],
             action: "LATE_FEE_APPLIED",
             fromStatus: invoice["status"],
-            toStatus: "OVERDUE",
+            toStatus: newStatus,
             amount: lateFee,
-            note: `Late fee of ${lateFee["toFixed"](2)} applied (${cfg["rate"]}% + ${cfg["fixedFee"]} fixed)`,
+            note: wasPaid
+              ? `Late fee of ${lateFee["toFixed"](2)} posted to an invoice that was already paid (${cfg["rate"]}% + ${cfg["fixedFee"]} fixed)`
+              : `Late fee of ${lateFee["toFixed"](2)} applied (${cfg["rate"]}% + ${cfg["fixedFee"]} fixed)`,
           },
           select: { id: true },
         });
