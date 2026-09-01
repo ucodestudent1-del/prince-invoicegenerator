@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
-import { generateDocumentPdf } from "@/lib/pdf-generator";
+import { generateDocumentPdf } from "@/lib/pdf-generator.server";
 import { resolvePaperSize } from "@/lib/pdf-constants";
 import { logError } from "@/lib/logging";
 import { hasFeature } from "@/lib/plans";

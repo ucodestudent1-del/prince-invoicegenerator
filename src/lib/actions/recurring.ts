@@ -990,6 +990,7 @@ export async function processScheduledInvoices() {
         },
         select: {
           id: true,
+          number: true,
           orgId: true,
         },
         orderBy: { scheduledFor: "asc" },

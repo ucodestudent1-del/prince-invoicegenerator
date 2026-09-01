@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { resolvePaperSize } from "@/lib/pdf-constants";
 import { db } from "@/lib/db";
-import { generateInvoicePdf } from "@/lib/pdf-generator";
+import { generateInvoicePdf } from "@/lib/pdf-generator.server";
 import { uploadPdfToR2 } from "@/lib/r2-storage";
 import { logError } from "@/lib/logging";
 import { hasFeature } from "@/lib/plans";
