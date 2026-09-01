@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processRecurringInvoices, processScheduledInvoices } from "@/lib/actions/recurring";
+import { processRecurringInvoices } from "@/lib/actions/recurring";
 import { applyLateFees } from "@/lib/actions/late-fees";
 import { logError } from "@/lib/logging";
 import { isBackgroundJobAuthorized } from "@/lib/background-job-auth";
@@ -21,9 +21,6 @@ export async function GET(req: NextRequest) {
       try {
         if (step === "recurring" || step === "all") {
           results["recurring"] = await processRecurringInvoices();
-        }
-        if (step === "scheduled" || step === "all") {
-          results["scheduled"] = await processScheduledInvoices();
         }
         if (step === "late-fees" || step === "all") {
           results["lateFees"] = await applyLateFees();
