@@ -169,7 +169,7 @@ export default async function InvoiceDetailPage({
               <div className="flex items-start justify-between border-b pb-4">
                 <div className="flex items-start gap-4">
                   {invoice["logoUrl"] && (
-                    <Image src={invoice["logoUrl"]} alt={t("logoAlt")} width={48} height={48} className="h-12 w-auto object-contain" />
+                    <Image src={invoice["logoUrl"]} alt={t("logoAlt")} width={48} height={48} sizes="48px" className="h-12 w-auto object-contain" />
                   )}
                   <div>
                     <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500">

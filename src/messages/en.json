@@ -250,7 +250,6 @@
       "multipleLayouts": "Multiple layouts",
       "automaticReminders": "Automatic reminders",
       "lateFees": "Late fees",
-      "scheduledInvoices": "Scheduled invoices",
       "pdfExport": "PDF export"
     },
     "plans": {
@@ -877,14 +876,6 @@
     "saveSettings": "Save settings",
     "saving": "Saving…",
     "failedSave": "Failed to save settings."
-  },
-  "scheduled": {
-    "title": "Scheduled Invoices",
-    "description": "Invoices scheduled to be sent on a future date.",
-    "scheduleInvoice": "Schedule invoice",
-    "loading": "Loading…",
-    "noScheduled": "No scheduled invoices yet.",
-    "scheduledFor": "Scheduled for {date}"
   },
   "customization": {
     "title": "Branding & Customization",

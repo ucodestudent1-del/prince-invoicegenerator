@@ -246,7 +246,6 @@
       "multipleLayouts": "Mehrere Layouts",
       "automaticReminders": "Automatische Erinnerungen",
       "lateFees": "Verspätungsgebühren",
-      "scheduledInvoices": "Geplante Rechnungen",
       "pdfExport": "PDF-Export"
     },
     "plans": {
@@ -656,14 +655,6 @@
     "saveSettings": "Einstellungen speichern",
     "saving": "Speichern…",
     "failedSave": "Fehler beim Speichern der Einstellungen."
-  },
-  "scheduled": {
-    "title": "Geplante Rechnungen",
-    "description": "Rechnungen, die für ein zukünftiges Datum geplant sind.",
-    "scheduleInvoice": "Rechnung planen",
-    "loading": "Laden…",
-    "noScheduled": "Noch keine geplanten Rechnungen.",
-    "scheduledFor": "Geplant für den {date}"
   },
   "customization": {
     "title": "Marke & Anpassung",

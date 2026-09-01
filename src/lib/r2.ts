@@ -24,12 +24,15 @@ export function getR2(): S3Client {
   if (!R2_ACCOUNT_ID) {
     throw new Error("R2_ACCOUNT_ID is not configured");
   }
+  if (!R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+    throw new Error("R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY must be configured");
+  }
   cachedR2 = new S3Client({
     region: "auto",
     endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: {
-      accessKeyId: R2_ACCESS_KEY_ID ?? "",
-      secretAccessKey: R2_SECRET_ACCESS_KEY ?? "",
+      accessKeyId: R2_ACCESS_KEY_ID,
+      secretAccessKey: R2_SECRET_ACCESS_KEY,
     },
   });
   return cachedR2;

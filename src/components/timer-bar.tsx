@@ -45,28 +45,33 @@ export function TimerBar({ projects }: { projects: Project[] }) {
   const intervalRef = React["useRef"]<NodeJS.Timeout | null>(null);
 
   React["useEffect"](() => {
-    if (timer["isRunning"]) {
-      intervalRef["current"] = setInterval(() => {
-        setTimer((prev) => ({
-          ...prev,
-          elapsed: Date["now"]() - prev["startTime"]!["getTime"](),
-        }));
-      }, 1000);
-    } else if (intervalRef["current"]) {
-      clearInterval(intervalRef["current"]);
-    }
+    if (!timer["isRunning"]) return;
+
+    const tick = () => {
+      if (document["hidden"]) return;
+      setTimer((prev) => ({
+        ...prev,
+        elapsed: prev["startTime"] ? Date["now"]() - prev["startTime"]["getTime"]() : prev["elapsed"],
+      }));
+    };
+
+    tick();
+    intervalRef["current"] = setInterval(tick, 1000);
     return () => {
       if (intervalRef["current"]) clearInterval(intervalRef["current"]);
     };
-  }, [timer["isRunning"]]);
+  }, [timer["isRunning"], timer["startTime"]]);
 
-  const formatElapsed = (ms: number) => {
-    const totalSeconds = Math["floor"](ms / 1000);
-    const hours = Math["floor"](totalSeconds / 3600);
-    const minutes = Math["floor"]((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${hours["toString"]()["padStart"](2, "0")}:${minutes["toString"]()["padStart"](2, "0")}:${seconds["toString"]()["padStart"](2, "0")}`;
-  };
+  const formatElapsed = React["useMemo"](
+    () => (ms: number) => {
+      const totalSeconds = Math["floor"](ms / 1000);
+      const hours = Math["floor"](totalSeconds / 3600);
+      const minutes = Math["floor"]((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${hours["toString"]()["padStart"](2, "0")}:${minutes["toString"]()["padStart"](2, "0")}:${seconds["toString"]()["padStart"](2, "0")}`;
+    },
+    []
+  );
 
   const startTimer = () => {
     setTimer((prev) => ({

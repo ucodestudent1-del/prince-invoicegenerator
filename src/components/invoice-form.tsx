@@ -23,7 +23,6 @@ export function InvoiceForm({
   canRecurring,
   canCustomizeInvoiceNumber,
   canProjectManagement,
-  canSchedule,
   hasSavedAddresses,
   canUseCatalog,
   canUseTimeTracking,
@@ -35,7 +34,6 @@ export function InvoiceForm({
   canRecurring: boolean;
   canCustomizeInvoiceNumber: boolean;
   canProjectManagement: boolean;
-  canSchedule: boolean;
   hasSavedAddresses: boolean;
   canUseCatalog: boolean;
   canUseTimeTracking: boolean;
@@ -51,7 +49,6 @@ export function InvoiceForm({
     new Date()["toISOString"]()["slice"](0, 10)
   );
   const [dueDate, setDueDate] = React["useState"]("");
-  const [scheduledFor, setScheduledFor] = React["useState"]("");
   const [taxRate, setTaxRate] = React["useState"]<string | number>(0);
   const [discount, setDiscount] = React["useState"]<string | number>(0);
   const [retainageRate, setRetainageRate] = React["useState"]<string | number>(0);
@@ -179,7 +176,6 @@ export function InvoiceForm({
           logoUrl: uploadedLogoUrl ?? logoUrl ?? null,
           billToAddress: billToAddress || null,
           shipToAddress: shipToAddress || null,
-          scheduledFor: scheduledFor || null,
           items: items
             ["filter"]((i) => i["description"])
             ["map"]((i) => ({
@@ -313,28 +309,8 @@ export function InvoiceForm({
               value={dueDate}
               onChange={(e) => setDueDate(e["target"]["value"])}
             />
-          </div>
-          <div className="space-y-1" hidden={!canSchedule}>
-            <Label htmlFor="scheduledFor">Schedule for later</Label>
-            <Input
-              id="scheduledFor"
-              type="date"
-              value={scheduledFor}
-              onChange={(e) => setScheduledFor(e.target.value)}
-              min={issueDate}
-            />
-            {scheduledFor && (
-              <p className="text-xs text-muted-foreground">
-                This invoice will be scheduled for {scheduledFor}
-              </p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Leave empty to create the invoice immediately. When set, the
-              invoice will be saved as a draft and automatically marked as SENT
-              on the scheduled date.
-            </p>
-          </div>
-          <div className="space-y-1">
+        </div>
+        <div className="space-y-1">
             <Label htmlFor="logo">Logo</Label>
             <Input
               id="logo"
@@ -343,7 +319,7 @@ export function InvoiceForm({
               onChange={handleLogoChange}
             />
             {logoPreview && (
-              <Image src={logoPreview} alt="Logo preview" width={64} height={64} className="mt-2 h-16 w-auto object-contain" />
+              <Image src={logoPreview} alt="Logo preview" width={64} height={64} sizes="64px" className="mt-2 h-16 w-auto object-contain" />
             )}
           </div>
         </CardContent>
@@ -520,7 +496,7 @@ export function InvoiceForm({
             Cancel
           </Button>
           <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : scheduledFor ? "Schedule Invoice" : "Create Invoice"}
+            {saving ? "Saving…" : "Create Invoice"}
           </Button>
         </div>
     </form>

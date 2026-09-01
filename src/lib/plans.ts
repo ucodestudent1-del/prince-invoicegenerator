@@ -26,8 +26,7 @@ export type FeatureKey =
   | "multipleLayouts"
   | "automaticReminders"
   | "lateFees"
-  | "scheduledInvoices"
-   | "pdfExport"
+  | "pdfExport"
    | "multilingual"
    | "catalogItems"
    | "timeTracking";
@@ -135,7 +134,6 @@ export const PLANS: PlanDefinition[] = [
       "reports",
       "automaticReminders",
       "lateFees",
-      "scheduledInvoices",
       "pdfExport",
       "multilingual",
     ],
@@ -169,7 +167,6 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   multipleLayouts: "Multiple page layouts",
   automaticReminders: "Automatic due-date reminders",
   lateFees: "Automatic late fee calculation",
-  scheduledInvoices: "Scheduled invoices",
   pdfExport: "PDF export without watermark",
   multilingual: "Multilingual interface and localized content",
   catalogItems: "Products & services catalog",

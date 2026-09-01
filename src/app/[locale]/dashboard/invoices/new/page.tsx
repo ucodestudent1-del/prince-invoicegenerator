@@ -48,7 +48,6 @@ export default async function NewInvoicePage({ params }: { params: { locale: str
           canRecurring={hasFeature(plan, "recurring")}
           canCustomizeInvoiceNumber={true}
           canProjectManagement={hasFeature(plan, "projectManagement")}
-          canSchedule={hasFeature(plan, "scheduledInvoices")}
           hasSavedAddresses={hasFeature(plan, "savedAddresses")}
           canUseCatalog={hasFeature(plan, "catalogItems")}
           canUseTimeTracking={hasFeature(plan, "timeTracking")}

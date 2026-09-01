@@ -246,7 +246,6 @@
       "multipleLayouts": "Múltiples diseños",
       "automaticReminders": "Recordatorios automáticos",
       "lateFees": "Recargos por mora",
-      "scheduledInvoices": "Facturas programadas",
       "pdfExport": "Exportar PDF"
     },
     "plans": {
@@ -656,14 +655,6 @@
     "saveSettings": "Guardar configuración",
     "saving": "Guardando…",
     "failedSave": "Error al guardar la configuración."
-  },
-  "scheduled": {
-    "title": "Facturas programadas",
-    "description": "Facturas programadas para enviarse en una fecha futura.",
-    "scheduleInvoice": "Programar factura",
-    "loading": "Cargando…",
-    "noScheduled": "Aún no hay facturas programadas.",
-    "scheduledFor": "Programada para el {date}"
   },
   "customization": {
     "title": "Marca y personalización",

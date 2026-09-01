@@ -53,14 +53,23 @@ export default async function DashboardPage({ params }: { params: { locale: stri
 
   let invoices;
   let customerCount;
+  let totalRevenue = 0;
+  let invoiceCount = 0;
+
   try {
-    [invoices, customerCount] = await Promise["all"]([
+    [invoices, customerCount, totalRevenue, invoiceCount] = await Promise["all"]([
       db["invoice"]["findMany"]({
         where: { orgId },
-        include: { customer: true },
+        include: { customer: { select: { name: true, company: true } } },
         orderBy: { createdAt: "desc" },
+        take: 15,
       }),
       db["customer"]["count"]({ where: { orgId } }),
+      db["invoice"]["aggregate"]({
+        where: { orgId },
+        _sum: { total: true },
+      })["then"]((r) => r["_sum"]["total"] ?? 0),
+      db["invoice"]["count"]({ where: { orgId } }),
     ]);
   } catch (err) {
     if (isMissingColumnError(err)) {
@@ -85,9 +94,12 @@ export default async function DashboardPage({ params }: { params: { locale: stri
             customer: { select: { name: true, company: true } },
           },
           orderBy: { createdAt: "desc" },
+          take: 15,
         }),
         db["customer"]["count"]({ where: { orgId } }),
       ]);
+      totalRevenue = invoices["reduce"]((sum: number, inv: any) => sum + (inv["total"] || 0), 0);
+      invoiceCount = invoices["length"];
     } else {
       logServerError("DashboardPage", err);
       throw err;
@@ -95,7 +107,6 @@ export default async function DashboardPage({ params }: { params: { locale: stri
   }
 
   const now = new Date();
-  const totalRevenue = invoices["reduce"]((sum: number, inv: any) => sum + (inv["total"] || 0), 0);
   const outstandingBalance = invoices
     ["filter"]((inv: any) => (inv["total"] || 0) - (inv["amountPaid"] || 0) > 0)
     ["reduce"]((sum: number, inv: any) => sum + (inv["total"] || 0) - (inv["amountPaid"] || 0), 0);
@@ -135,7 +146,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
     },
     {
       label: t("invoices"),
-      value: invoices["length"]["toString"](),
+      value: invoiceCount["toString"](),
       icon: FileText,
     },
     {
@@ -210,7 +221,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
                   </TableCell>
                 </TableRow>
               ) : (
-                invoiceList["slice"](0, 15)["map"]((inv) => (
+                invoiceList.map((inv) => (
                   <TableRow key={inv["id"]}>
                     <TableCell className="font-medium">
                       <Link href={`/dashboard/invoices/${inv["id"]}`} className="hover:underline">
@@ -241,9 +252,9 @@ export default async function DashboardPage({ params }: { params: { locale: stri
               )}
             </TableBody>
           </Table>
-          {invoiceList["length"] > 15 && (
+          {invoiceCount > 15 && (
             <div className="text-center py-4 text-sm text-muted-foreground">
-              {invoiceList["length"] - 15} more invoices not shown
+              {invoiceCount - 15} more invoices not shown
             </div>
           )}
         </CardContent>

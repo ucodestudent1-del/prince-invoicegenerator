@@ -27,6 +27,7 @@ export function ExpenseForm({
   projects: { id: string; name: string }[];
 }) {
   const t = useTranslations("expenses");
+  const tc = useTranslations("expenseCategories");
   const router = useRouter();
   const [error, setError] = React["useState"]<string | null>(null);
   const [saving, setSaving] = React["useState"](false);
@@ -94,7 +95,7 @@ export function ExpenseForm({
               <Label htmlFor="category">{t("category")}</Label>
               <select id="category" name="category" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
                 {CATEGORIES["map"]((c) => (
-                  <option key={c} value={c}>{t(`expenseCategories.${c}`)}</option>
+                  <option key={c} value={c}>{tc(c)}</option>
                 ))}
               </select>
             </div>

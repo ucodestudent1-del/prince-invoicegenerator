@@ -246,7 +246,6 @@
       "multipleLayouts": "Plusieurs mises en page",
       "automaticReminders": "Rappels automatiques",
       "lateFees": "Frais de retard",
-      "scheduledInvoices": "Factures planifiées",
       "pdfExport": "Export PDF"
     },
     "plans": {
@@ -664,14 +663,6 @@
     "saveSettings": "Enregistrer les paramètres",
     "saving": "Enregistrement…",
     "failedSave": "Échec de l'enregistrement des paramètres."
-  },
-  "scheduled": {
-    "title": "Factures planifiées",
-    "description": "Factures planifiées pour être envoyées à une date future.",
-    "scheduleInvoice": "Planifier une facture",
-    "loading": "Chargement…",
-    "noScheduled": "Aucune facture planifiée pour le moment.",
-    "scheduledFor": "Planifié pour le {date}"
   },
   "customization": {
     "title": "Marque et personnalisation",

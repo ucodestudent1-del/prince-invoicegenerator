@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { LocaleRedirectGuard } from "@/components/locale-redirect-guard";
@@ -13,6 +14,20 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isMissingColumnError, ensureEnv } from "@/lib/org";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
 
 // This layout reads cookies(), the session, and the database via
 // getInitialTheme(), so it must render dynamically per request. Without this,
@@ -119,7 +134,7 @@ export default async function RootLayout({
 
   return (
     <html lang={params["locale"]}>
-      <body className="min-h-screen antialiased">
+      <body className={`min-h-screen antialiased ${inter["variable"]} ${playfair["variable"]}`}>
         <NextIntlClientProvider locale={params["locale"]} messages={messages}>
           <LocaleRedirectGuard />
           <ThemeClient
