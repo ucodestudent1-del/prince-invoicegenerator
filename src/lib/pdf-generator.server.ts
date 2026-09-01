@@ -2,7 +2,8 @@ import { InvoiceTemplate } from "@/components/invoice-template";
 import { DocumentTemplate } from "@/components/document-template";
 import type { EntityType } from "@/components/document-template";
 import { PAPER_SIZES, type PaperSize, resolvePaperSize } from "@/lib/pdf-constants";
-import { renderToString } from "react-dom/server";
+
+let cachedRenderToString: ((node: any) => string) | null = null;
 
 export interface PdfGenerationOptions {
   paperSize?: PaperSize;
@@ -16,8 +17,12 @@ export async function generateInvoicePdf(
 ): Promise<Buffer> {
   const { paperSize = "A4", locale = "en" } = options;
   const resolvedSize = resolvePaperSize(paperSize);
+  if (!cachedRenderToString) {
+    const { renderToString } = await import("react-dom/server");
+    cachedRenderToString = renderToString;
+  }
   const html = wrapHtmlForPdf(
-    renderToString(InvoiceTemplate({ invoice, org, paperSize: resolvedSize, locale })),
+    cachedRenderToString(InvoiceTemplate({ invoice, org, paperSize: resolvedSize, locale })),
     PAPER_SIZES[resolvedSize]
   );
   return renderPdf(html, PAPER_SIZES[resolvedSize]);
@@ -31,8 +36,12 @@ export async function generateDocumentPdf(
 ): Promise<Buffer> {
   const { paperSize = "A4", locale = "en" } = options;
   const resolvedSize = resolvePaperSize(paperSize);
+  if (!cachedRenderToString) {
+    const { renderToString } = await import("react-dom/server");
+    cachedRenderToString = renderToString;
+  }
   const html = wrapHtmlForPdf(
-    renderToString(DocumentTemplate({ entityType, doc, org, paperSize: resolvedSize, locale })),
+    cachedRenderToString(DocumentTemplate({ entityType, doc, org, paperSize: resolvedSize, locale })),
     PAPER_SIZES[resolvedSize]
   );
   return renderPdf(html, PAPER_SIZES[resolvedSize]);
