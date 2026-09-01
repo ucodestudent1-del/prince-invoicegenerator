@@ -102,10 +102,10 @@ function normalizeDefaultItems(json: unknown): InvoiceItemInput[] {
 function normalizeTemplateItems(items: any[]): InvoiceItemInput[] {
   return (items ?? [])["map"]((it) => ({
     description: it["description"],
-    quantity: toFiniteNumber(it?.["quantity"]),
-    unitPrice: toFiniteNumber(it?.["unitPrice"]),
-    amount: toFiniteNumber(it?.["amount"]),
-    sortOrder: toFiniteNumber(it?.["sortOrder"] ?? 0),
+    quantity: it["quantity"] ?? 0,
+    unitPrice: it["unitPrice"] ?? 0,
+    amount: it["amount"] ?? 0,
+    sortOrder: it["sortOrder"] ?? 0,
   }));
 }
 
@@ -321,6 +321,7 @@ async function validateTemplateInvoice(
           total: true,
           notes: true,
           items: {
+            orderBy: { id: "asc" },
             select: {
               id: true,
               description: true,
@@ -448,8 +449,8 @@ async function generateRecurringInvoice(ctx: {
   const paymentTerms = config["paymentTerms"] ?? "NET_30";
   const startDate = config["startDate"] ? new Date(config["startDate"]) : null;
   const endDate = config["endDate"] ? new Date(config["endDate"]) : null;
-  const occurrences = config["occurrences"] ? Number(config["occurrences"]) : null;
-  const generatedCount = config["generatedCount"] ? Number(config["generatedCount"]) : 0;
+  const occurrences = config["occurrences"] != null ? toFiniteNumber(config["occurrences"]) : null;
+  const generatedCount = config["generatedCount"] != null ? toFiniteNumber(config["generatedCount"]) : 0;
   const frequency = (config["frequency"] ?? "MONTHLY")["toUpperCase"]();
   const addFn = FREQUENCY_MAP[frequency] || ((d: Date) => addMonths(d, 1));
 
@@ -690,7 +691,7 @@ export async function getRecurringConfigs() {
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
 
-    let configs;
+    let configs: any[];
     try {
       configs = await db["recurringInvoiceConfig"]["findMany"]({
         where: { orgId },
@@ -711,7 +712,6 @@ export async function getRecurringConfigs() {
             frequency: true,
             nextRunDate: true,
             active: true,
-            lastInvoiceId: true,
             createdAt: true,
             updatedAt: true,
             customer: { select: { name: true, email: true } },
@@ -988,7 +988,12 @@ export async function processScheduledInvoices() {
           scheduledFor: { lte: now },
           status: "DRAFT",
         },
-        include: { items: true },
+        select: {
+          id: true,
+          orgId: true,
+        },
+        orderBy: { scheduledFor: "asc" },
+        take: 200,
       });
     } catch (err) {
       if (isMissingColumnError(err)) {

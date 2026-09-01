@@ -43,9 +43,10 @@ function nextFromLast(
   lastNumber: string | undefined,
   pad: number
 ): string {
-  const lastNum = lastNumber
-    ? parseInt(lastNumber.replace(new RegExp(`^${prefix}`), ""), 10)
-    : 0;
+  const lastNum =
+    lastNumber && lastNumber.startsWith(prefix)
+      ? parseInt(lastNumber.slice(prefix.length), 10)
+      : 0;
   const nextNum = Number.isFinite(lastNum) ? lastNum + 1 : 1;
   if (nextNum >= 10 ** pad) {
     throw new Error(

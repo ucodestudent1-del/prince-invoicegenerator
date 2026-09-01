@@ -359,19 +359,19 @@ export async function getCustomerActivityLog(customerId: string) {
           where: { customerId, orgId },
           select: { id: true, number: true, status: true, total: true, createdAt: true },
           orderBy: { createdAt: "desc" },
-          take: 100,
+          take: 34,
         }),
         db["estimate"]["findMany"]({
           where: { customerId, orgId },
           select: { id: true, number: true, status: true, total: true, createdAt: true },
           orderBy: { createdAt: "desc" },
-          take: 100,
+          take: 34,
         }),
         db["payment"]["findMany"]({
           where: { invoice: { customerId, orgId } },
           select: { id: true, amount: true, method: true, status: true, createdAt: true, invoice: { select: { number: true } } },
           orderBy: { createdAt: "desc" },
-          take: 100,
+          take: 34,
         }),
       ]);
     } catch (err) {

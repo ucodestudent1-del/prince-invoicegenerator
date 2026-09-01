@@ -1,5 +1,5 @@
 import { logError } from "@/lib/logging";
-import { r2, R2_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
+import { R2_BUCKET, R2_PUBLIC_URL, getR2 } from "@/lib/r2";
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const R2_ACCOUNT_ID = process["env"]["R2_ACCOUNT_ID"];
@@ -21,7 +21,7 @@ export async function uploadPdfToR2(
   const key = `invoices/${invoiceNumber}/${Date["now"]()}-${invoiceNumber}.pdf`;
 
   try {
-    await r2["send"](
+    await getR2()["send"](
       new PutObjectCommand({
         Bucket: R2_BUCKET,
         Key: key,
@@ -51,7 +51,7 @@ export async function getPdfFromR2(key: string): Promise<Buffer | null> {
   if (!R2_BUCKET) return null;
 
   try {
-    const res = await r2["send"](
+    const res = await getR2()["send"](
       new GetObjectCommand({ Bucket: R2_BUCKET, Key: key })
     );
     if (!res["Body"]) return null;
