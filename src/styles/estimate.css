@@ -147,6 +147,7 @@
 .estimate-items col.col-num    { width: 3rem; }
 .estimate-items col.col-desc   { width: auto; }
 .estimate-items col.col-qty,
+.estimate-items col.col-unit,
 .estimate-items col.col-rate,
 .estimate-items col.col-amount { width: 6.5rem; }
 
@@ -246,6 +247,61 @@
   margin: 0;
 }
 
+/* === Customer contact & address ======================================= */
+.estimate-contact {
+  color: var(--est-muted);
+  font-size: 0.8125rem;
+}
+
+.estimate-job-address {
+  color: var(--est-muted);
+  font-size: 0.8125rem;
+}
+
+/* === Signature block ================================================== */
+.estimate-signature {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: var(--est-rule-strong);
+}
+.estimate-sig-block {
+  width: 100%;
+  max-width: 280px;
+}
+.estimate-sig-role {
+  display: block;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--est-muted);
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+.estimate-sig-line {
+  width: 100%;
+  height: 1px;
+  background: var(--est-fg);
+  margin-bottom: 0.75rem;
+}
+.estimate-sig-line-small {
+  width: 100%;
+  height: 1px;
+  background: var(--est-fg);
+  margin-top: 0.5rem;
+}
+.estimate-sig-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.estimate-sig-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--est-muted);
+  font-weight: 600;
+}
+
 /* === Action bar (Accept / Reject) ===================================== */
 .estimate-actions {
   margin-top: 2rem;
@@ -326,12 +382,13 @@
     page-break-inside: avoid;
   }
   .estimate-items tfoot { display: table-row-group; }
-  .estimate-header,
-  .estimate-meta,
-  .estimate-items,
-  .estimate-notes {
-    page-break-inside: avoid;
-  }
+   .estimate-header,
+   .estimate-meta,
+   .estimate-items,
+   .estimate-notes,
+   .estimate-signature {
+     page-break-inside: avoid;
+   }
   .estimate-actions { display: none; }
   .estimate-status { border: 1px solid currentColor; }
 }

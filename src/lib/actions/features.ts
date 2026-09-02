@@ -206,33 +206,53 @@ export async function createChangeOrder(input: {
        }
      }
 
-     const number = await getNextChangeOrderNumber(db, orgId);
-     const originalTotal = input["originalTotal"] ?? 0;
-     const changeAmount = input["amount"];
-     const revisedTotal = originalTotal + changeAmount;
-     const co = await db["changeOrder"]["create"]({
-       data: {
-         orgId,
-         number,
-         title: input["title"],
-         description: input["description"],
-         projectId: input["projectId"] ?? null,
-         invoiceId: input["invoiceId"] ?? null,
-         customerId: input["customerId"] ?? null,
-         amount: input["amount"],
-         changeAmount,
-         revisedTotal,
-         originalTotal,
-         daysAdded: input["daysAdded"] ?? null,
-         originalCompletionDate: input["originalCompletionDate"] ? new Date(input["originalCompletionDate"]) : null,
-         newCompletionDate: input["newCompletionDate"] ? new Date(input["newCompletionDate"]) : null,
-         billToAddress: input["billToAddress"] ?? null,
-         scopeChangeDescription: input["scopeChangeDescription"],
-         scheduleImpactDescription: input["scheduleImpactDescription"],
-       },
-     });
-     await revalidateWithLocale("/dashboard/change-orders");
-     return co;
+      const number = await getNextChangeOrderNumber(db, orgId);
+      const originalTotal = input["originalTotal"] ?? 0;
+      const changeAmount = input["amount"];
+      const revisedTotal = originalTotal + changeAmount;
+
+      let co;
+      try {
+        co = await db["changeOrder"]["create"]({
+          data: {
+            orgId,
+            number,
+            title: input["title"],
+            description: input["description"],
+            projectId: input["projectId"] ?? null,
+            invoiceId: input["invoiceId"] ?? null,
+            customerId: input["customerId"] ?? null,
+            amount: input["amount"],
+            changeAmount,
+            revisedTotal,
+            originalTotal,
+            daysAdded: input["daysAdded"] ?? null,
+            originalCompletionDate: input["originalCompletionDate"] ? new Date(input["originalCompletionDate"]) : null,
+            newCompletionDate: input["newCompletionDate"] ? new Date(input["newCompletionDate"]) : null,
+            billToAddress: input["billToAddress"] ?? null,
+            scopeChangeDescription: input["scopeChangeDescription"],
+            scheduleImpactDescription: input["scheduleImpactDescription"],
+          },
+        });
+      } catch (err) {
+        if (isMissingColumnError(err)) {
+          co = await db["changeOrder"]["create"]({
+            data: {
+              orgId,
+              number,
+              title: input["title"],
+              description: input["description"],
+              projectId: input["projectId"] ?? null,
+              invoiceId: input["invoiceId"] ?? null,
+              amount: input["amount"],
+            },
+          });
+        } else {
+          throw err;
+        }
+      }
+      await revalidateWithLocale("/dashboard/change-orders");
+      return co;
    });
 }
 

@@ -35,22 +35,28 @@ const LABELS: Record<EntityType, Record<string, string>> = {
   },
   estimates: {
     title: "Estimate",
-    issued: "Issued",
-    due: "Valid Until",
-    billTo: "Bill To",
-    shipTo: "Ship To",
+    issued: "Date",
+    due: "Expiration Date",
+    billTo: "Customer",
+    contact: "Contact",
+    address: "Job Address",
     project: "Project",
     type: "Type",
-    description: "Description",
-    qty: "Qty",
+    description: "Description of Work",
+    qty: "Quantity",
+    unit: "Unit",
     unitPrice: "Unit Price",
-    amount: "Amount",
+    amount: "Total Amount",
     subtotal: "Subtotal",
     tax: "Tax",
     discount: "Discount",
     retainage: "Retainage",
-    total: "Total",
+    total: "Grand Total",
     notes: "Notes",
+    terms: "Terms & Conditions",
+    signature: "Customer Signature",
+    printName: "Printed Name",
+    date: "Date",
     poweredBy: "Powered by Prince",
   },
   "change-orders": {
@@ -78,7 +84,14 @@ const LABELS: Record<EntityType, Record<string, string>> = {
 const ACCENT = "#3b82f6";
 
 /**
- * Estimate body — clean data-table layout.
+ * Estimate body — professional 5-section layout.
+ *
+ * Sections:
+ *   1. Estimate Details — number, date, expiration date
+ *   2. Customer Information — name, contact info, job address
+ *   3. Work & Pricing Table — description, quantity, unit price, total
+ *   4. Totals Section — subtotal, tax, grand total
+ *   5. Notes & Approval — terms, signature lines
  *
  * Used by both the public acceptance page and the dashboard print + PDF
  * pipeline. The CSS lives in `src/styles/estimate.css` and is scoped to
@@ -124,7 +137,7 @@ function EstimateDocumentBody({
         } as React.CSSProperties
       }
     >
-      {/* Header */}
+      {/* 1. Estimate Details */}
       <header className="estimate-header">
         <div className="brand">
           {doc?.["logoUrl"] && (
@@ -150,15 +163,15 @@ function EstimateDocumentBody({
           <p className="doc-issued">
             {labels["issued"]} {formatDate(doc?.["issueDate"] ?? doc?.["createdAt"])}
           </p>
-          {doc?.["validUntil"] && (
+          {(doc?.["validUntil"] || doc?.["expirationDate"]) && (
             <p className="doc-issued">
-              {labels["due"]} {formatDate(doc["validUntil"])}
+              {labels["due"]} {formatDate(doc?.["expirationDate"] ?? doc?.["validUntil"])}
             </p>
           )}
         </div>
       </header>
 
-      {/* Meta summary */}
+      {/* 2. Customer Information */}
       <table className="estimate-meta">
         <tbody>
           <tr>
@@ -175,16 +188,22 @@ function EstimateDocumentBody({
                       {customer["company"]}
                     </>
                   )}
-                  {customer?.["email"] && (
+                  {(customer?.["email"] || customer?.["phone"]) && (
                     <>
                       <br />
-                      {customer["email"]}
+                      <span className="estimate-contact">
+                        {customer?.["email"] && <span>{customer["email"]}</span>}
+                        {customer?.["email"] && customer?.["phone"] && <span> · </span>}
+                        {customer?.["phone"] && <span>{customer["phone"]}</span>}
+                      </span>
                     </>
                   )}
-                  {customer?.["address"] && (
+                  {(customer?.["address"] || doc?.["billToAddress"]) && (
                     <>
                       <br />
-                      {customer["address"]}
+                      <span className="estimate-job-address">
+                        {customer?.["address"] ?? doc?.["billToAddress"]}
+                      </span>
                     </>
                   )}
                 </>
@@ -210,12 +229,13 @@ function EstimateDocumentBody({
         </tbody>
       </table>
 
-      {/* Line items */}
+      {/* 3. Work & Pricing Table */}
       <table className="estimate-items">
         <colgroup>
           <col className="col-num" />
           <col className="col-desc" />
           <col className="col-qty" />
+          <col className="col-unit" />
           <col className="col-rate" />
           <col className="col-amount" />
         </colgroup>
@@ -225,6 +245,9 @@ function EstimateDocumentBody({
             <th scope="col">{labels["description"]}</th>
             <th scope="col" className="num">
               {labels["qty"]}
+            </th>
+            <th scope="col" className="num">
+              {labels["unit"]}
             </th>
             <th scope="col" className="num">
               {labels["unitPrice"]}
@@ -246,6 +269,9 @@ function EstimateDocumentBody({
               <td className="num col-qty" data-label={labels["qty"]}>
                 {it?.["quantity"] ?? ""}
               </td>
+              <td className="num" data-label={labels["unit"]}>
+                {it?.["unit"] ?? "units"}
+              </td>
               <td className="num col-rate" data-label={labels["unitPrice"]}>
                 {formatCurrency(it?.["unitPrice"], currency)}
               </td>
@@ -255,16 +281,17 @@ function EstimateDocumentBody({
             </tr>
           ))}
         </tbody>
+        {/* 4. Totals Section */}
         <tfoot>
           <tr>
-            <th scope="row" colSpan={4} className="label">
+            <th scope="row" colSpan={5} className="label">
               {labels["subtotal"]}
             </th>
             <td className="num">{formatCurrency(subtotal, currency)}</td>
           </tr>
           {taxAmount > 0 && (
             <tr>
-              <th scope="row" colSpan={4} className="label">
+              <th scope="row" colSpan={5} className="label">
                 {labels["tax"]}
                 {taxRate > 0 ? ` (${taxRate}%)` : ""}
               </th>
@@ -273,14 +300,14 @@ function EstimateDocumentBody({
           )}
           {discount > 0 && (
             <tr>
-              <th scope="row" colSpan={4} className="label">
+              <th scope="row" colSpan={5} className="label">
                 {labels["discount"]}
               </th>
               <td className="num">-{formatCurrency(discount, currency)}</td>
             </tr>
           )}
           <tr className="grand-total">
-            <th scope="row" colSpan={4} className="label">
+            <th scope="row" colSpan={5} className="label">
               {labels["total"]}
             </th>
             <td className="num">{formatCurrency(total, currency)}</td>
@@ -288,13 +315,28 @@ function EstimateDocumentBody({
         </tfoot>
       </table>
 
-      {/* Notes */}
-      {(doc?.["notes"] || doc?.["description"]) && (
-        <section className="estimate-notes">
-          <h2>{labels["notes"]}</h2>
-          <p>{doc?.["notes"] ?? doc?.["description"]}</p>
-        </section>
-      )}
+      {/* 5. Notes & Approval */}
+      <section className="estimate-notes">
+        {(doc?.["termsAndConditions"] || doc?.["notes"] || doc?.["description"]) && (
+          <>
+            <h2>{labels["terms"]}</h2>
+            <p>{doc?.["termsAndConditions"] ?? doc?.["notes"] ?? doc?.["description"]}</p>
+          </>
+        )}
+      </section>
+
+      <section className="estimate-signature" aria-label="Customer Approval">
+        <div className="estimate-sig-block">
+          <span className="estimate-sig-role">{labels["signature"]}</span>
+          <div className="estimate-sig-line" />
+          <div className="estimate-sig-fields">
+            <span className="estimate-sig-label">{labels["printName"]}</span>
+            <div className="estimate-sig-line-small" />
+            <span className="estimate-sig-label">{labels["date"]}</span>
+            <div className="estimate-sig-line-small" />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
