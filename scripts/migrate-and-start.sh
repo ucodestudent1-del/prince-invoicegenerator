@@ -135,15 +135,25 @@ else
      ESTIMATE_OLD_RESOLVE_CREATED=1
    fi
 
-   echo "Resolving failed migration 20260825_repair_estimate_enhancements..."
-   npx prisma migrate resolve --applied 20260825_repair_estimate_enhancements || true
+    echo "Resolving failed migration 20260825_repair_estimate_enhancements..."
+    npx prisma migrate resolve --applied 20260825_repair_estimate_enhancements || true
 
-   if [ "$ESTIMATE_OLD_RESOLVE_CREATED" = "1" ]; then
-     echo "Removing temporary old estimate repair migration folder..."
-     rm -rf prisma/migrations/20260825_repair_estimate_enhancements
-   fi
+    if [ "$ESTIMATE_OLD_RESOLVE_CREATED" = "1" ]; then
+      echo "Removing temporary old estimate repair migration folder..."
+      rm -rf prisma/migrations/20260825_repair_estimate_enhancements
+    fi
 
-   # Retry migrations up to 5 times in case database is not ready yet
+    # -------------------------------------------------------------------------
+    # Resolve the failed 20260830000001_add_change_order_structured_fields migration.
+    # The original SQL had syntax errors (IF NOT NULL instead of IF NOT EXISTS)
+    # and incorrect nullability on nullable columns. The fixed SQL is now in
+    # the migration file. Mark as rolled back so prisma migrate deploy can
+    # re-apply it cleanly against production.
+    # -------------------------------------------------------------------------
+    echo "Resolving failed migration 20260830000001_add_change_order_structured_fields..."
+    npx prisma migrate resolve --rolled-back 20260830000001_add_change_order_structured_fields || true
+
+    # Retry migrations up to 5 times in case database is not ready yet
    max_retries=5
    retry=1
    until npx prisma migrate deploy; do
