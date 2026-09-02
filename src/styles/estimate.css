@@ -1,0 +1,337 @@
+/*
+ * Estimate template — clean, professional data-table aesthetic.
+ *
+ * Scoped to `.estimate-*` classes so it never collides with the existing
+ * `.invoice-*` / `.template-*` styles. Used by:
+ *   - src/app/[locale]/estimate/[number]/page.tsx (public acceptance view)
+ *   - src/components/document-template.tsx (dashboard print + PDF)
+ *
+ * Design rules (see plan):
+ *   - One semantic table per concern (meta summary, line items).
+ *   - Line-item totals live in the same <table> as <tfoot> so the browser
+ *     repeats them on every printed page and they stay visible on long tables.
+ *   - No card chrome. Whitespace does the work.
+ *   - `font-variant-numeric: tabular-nums` so decimal columns align.
+ */
+
+/* === Tabular reset for the estimate shell ============================== */
+.estimate-body {
+  --est-fg: #111827;
+  --est-muted: #6b7280;
+  --est-faint: #9ca3af;
+  --est-rule: 1px solid #e5e7eb;
+  --est-rule-strong: 2px solid #111827;
+  --est-accent: #2563eb;
+
+  color: var(--est-fg);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "ss01" 1;
+}
+
+/* Per-org accent (set inline as a CSS custom property when known). */
+.estimate-body[style*="--est-accent"] {
+  /* The template component sets --est-accent inline; this rule just
+     ensures descendants pick it up without a redeclaration. */
+}
+
+/* === Header ============================================================ */
+.estimate-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0 0 1.25rem;
+  border-bottom: var(--est-rule-strong);
+  margin-bottom: 1.5rem;
+}
+.estimate-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.estimate-header .brand-mark {
+  height: 2.5rem;
+  width: auto;
+  max-width: 8rem;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.estimate-header .brand-text { min-width: 0; }
+.estimate-header .brand-org {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.estimate-header .brand-doc-type {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--est-muted);
+  margin: 0.125rem 0 0;
+  font-weight: 500;
+}
+.estimate-header .doc-id {
+  text-align: right;
+  flex: 0 0 auto;
+}
+.estimate-header .doc-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0.25rem 0 0;
+  line-height: 1.1;
+}
+.estimate-header .doc-issued {
+  font-size: 0.8125rem;
+  color: var(--est-muted);
+  margin: 0.25rem 0 0;
+}
+
+/* === Status chip ====================================================== */
+.estimate-status {
+  display: inline-block;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 9999px;
+  background: #f3f4f6;
+  color: #374151;
+  white-space: nowrap;
+}
+.estimate-status[data-status="DRAFT"]     { background: #f3f4f6; color: #374151; }
+.estimate-status[data-status="SENT"]      { background: #fef3c7; color: #92400e; }
+.estimate-status[data-status="VIEWED"]    { background: #fef3c7; color: #92400e; }
+.estimate-status[data-status="ACCEPTED"]  { background: #dcfce7; color: #166534; }
+.estimate-status[data-status="REJECTED"]  { background: #fee2e2; color: #991b1b; }
+.estimate-status[data-status="DECLINED"]  { background: #fee2e2; color: #991b1b; }
+.estimate-status[data-status="EXPIRED"]   { background: #f3f4f6; color: #6b7280; }
+.estimate-status[data-status="INVOICED"]  { background: #dbeafe; color: #1e40af; }
+
+/* === Meta summary table =============================================== */
+.estimate-meta {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 2rem;
+  font-size: 0.8125rem;
+}
+.estimate-meta th,
+.estimate-meta td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5rem 0.75rem;
+  border-bottom: var(--est-rule);
+}
+.estimate-meta th {
+  width: 6.5rem;
+  font-weight: 500;
+  color: var(--est-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.6875rem;
+}
+.estimate-meta td strong { font-weight: 600; }
+
+/* === Line items table (the headline) ================================== */
+.estimate-items {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  table-layout: fixed;
+}
+.estimate-items col.col-num    { width: 3rem; }
+.estimate-items col.col-desc   { width: auto; }
+.estimate-items col.col-qty,
+.estimate-items col.col-rate,
+.estimate-items col.col-amount { width: 6.5rem; }
+
+.estimate-items thead th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--est-muted);
+  padding: 0.625rem 0.75rem;
+  border-top: var(--est-rule-strong);
+  border-bottom: var(--est-rule-strong);
+  background: #fff;
+}
+.estimate-items thead th.num { text-align: right; }
+
+.estimate-items tbody td {
+  padding: 0.75rem;
+  border-bottom: var(--est-rule);
+  vertical-align: top;
+  line-height: 1.4;
+}
+.estimate-items tbody td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+.estimate-items tbody td.col-num {
+  color: var(--est-faint);
+  font-weight: 400;
+}
+.estimate-items tbody tr:last-child td {
+  border-bottom: var(--est-rule-strong);
+}
+
+/* Sticky tfoot so totals stay visible on long tables (desktop only). */
+.estimate-items tfoot th,
+.estimate-items tfoot td {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background: #fff;
+}
+.estimate-items tfoot th.label {
+  text-align: right;
+  font-weight: 500;
+  color: var(--est-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8125rem;
+}
+.estimate-items tfoot td.num { text-align: right; }
+
+.estimate-items tfoot tr.grand-total th.label,
+.estimate-items tfoot tr.grand-total td {
+  border-top: var(--est-rule-strong);
+  border-bottom: var(--est-rule-strong);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--est-accent);
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+}
+.estimate-items tfoot tr.grand-total th.label { color: var(--est-fg); }
+
+/* Sticky thead on tall tables (desktop only — mobile collapses below). */
+@media (min-width: 641px) {
+  .estimate-items thead th { position: sticky; top: 0; z-index: 1; }
+  .estimate-items tfoot th,
+  .estimate-items tfoot td { position: sticky; bottom: 0; }
+}
+
+/* Long descriptions wrap neatly. */
+.estimate-items td.col-desc {
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* === Notes / terms ==================================================== */
+.estimate-notes {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: var(--est-rule);
+  font-size: 0.875rem;
+}
+.estimate-notes h2 {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--est-muted);
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+.estimate-notes p {
+  white-space: pre-line;
+  color: #374151;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* === Action bar (Accept / Reject) ===================================== */
+.estimate-actions {
+  margin-top: 2rem;
+  padding: 1rem 0 0;
+  border-top: var(--est-rule-strong);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* === Mobile: collapse items into key/value rows ====================== */
+@media (max-width: 640px) {
+  .estimate-items,
+  .estimate-items thead,
+  .estimate-items tbody,
+  .estimate-items tfoot,
+  .estimate-items tr,
+  .estimate-items th,
+  .estimate-items td { display: block; }
+
+  .estimate-items thead { display: none; }
+
+  .estimate-items tbody tr {
+    border-bottom: 1px solid var(--est-fg);
+    padding: 0.5rem 0;
+  }
+  .estimate-items tbody td {
+    border: 0;
+    padding: 0.25rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+  .estimate-items tbody td::before {
+    content: attr(data-label);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--est-muted);
+    font-weight: 600;
+    flex: 0 0 auto;
+  }
+  .estimate-items tbody td.num {
+    text-align: right;
+    white-space: nowrap;
+  }
+  .estimate-items tbody td.col-num::before { content: "#"; }
+  .estimate-items tbody td.col-num {
+    color: var(--est-fg);
+    font-weight: 600;
+  }
+
+  .estimate-items tfoot tr {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+  }
+  .estimate-items tfoot th.label,
+  .estimate-items tfoot td.num {
+    text-align: right;
+    border: 0;
+  }
+  .estimate-items tfoot tr.grand-total {
+    border-top: 1px solid var(--est-fg);
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+  }
+}
+
+/* === Print ============================================================ */
+@media print {
+  .estimate-body {
+    color: #000;
+  }
+  .estimate-items tbody tr {
+    page-break-inside: avoid;
+  }
+  .estimate-items tfoot { display: table-row-group; }
+  .estimate-header,
+  .estimate-meta,
+  .estimate-items,
+  .estimate-notes {
+    page-break-inside: avoid;
+  }
+  .estimate-actions { display: none; }
+  .estimate-status { border: 1px solid currentColor; }
+}

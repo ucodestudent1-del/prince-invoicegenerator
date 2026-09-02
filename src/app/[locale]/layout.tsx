@@ -7,6 +7,8 @@ import { setRequestLocale } from "next-intl/server";
 import { cookies } from "next/headers";
 import "./globals.css";
 import "@/styles/invoice-print.css";
+import "@/styles/estimate.css";
+import "@/styles/change-order.css";
 import { ThemeClient } from "@/components/theme-client";
 import { CookieConsent } from "@/components/cookie-consent";
 import { Analytics } from "@/components/analytics";

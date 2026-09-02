@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Check, X, Share2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -249,123 +248,119 @@ export default function EstimatePage({
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex items-center gap-3">
-            {estimate["org"]["logoUrl"] && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={estimate["org"]["logoUrl"]}
-                alt={estimate["org"]["name"] || "Logo"}
-                className="h-10 w-auto object-contain"
-              />
-            )}
-            <span className="text-lg font-semibold text-gray-700">
-              {estimate["org"]["name"] || "Prince Invoice Generator"}
-            </span>
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleShare}>
-            <Share2 className="h-4 w-4 mr-1" /> Share
-          </Button>
-        </div>
-
-        {/* Estimate Header */}
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl">Estimate {estimate["number"]}</CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                Issued on {formatDate(estimate["issueDate"])}
-              </p>
-            </div>
-            <Badge className={statusInfo["color"]}>{statusInfo["label"]}</Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between text-sm text-gray-600">
-              <div>
-                <span className="font-medium">Valid until:</span> {formatDate(estimate["validUntil"])}
-              </div>
-              {estimate["viewedAt"] && (
-                <div>
-                  <span className="font-medium">Viewed:</span> {formatDate(estimate["viewedAt"])}
-                </div>
-              )}
-              {estimate["acceptedAt"] && (
-                <div>
-                  <span className="font-medium">Accepted:</span> {formatDate(estimate["acceptedAt"])}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Expired Banner */}
+        {/* Expired banner sits above the document so it can't be missed. */}
         {isExpired && (
-          <Card className="mb-6 border-red-200 bg-red-50">
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2 text-red-800">
-                <AlertCircle className="h-5 w-5" />
-                <p className="font-medium">This estimate has expired.</p>
-              </div>
-              <p className="text-sm text-red-700 mt-1">
+          <div className="mb-4 p-4 rounded-md flex items-start gap-2 border border-red-200 bg-red-50 text-sm">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-red-800">This estimate has expired.</p>
+              <p className="text-red-700 mt-0.5">
                 Valid until {formatDate(estimate["validUntil"])} has passed. Please request a new quote.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        {/* Customer Info & Estimate Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                Bill To
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-medium">{estimate["customer"]["name"] || estimate["customer"]["company"] || "—"}</p>
-              {estimate["customer"]["company"] && estimate["customer"]["name"] && (
-                <p className="text-gray-600">{estimate["customer"]["company"]}</p>
-              )}
-              {estimate["customer"]["email"] && <p className="text-gray-500">{estimate["customer"]["email"]}</p>}
-              {estimate["customer"]["address"] && <p className="text-gray-500">{estimate["customer"]["address"]}</p>}
-            </CardContent>
-          </Card>
+        {/* Document shell — clean data-table layout, see estimate.css. */}
+        <div className="bg-white border border-gray-200 rounded-md p-6 sm:p-10 shadow-sm">
+          <div className="estimate-body">
+            {/* Header */}
+            <header className="estimate-header">
+              <div className="brand">
+                {estimate["org"]["logoUrl"] && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={estimate["org"]["logoUrl"]}
+                    alt={estimate["org"]["name"] || "Logo"}
+                    className="brand-mark"
+                  />
+                )}
+                <div className="brand-text">
+                  <p className="brand-org">{estimate["org"]["name"] || "Prince Invoice Generator"}</p>
+                  <p className="brand-doc-type">Estimate</p>
+                </div>
+              </div>
+              <div className="doc-id">
+                <span className="estimate-status" data-status={estimate["status"]}>
+                  {statusInfo["label"]}
+                </span>
+                <h2 className="doc-number">{estimate["number"]}</h2>
+                <p className="doc-issued">Issued {formatDate(estimate["issueDate"])}</p>
+                {estimate["validUntil"] && (
+                  <p className="doc-issued">Valid until {formatDate(estimate["validUntil"])}</p>
+                )}
+                {estimate["viewedAt"] && (
+                  <p className="doc-issued">Viewed {formatDate(estimate["viewedAt"])}</p>
+                )}
+                {estimate["acceptedAt"] && (
+                  <p className="doc-issued">Accepted {formatDate(estimate["acceptedAt"])}</p>
+                )}
+              </div>
+            </header>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                Estimate Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Currency:</span>
-                <span>{estimate["currency"]}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Tax Rate:</span>
-                <span>{estimate["taxRate"]}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Discount:</span>
-                <span>{formatCurrency(estimate["discount"], estimate["currency"])}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Meta summary table */}
+            <table className="estimate-meta">
+              <tbody>
+                <tr>
+                  <th scope="row">Bill To</th>
+                  <td>
+                    <strong>{estimate["customer"]["name"] || estimate["customer"]["company"] || "—"}</strong>
+                    {estimate["customer"]["company"] && estimate["customer"]["name"] && (
+                      <>
+                        <br />
+                        {estimate["customer"]["company"]}
+                      </>
+                    )}
+                    {estimate["customer"]["email"] && (
+                      <>
+                        <br />
+                        {estimate["customer"]["email"]}
+                      </>
+                    )}
+                    {estimate["customer"]["address"] && (
+                      <>
+                        <br />
+                        {estimate["customer"]["address"]}
+                      </>
+                    )}
+                  </td>
+                  <th scope="row">Details</th>
+                  <td>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "var(--est-muted)" }}>Currency</span>
+                      <span>{estimate["currency"]}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "var(--est-muted)" }}>Tax Rate</span>
+                      <span>{estimate["taxRate"]}%</span>
+                    </div>
+                    {estimate["discount"] > 0 && (
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--est-muted)" }}>Discount</span>
+                        <span>{formatCurrency(estimate["discount"], estimate["currency"])}</span>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
 
-        {/* Line Items */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <table className="w-full text-sm">
+            {/* Line items + totals in one table */}
+            <table className="estimate-items">
+              <colgroup>
+                <col className="col-num" />
+                <col className="col-desc" />
+                <col className="col-qty" />
+                <col className="col-rate" />
+                <col className="col-amount" />
+              </colgroup>
               <thead>
-                <tr className="border-b-2 border-gray-200 text-left">
-                  <th className="pb-2">#</th>
-                  <th className="pb-2">Description</th>
-                  <th className="pb-2 text-right">Qty</th>
-                  <th className="pb-2 text-right">Unit Price</th>
-                  <th className="pb-2 text-right">Amount</th>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Description</th>
+                  <th scope="col" className="num">Qty</th>
+                  <th scope="col" className="num">Unit Price</th>
+                  <th scope="col" className="num">Amount</th>
                 </tr>
               </thead>
               <tbody>
@@ -373,149 +368,153 @@ export default function EstimatePage({
                   ["slice"]()
                   ["sort"]((a, b) => a["sortOrder"] - b["sortOrder"])
                   ["map"]((item, idx) => (
-                    <tr key={item["id"]} className="border-b border-gray-100">
-                      <td className="py-3 text-gray-400">{idx + 1}</td>
-                      <td className="py-3">{item["description"]}</td>
-                      <td className="py-3 text-right">{item["quantity"]}</td>
-                      <td className="py-3 text-right">
+                    <tr key={item["id"]}>
+                      <td className="col-num" data-label="#">
+                        {idx + 1}
+                      </td>
+                      <td className="col-desc" data-label="Description">
+                        {item["description"]}
+                      </td>
+                      <td className="num col-qty" data-label="Qty">
+                        {item["quantity"]}
+                      </td>
+                      <td className="num col-rate" data-label="Unit Price">
                         {formatCurrency(item["unitPrice"], estimate["currency"])}
                       </td>
-                      <td className="py-3 text-right font-medium">
+                      <td className="num col-amount" data-label="Amount">
                         {formatCurrency(item["amount"], estimate["currency"])}
                       </td>
                     </tr>
                   ))}
               </tbody>
-            </table>
-          </CardContent>
-        </Card>
-
-        {/* Totals */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex justify-end">
-              <div className="w-64 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Subtotal</span>
-                  <span>{formatCurrency(estimate["subtotal"], estimate["currency"])}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Tax ({estimate["taxRate"]}%)</span>
-                  <span>{formatCurrency(estimate["taxAmount"], estimate["currency"])}</span>
-                </div>
-                {estimate["discount"] > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Discount</span>
-                    <span>-{formatCurrency(estimate["discount"], estimate["currency"])}</span>
-                  </div>
+              <tfoot>
+                <tr>
+                  <th scope="row" colSpan={4} className="label">
+                    Subtotal
+                  </th>
+                  <td className="num">{formatCurrency(estimate["subtotal"], estimate["currency"])}</td>
+                </tr>
+                {estimate["taxAmount"] > 0 && (
+                  <tr>
+                    <th scope="row" colSpan={4} className="label">
+                      Tax ({estimate["taxRate"]}%)
+                    </th>
+                    <td className="num">{formatCurrency(estimate["taxAmount"], estimate["currency"])}</td>
+                  </tr>
                 )}
-                <div className="border-t-2 pt-2 flex justify-between text-lg font-bold">
-                  <span>TOTAL</span>
-                  <span>{formatCurrency(estimate["total"], estimate["currency"])}</span>
+                {estimate["discount"] > 0 && (
+                  <tr>
+                    <th scope="row" colSpan={4} className="label">
+                      Discount
+                    </th>
+                    <td className="num">-{formatCurrency(estimate["discount"], estimate["currency"])}</td>
+                  </tr>
+                )}
+                <tr className="grand-total">
+                  <th scope="row" colSpan={4} className="label">
+                    Total
+                  </th>
+                  <td className="num">{formatCurrency(estimate["total"], estimate["currency"])}</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            {/* Notes & terms */}
+            {estimate["notes"] && (
+              <section className="estimate-notes">
+                <h2>Notes & Terms</h2>
+                <p>{estimate["notes"]}</p>
+              </section>
+            )}
+          </div>
+
+          {/* Accepted / Rejected / Invoiced status panels — sit below the
+              document so they don't fight with the table. */}
+          {estimate["status"] === "ACCEPTED" && (
+            <div className="estimate-notes" style={{ borderColor: "#a7f3d0" }}>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center justify-center w-10 h-10 bg-emerald-100 rounded-full">
+                  <Check className="h-5 w-5 text-emerald-600" />
+                </span>
+                <div>
+                  <h2 style={{ color: "#166534" }}>Accepted</h2>
+                  <p style={{ color: "#15803d" }}>
+                    Your estimate has been accepted. Your contractor has been notified and will prepare your invoice.
+                  </p>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
 
-        {/* Notes */}
-        {estimate["notes"] && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                Notes & Terms
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-700 whitespace-pre-line text-sm">{estimate["notes"]}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Action Buttons */}
-        {canAcceptReject && (
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <div className="flex gap-4 justify-center">
-                <Button
-                  size="lg"
-                  className={`${actionColorClass} text-white px-8`}
-                  onClick={() => setShowAcceptDialog(true)}
-                >
-                  <Check className="h-5 w-5 mr-2" />
-                  Accept Quote
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className={rejectColorClass}
-                  onClick={() => setShowRejectDialog(true)}
-                >
-                  <X className="h-5 w-5 mr-2" />
-                  Reject / Request Changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Accepted State */}
-        {estimate["status"] === "ACCEPTED" && (
-          <Card className="mb-6 border-emerald-200 bg-emerald-50">
-            <CardContent className="pt-6 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-full mb-3">
-                <Check className="h-6 w-6 text-emerald-600" />
-              </div>
-              <h3 className="font-semibold text-emerald-800 mb-1">Thank you!</h3>
-              <p className="text-sm text-emerald-700">
-                Your estimate has been accepted. Your contractor has been notified and will prepare your invoice.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Rejected State */}
-        {estimate["status"] === "REJECTED" && (
-          <Card className="mb-6 border-red-200 bg-red-50">
-            <CardContent className="pt-6">
+          {estimate["status"] === "REJECTED" && (
+            <div className="estimate-notes" style={{ borderColor: "#fecaca" }}>
               <div className="flex items-start gap-3">
-                <X className="h-5 w-5 text-red-600 mt-0.5" />
+                <span className="inline-flex items-center justify-center w-10 h-10 bg-red-100 rounded-full flex-shrink-0">
+                  <X className="h-5 w-5 text-red-600" />
+                </span>
                 <div>
-                  <h3 className="font-semibold text-red-800 mb-1">Estimate Rejected</h3>
-                  <p className="text-sm text-red-700 mb-2">
+                  <h2 style={{ color: "#991b1b" }}>Estimate Rejected</h2>
+                  <p style={{ color: "#b91c1c" }}>
                     Your contractor has been notified of your feedback.
                   </p>
                   {estimate["rejectionReason"] && (
-                    <p className="text-sm text-red-700">
-                      <span className="font-medium">Your feedback:</span> {estimate["rejectionReason"]}
+                    <p style={{ color: "#b91c1c", marginTop: "0.5rem" }}>
+                      <strong>Your feedback:</strong> {estimate["rejectionReason"]}
                     </p>
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        {/* Converted State */}
-        {estimate["status"] === "INVOICED" && (
-          <Card className="mb-6 border-blue-200 bg-blue-50">
-            <CardContent className="pt-6">
+          {estimate["status"] === "INVOICED" && (
+            <div className="estimate-notes" style={{ borderColor: "#bfdbfe" }}>
               <div className="flex items-center gap-3">
-                <Check className="h-5 w-5 text-blue-600" />
+                <span className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
+                  <Check className="h-5 w-5 text-blue-600" />
+                </span>
                 <div>
-                  <h3 className="font-semibold text-blue-800">Estimate Converted</h3>
-                  <p className="text-sm text-blue-700">
+                  <h2 style={{ color: "#1e40af" }}>Estimate Converted</h2>
+                  <p style={{ color: "#1d4ed8" }}>
                     This estimate has been converted to an invoice. You will receive a separate notification.
                   </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          )}
+        </div>
+
+        {/* Action bar — outside the document so it doesn't print. */}
+        {canAcceptReject && (
+          <div className="estimate-actions">
+            <Button
+              size="lg"
+              className={`${actionColorClass} text-white`}
+              onClick={() => setShowAcceptDialog(true)}
+              disabled={!!actionLoading}
+            >
+              <Check className="h-5 w-5 mr-2" />
+              Accept Quote
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className={rejectColorClass}
+              onClick={() => setShowRejectDialog(true)}
+              disabled={!!actionLoading}
+            >
+              <X className="h-5 w-5 mr-2" />
+              Reject / Request Changes
+            </Button>
+          </div>
         )}
 
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-400">
-          <p>This estimate was generated using Prince Invoice Generator</p>
+        {/* Footer + share */}
+        <div className="flex items-center justify-between mt-6">
+          <p className="text-xs text-gray-400">This estimate was generated using Prince Invoice Generator</p>
+          <Button variant="ghost" size="sm" onClick={handleShare}>
+            <Share2 className="h-4 w-4 mr-1" /> Share
+          </Button>
         </div>
       </div>
 

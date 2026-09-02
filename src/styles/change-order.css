@@ -1,0 +1,295 @@
+/*
+ * Change Order template — traditional construction-document layout.
+ *
+ * Scoped to `.change-order-*` classes so it never collides with the existing
+ * `.invoice-*` / `.estimate-*` / `.template-*` styles. Used by:
+ *   - src/components/document-template.tsx (dashboard print + PDF)
+ *
+ * Design rules (see plan):
+ *   - Centered "CHANGE ORDER" title with a thin top/bottom rule.
+ *   - Project / Owner / Contractor block as a 2-column key/value grid.
+ *   - Narrative description, not a table.
+ *   - Line items in a single table, totals in tfoot.
+ *   - Schedule impact as a horizontal key/value strip.
+ *   - Signature blocks at the bottom (Contractor / Owner).
+ *   - Print: A4, single page, hidden action bar.
+ */
+
+.co-body {
+  --co-fg: #111827;
+  --co-muted: #4b5563;
+  --co-faint: #6b7280;
+  --co-rule: 1px solid #d1d5db;
+  --co-rule-strong: 1.5px solid #111827;
+  --co-accent: #1e3a8a;
+  --co-band: #f3f4f6;
+
+  color: var(--co-fg);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10pt;
+  line-height: 1.45;
+}
+
+/* === Title band ======================================================= */
+.co-title {
+  text-align: center;
+  margin: 0 0 0.5rem;
+  padding: 0.5rem 0 0.75rem;
+  border-top: var(--co-rule-strong);
+  border-bottom: var(--co-rule-strong);
+}
+.co-title h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0 0 0.25rem;
+  color: var(--co-accent);
+}
+.co-title .co-number {
+  font-size: 0.875rem;
+  color: var(--co-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* === Section heading ================================================== */
+.co-section {
+  margin-top: 1.25rem;
+}
+.co-section-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--co-muted);
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: var(--co-rule);
+}
+
+/* === Meta strip (number / date / status) ============================== */
+.co-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin-top: 0.5rem;
+}
+.co-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.co-meta-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--co-faint);
+  font-weight: 600;
+}
+.co-meta-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--co-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* === Party block (Contractor / Owner) ================================= */
+.co-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.co-party {
+  border-top: var(--co-rule);
+  border-bottom: var(--co-rule);
+  padding: 0.5rem 0;
+  font-size: 0.8125rem;
+}
+.co-party-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--co-faint);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+.co-party strong { font-weight: 600; }
+.co-party .co-party-line { color: var(--co-fg); }
+
+/* === Project info ===================================================== */
+.co-project {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1.5rem;
+  font-size: 0.8125rem;
+}
+.co-project .co-meta-label { font-size: 0.625rem; }
+
+/* === Narrative description ============================================ */
+.co-narrative {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--co-fg);
+  white-space: pre-line;
+}
+
+/* === Schedule impact strip =========================================== */
+.co-schedule {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1.5rem;
+  font-size: 0.8125rem;
+  background: var(--co-band);
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+}
+.co-schedule .co-meta-label { font-size: 0.625rem; }
+.co-schedule .co-meta-value { font-size: 0.875rem; }
+
+/* === Cost impact table ================================================ */
+.co-cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+.co-cost-table col.co-col-num    { width: 2.5rem; }
+.co-cost-table col.co-col-desc   { width: auto; }
+.co-cost-table col.co-col-qty    { width: 4rem; }
+.co-cost-table col.co-col-unit   { width: 5rem; }
+.co-cost-table col.co-col-amount { width: 5rem; }
+
+.co-cost-table thead th {
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--co-muted);
+  padding: 0.4rem 0.5rem;
+  border-bottom: var(--co-rule-strong);
+  background: var(--co-band);
+}
+.co-cost-table thead th.num { text-align: right; }
+
+.co-cost-table tbody td {
+  padding: 0.5rem;
+  border-bottom: var(--co-rule);
+  vertical-align: top;
+  line-height: 1.35;
+}
+.co-cost-table tbody td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+.co-cost-table tbody td.co-col-num {
+  color: var(--co-faint);
+  font-weight: 400;
+}
+
+.co-cost-table tfoot th,
+.co-cost-table tfoot td {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8125rem;
+}
+.co-cost-table tfoot th.label {
+  text-align: right;
+  font-weight: 500;
+  color: var(--co-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.co-cost-table tfoot td.num { text-align: right; }
+.co-cost-table tfoot tr.grand-total th,
+.co-cost-table tfoot tr.grand-total td {
+  border-top: var(--co-rule-strong);
+  border-bottom: var(--co-rule-strong);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--co-accent);
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}
+.co-cost-table tfoot tr.grand-total th.label { color: var(--co-fg); }
+
+/* === Terms ============================================================ */
+.co-terms {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--co-muted);
+  font-style: italic;
+}
+
+/* === Signature blocks ================================================= */
+.co-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2.5rem;
+  page-break-inside: avoid;
+}
+.co-signature {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.co-signature .co-sig-role {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--co-faint);
+  font-weight: 700;
+}
+.co-signature .co-sig-line {
+  border-bottom: 1px solid var(--co-fg);
+  height: 2.25rem;
+}
+.co-signature .co-sig-line-name {
+  font-size: 0.6875rem;
+  color: var(--co-faint);
+  margin-top: 0.125rem;
+}
+
+/* === Status chip ====================================================== */
+.co-status {
+  display: inline-block;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 0.125rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid currentColor;
+}
+.co-status[data-status="PROPOSED"]  { color: #92400e; background: #fef3c7; }
+.co-status[data-status="APPROVED"]  { color: #166534; background: #dcfce7; }
+.co-status[data-status="REJECTED"]  { color: #991b1b; background: #fee2e2; }
+.co-status[data-status="INVOICED"]  { color: #1e40af; background: #dbeafe; }
+
+/* === Responsive ======================================================= */
+@media (max-width: 640px) {
+  .co-meta,
+  .co-parties,
+  .co-project,
+  .co-schedule,
+  .co-signatures {
+    grid-template-columns: 1fr;
+  }
+  .co-cost-table col.co-col-num    { width: 2rem; }
+  .co-cost-table col.co-col-qty    { width: 3rem; }
+  .co-cost-table col.co-col-unit,
+  .co-cost-table col.co-col-amount { width: 4rem; }
+}
+
+/* === Print ============================================================ */
+@media print {
+  .co-body { color: #000; }
+  .co-section,
+  .co-signatures,
+  .co-cost-table,
+  .co-title {
+    page-break-inside: avoid;
+  }
+  .co-cost-table tfoot { display: table-row-group; }
+  @page { size: A4; margin: 12mm; }
+}
