@@ -555,17 +555,43 @@ function ChangeOrderDocumentBody({
                 <td className="num">{formatCurrency(row.amount, currency)}</td>
               </tr>
             ))}
-          </tbody>
-          <tfoot>
-            <tr className="grand-total">
-              <th scope="row" colSpan={4} className="label">
-                {labels["total"]}
-              </th>
-              <td className="num">{formatCurrency(total, currency)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </section>
+           </tbody>
+           <tfoot>
+             <tr className="grand-total">
+               <th scope="row" colSpan={4} className="label">
+                 {labels["total"]}
+               </th>
+               <td className="num">{formatCurrency(total, currency)}</td>
+             </tr>
+           </tfoot>
+         </table>
+
+         {/* Financial Impact breakdown */}
+         {(doc?.["originalTotal"] != null || doc?.["changeAmount"] != null || doc?.["revisedTotal"] != null) && (
+           <div className="co-financial-impact" style={{ marginTop: "1rem", borderTop: "1px solid #e5e7eb", paddingTop: "0.75rem" }}>
+             <div className="co-meta" style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+               {doc?.["originalTotal"] != null && (
+                 <div className="co-meta-item">
+                   <span className="co-meta-label">Original Contract Price</span>
+                   <span className="co-meta-value">{formatCurrency(Number(doc["originalTotal"]), currency)}</span>
+                 </div>
+               )}
+               {doc?.["changeAmount"] != null && (
+                 <div className="co-meta-item">
+                   <span className="co-meta-label">Change Amount</span>
+                   <span className="co-meta-value">{formatCurrency(Number(doc["changeAmount"]), currency)}</span>
+                 </div>
+               )}
+               {doc?.["revisedTotal"] != null && (
+                 <div className="co-meta-item">
+                   <span className="co-meta-label">New Contract Price</span>
+                   <span className="co-meta-value font-semibold">{formatCurrency(Number(doc["revisedTotal"]), currency)}</span>
+                 </div>
+               )}
+             </div>
+           </div>
+         )}
+       </section>
 
       {/* 8. Terms */}
       <section className="co-section" aria-labelledby="co-terms-title">

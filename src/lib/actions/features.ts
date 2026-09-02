@@ -141,69 +141,99 @@ export async function createEstimate(input: {
 // --------------------------- Change Orders ---------------------------
 
 export async function createChangeOrder(input: {
-  title: string;
-  description?: string;
-  projectId?: string | null;
-  invoiceId?: string | null;
-  amount: number;
+   title: string;
+   description?: string;
+   projectId?: string | null;
+   invoiceId?: string | null;
+   customerId?: string | null;
+   amount: number;
+   originalTotal?: number;
+   daysAdded?: number | null;
+   originalCompletionDate?: string | null;
+   newCompletionDate?: string | null;
+   billToAddress?: string | null;
+   scopeChangeDescription?: string;
+   scheduleImpactDescription?: string;
 }) {
-  return withActionError("createChangeOrder", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
-    const orgId = user["organizationId"];
-    const plan = await getActivePlan(user);
-    if (!hasFeature(plan, "changeOrders")) actionError("Change orders require a paid plan.");
+   return withActionError("createChangeOrder", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+     const plan = await getActivePlan(user);
+     if (!hasFeature(plan, "changeOrders")) actionError("Change orders require a paid plan.");
 
-    if (!input["title"]) actionError("Title is required.");
+     if (!input["title"]) actionError("Title is required.");
 
-    if (input["projectId"]) {
-      const projectExists = await db["project"]["findFirst"]({
-        where: { id: input["projectId"]!, orgId },
-        select: { id: true },
-      });
-      if (!projectExists) {
-        // Soft-fail: a stale projectId (project deleted since the form
-        // rendered) shouldn't block creating the change order.
-        logServerError("createChangeOrder: missing project", {
-          projectId: input["projectId"],
-          orgId,
-        });
-        input["projectId"] = null;
-      }
-    }
+     if (input["projectId"]) {
+       const projectExists = await db["project"]["findFirst"]({
+         where: { id: input["projectId"]!, orgId },
+         select: { id: true },
+       });
+       if (!projectExists) {
+         logServerError("createChangeOrder: missing project", {
+           projectId: input["projectId"],
+           orgId,
+         });
+         input["projectId"] = null;
+       }
+     }
 
-    if (input["invoiceId"]) {
-      const invoiceExists = await db["invoice"]["findFirst"]({
-        where: { id: input["invoiceId"]!, orgId },
-        select: { id: true },
-      });
-      if (!invoiceExists) {
-        // Soft-fail: stale invoiceId should not block the change order.
-        logServerError("createChangeOrder: missing invoice", {
-          invoiceId: input["invoiceId"],
-          orgId,
-        });
-        input["invoiceId"] = null;
-      }
-    }
+     if (input["invoiceId"]) {
+       const invoiceExists = await db["invoice"]["findFirst"]({
+         where: { id: input["invoiceId"]!, orgId },
+         select: { id: true },
+       });
+       if (!invoiceExists) {
+         logServerError("createChangeOrder: missing invoice", {
+           invoiceId: input["invoiceId"],
+           orgId,
+         });
+         input["invoiceId"] = null;
+       }
+     }
+
+     if (input["customerId"]) {
+       const customerExists = await db["customer"]["findFirst"]({
+         where: { id: input["customerId"]!, orgId },
+         select: { id: true },
+       });
+       if (!customerExists) {
+         logServerError("createChangeOrder: missing customer", {
+           customerId: input["customerId"],
+           orgId,
+         });
+         input["customerId"] = null;
+       }
+     }
 
      const number = await getNextChangeOrderNumber(db, orgId);
-    const co = await db["changeOrder"]["create"]({
-      data: {
-        orgId,
-        number,
-        title: input["title"],
-        description: input["description"],
-        projectId: input["projectId"] ?? null,
-        invoiceId: input["invoiceId"] ?? null,
-        amount: input["amount"],
-        changeAmount: input["amount"],
-        revisedTotal: input["amount"],
-      },
-    });
-    await revalidateWithLocale("/dashboard/change-orders");
-    return co;
-  });
+     const originalTotal = input["originalTotal"] ?? 0;
+     const changeAmount = input["amount"];
+     const revisedTotal = originalTotal + changeAmount;
+     const co = await db["changeOrder"]["create"]({
+       data: {
+         orgId,
+         number,
+         title: input["title"],
+         description: input["description"],
+         projectId: input["projectId"] ?? null,
+         invoiceId: input["invoiceId"] ?? null,
+         customerId: input["customerId"] ?? null,
+         amount: input["amount"],
+         changeAmount,
+         revisedTotal,
+         originalTotal,
+         daysAdded: input["daysAdded"] ?? null,
+         originalCompletionDate: input["originalCompletionDate"] ? new Date(input["originalCompletionDate"]) : null,
+         newCompletionDate: input["newCompletionDate"] ? new Date(input["newCompletionDate"]) : null,
+         billToAddress: input["billToAddress"] ?? null,
+         scopeChangeDescription: input["scopeChangeDescription"],
+         scheduleImpactDescription: input["scheduleImpactDescription"],
+       },
+     });
+     await revalidateWithLocale("/dashboard/change-orders");
+     return co;
+   });
 }
 
 // --------------------------- Projects ---------------------------

@@ -465,8 +465,9 @@ model Project {
   org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   customerId String?
   customer   Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  name       String
-  address    String?
+   name       String
+   number     String?  // project number / job number
+   address    String?
   startDate  DateTime?
   endDate    DateTime?
   status     String       @default("ACTIVE")
@@ -742,11 +743,19 @@ model ChangeOrder {
    title               String
    notes               String?
 
-  // Approval workflow
-  approvedAt  DateTime?
-  approvedBy  String?
-  rejectedAt  DateTime?
-  rejectedBy  String?
+   // Approval workflow
+   approvedAt  DateTime?
+   approvedBy  String?
+   rejectedAt  DateTime?
+   rejectedBy  String?
+
+   // Schedule impact
+   originalCompletionDate DateTime?
+   daysAdded              Int?    // additional calendar days required
+   newCompletionDate      DateTime?
+
+   // Location of work (site address for the change)
+   billToAddress          String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

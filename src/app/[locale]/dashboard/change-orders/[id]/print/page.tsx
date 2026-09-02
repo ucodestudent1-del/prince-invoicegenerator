@@ -23,13 +23,14 @@ export default async function ChangeOrderPrintPage({
   let org;
   try {
     [changeOrder, org] = await Promise["all"]([
-      db["changeOrder"]["findFirst"]({
-        where: { id: params["id"], orgId: user["organizationId"] },
-        include: {
-          project: true,
-          invoice: { select: { id: true, number: true, status: true, total: true } },
-        },
-      }),
+       db["changeOrder"]["findFirst"]({
+         where: { id: params["id"], orgId: user["organizationId"] },
+         include: {
+           project: true,
+           customer: true,
+           invoice: { select: { id: true, number: true, status: true, total: true } },
+         },
+       }),
       db["organization"]["findUnique"]({
         where: { id: user["organizationId"] },
         select: {
@@ -56,12 +57,23 @@ export default async function ChangeOrderPrintPage({
             title: true,
             description: true,
             amount: true,
+            changeAmount: true,
+            originalTotal: true,
+            revisedTotal: true,
             status: true,
             createdAt: true,
             updatedAt: true,
+            issueDate: true,
             projectId: true,
             invoiceId: true,
-            project: { select: { id: true, name: true } },
+            customerId: true,
+            billToAddress: true,
+            daysAdded: true,
+            originalCompletionDate: true,
+            newCompletionDate: true,
+            scopeChangeDescription: true,
+            scheduleImpactDescription: true,
+            project: { select: { id: true, name: true, number: true } },
             invoice: { select: { id: true, number: true, status: true, total: true } },
           },
         }),
