@@ -9,6 +9,7 @@ import { revalidateWithLocale } from "@/lib/revalidate";
 import { coerceEnum } from "@/lib/utils";
 import { hasFeature } from "@/lib/plans";
 import { ExpenseCategory, type EstimateStatus } from "@prisma/client";
+import { logServerError } from "@/lib/errors";
 
 // --------------------------- Estimates ---------------------------
 
@@ -27,6 +28,31 @@ export async function createEstimate(input: {
     const orgId = user["organizationId"];
     const plan = await getActivePlan(user);
     if (!hasFeature(plan, "estimates")) actionError("Estimates require a paid plan.");
+
+    if (!input["customerId"]) actionError("Customer is required.");
+    const customerExists = await db["customer"]["findFirst"]({
+      where: { id: input["customerId"], orgId },
+      select: { id: true },
+    });
+    if (!customerExists) {
+      actionError("Selected customer does not exist or has been deleted.");
+    }
+
+    if (input["projectId"]) {
+      const projectExists = await db["project"]["findFirst"]({
+        where: { id: input["projectId"]!, orgId },
+        select: { id: true },
+      });
+      if (!projectExists) {
+        // Soft-fail: a stale projectId (project deleted since the form
+        // rendered) shouldn't block creating the estimate.
+        logServerError("createEstimate: missing project", {
+          projectId: input["projectId"],
+          orgId,
+        });
+        input["projectId"] = null;
+      }
+    }
 
     const validItems = input["items"]["filter"](
       (it) => it["description"] && it["quantity"] > 0 && it["unitPrice"] > 0
@@ -135,7 +161,15 @@ export async function createChangeOrder(input: {
         where: { id: input["projectId"]!, orgId },
         select: { id: true },
       });
-      if (!projectExists) actionError("Selected project does not exist or has been deleted.");
+      if (!projectExists) {
+        // Soft-fail: a stale projectId (project deleted since the form
+        // rendered) shouldn't block creating the change order.
+        logServerError("createChangeOrder: missing project", {
+          projectId: input["projectId"],
+          orgId,
+        });
+        input["projectId"] = null;
+      }
     }
 
     if (input["invoiceId"]) {
@@ -143,7 +177,14 @@ export async function createChangeOrder(input: {
         where: { id: input["invoiceId"]!, orgId },
         select: { id: true },
       });
-      if (!invoiceExists) actionError("Selected invoice does not exist or has been deleted.");
+      if (!invoiceExists) {
+        // Soft-fail: stale invoiceId should not block the change order.
+        logServerError("createChangeOrder: missing invoice", {
+          invoiceId: input["invoiceId"],
+          orgId,
+        });
+        input["invoiceId"] = null;
+      }
     }
 
     const number = await getNextChangeOrderNumber(db, orgId);

@@ -12,6 +12,7 @@ import { InvoiceType, PaymentMethod, PaymentStatus, InvoiceStatus } from "@prism
 import { coerceEnum } from "@/lib/utils";
 import { CreateInvoiceSchema, RecordPaymentSchema, formatZodError } from "@/lib/schemas";
 import { computeInvoiceTotals } from "@/lib/invoice-totals";
+import { logServerError } from "@/lib/errors";
 
 export interface InvoiceItemInput {
   description: string;
@@ -71,7 +72,12 @@ export async function createInvoice(input: CreateInvoiceInput) {
         })
       );
       if (!projectExists) {
-        actionError("Selected project does not exist or has been deleted.");
+        // Soft-fail: treat the missing project as "no project" instead of
+        // blocking the invoice. The ProjectId field is a free-text lookup
+        // from the invoice form, so a stale value (project deleted since the
+        // form was rendered) shouldn't kill the entire create.
+        logServerError("createInvoice: missing project", { projectId: input["projectId"], orgId });
+        input["projectId"] = null;
       }
     }
 
