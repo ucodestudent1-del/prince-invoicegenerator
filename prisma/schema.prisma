@@ -57,9 +57,12 @@ enum PaymentMethod {
   CASH
   CHECK
   CREDIT_CARD
+  CARD
   STRIPE
   PAYPAL
   BANK_TRANSFER
+  WIRE
+  ACH
   OTHER
 }
 
@@ -74,10 +77,13 @@ enum InvoiceStatus {
   DRAFT
   SENT
   VIEWED
+  PARTIALLY_PAID
   PAID
   UNPAID
   OVERDUE
   VOID
+  CANCELLED
+  WRITTEN_OFF
 }
 
 enum EstimateStatus {
@@ -87,14 +93,32 @@ enum EstimateStatus {
   ACCEPTED
   REJECTED
   EXPIRED
+  CANCELLED
+  CONVERTED
   INVOICED
 }
 
 enum ChangeOrderStatus {
-  PROPOSED
+  DRAFT
+  PENDING_APPROVAL
   APPROVED
   REJECTED
+  CANCELLED
+  VOID
+  PROPOSED
   INVOICED
+}
+
+enum ChangeType {
+  ADD
+  REMOVE
+  MODIFY
+  REPLACE
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
 }
 
 enum ExpenseCategory {
@@ -110,8 +134,10 @@ enum ExpenseCategory {
 enum EntityType {
   INVOICE
   ESTIMATE
+  CHANGE_ORDER
   EXPENSE
   PROJECT
+  PAYMENT
 }
 
 enum AddressType {
@@ -258,6 +284,8 @@ model Organization {
   catalogItems         CatalogItem[]
   estimateAuditLogs    EstimateAudit[]
   changeOrders         ChangeOrder[]
+  changeOrderAuditLogs ChangeOrderAudit[]
+  documentAuditLogs    DocumentAuditLog[]
   expenses             Expense[]
   subcontractors       Subcontractor[]
   photoAttachments     PhotoAttachment[]
@@ -361,10 +389,11 @@ model Customer {
   status     CustomerStatus @default(ACTIVE)
   archivedAt DateTime?
 
-  // Relations
-  invoices         Invoice[]
-  estimates        Estimate[]
-  projects         Project[]
+   // Relations
+   invoices         Invoice[]
+   estimates        Estimate[]
+   changeOrders     ChangeOrder[]
+   projects         Project[]
   recurringConfigs RecurringInvoiceConfig[]
   addresses        CustomerAddress[]
   portalSessions   PortalSession[]
@@ -479,6 +508,9 @@ model Invoice {
   taxRate   Float @default(0)
   taxAmount Float @default(0)
   discount  Float @default(0)
+  discountTotal Float @default(0)
+  taxTotal      Float @default(0)
+  feeTotal      Float @default(0)
 
   // Retainage (Pro tier): percentage of contract withheld until completion
   retainageRate   Float @default(0)
@@ -486,9 +518,15 @@ model Invoice {
 
   total             Float                   @default(0)
   amountPaid        Float                   @default(0)
+  amountCredited    Float                   @default(0) // credits applied (credit memos, etc.)
+  amountDue         Float                   @default(0)  // total - payments - credits
   lateFeeAmount     Float                   @default(0)
   scheduledFor      DateTime?
   notes             String?
+  customerNotes     String?
+  internalNotes     String?
+  termsAndConditions String?
+  paymentTerms      String                  @default("NET_30")
   stripeInvoiceId   String?
   recurringConfigId String?
   recurringConfig   RecurringInvoiceConfig? @relation("RecurringInvoices", fields: [recurringConfigId], references: [id])
@@ -496,16 +534,17 @@ model Invoice {
   billToAddress     String?
   shipToAddress     String?
 
-  // Link to source estimate (v2 enhancement)
-  estimateId String?   @unique
-  estimate   Estimate? @relation("EstimateToInvoice", fields: [estimateId], references: [id], onDelete: SetNull)
+  // Links to source documents. An invoice may reference an estimate OR a change
+  // order, but neither is required (invoices can be created directly).
+  estimateId    String?   @unique
+  estimate      Estimate? @relation("EstimateToInvoice", fields: [estimateId], references: [id], onDelete: SetNull)
+  changeOrders  ChangeOrder[]  // change orders referenced by this invoice
 
   createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   items                InvoiceItem[]
-  changeOrders         ChangeOrder[]
   payments             Payment[]
   auditLogs            InvoiceAudit[]
   reminders            Reminder[]
@@ -516,6 +555,7 @@ model Invoice {
   @@unique([orgId, number])
   @@index([orgId])
   @@index([customerId])
+  @@index([estimateId])
 }
 
 model InvoiceItem {
@@ -524,12 +564,25 @@ model InvoiceItem {
   invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   description String
   quantity    Float   @default(1)
+  unit        String  @default("units")
   unitPrice   Float   @default(0)
-  amount      Float   @default(0)
+  discountType DiscountType? @default(PERCENT)
+  discountValue Float? @default(0)
+  taxable      Boolean @default(false)
+  taxRate      Float   @default(0)
+  lineSubtotal Float   @default(0)
+  lineDiscount Float   @default(0)
+  lineTax      Float   @default(0)
+  lineTotal    Float   @default(0)
+  amount      Float   @default(0) // legacy alias for lineTotal
   sortOrder   Int     @default(0)
   sku         String?
+  // Traceability back to the source of the billed item.
+  sourceType  String? // "estimate_item" | "change_order_item" | "project_task" | "work_item"
+  sourceId    String?
 
   @@index([invoiceId])
+  @@index([sourceType, sourceId])
 }
 
 // ---------------------------------------------------------------------------
@@ -547,23 +600,41 @@ model Estimate {
   project    Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
   status     EstimateStatus @default(DRAFT)
   issueDate  DateTime       @default(now())
-  validUntil DateTime?
-  currency   String         @default("USD")
-  subtotal   Float          @default(0)
-  taxRate    Float          @default(0)
-  taxAmount  Float          @default(0)
-  discount   Float          @default(0)
-  total      Float          @default(0)
-  notes      String?
+  // Proposal validity. validUntil is the existing column; expirationDate is
+  // the spec-mandated alias used by the new calculation layer.
+  validUntil  DateTime?
+  expirationDate DateTime?
+  currency      String         @default("USD")
+  subtotal      Float          @default(0)
+  taxRate       Float          @default(0)
+  taxAmount     Float          @default(0)
+  discount      Float          @default(0)
+  discountTotal Float          @default(0)
+  taxTotal      Float          @default(0)
+  feeTotal      Float          @default(0)
+  total         Float          @default(0)
 
   // Engagement tracking (v2 enhancement)
   shareToken      String? // cryptographically random UUID for secure link
   viewedAt        DateTime? // when customer first viewed
   acceptedAt      DateTime? // when customer accepted
+  acceptedBy      String?   // user/customer who accepted
   rejectedAt      DateTime? // when customer rejected
   rejectionReason String? // free-text or predefined code
   convertedAt     DateTime? // when converted to invoice
   sentAt          DateTime? // when estimate was sent to customer
+
+  // Electronic signature support
+  signatureId      String?
+  signedAt         DateTime?
+  signedBy         String?
+  signatureMethod  String?
+
+  // Prose fields
+  customerNotes       String?
+  internalNotes       String?
+  termsAndConditions  String?
+  notes               String?
 
   // Conversion to invoice
   linkedInvoiceId String?
@@ -574,21 +645,34 @@ model Estimate {
 
   items     EstimateItem[]
   auditLogs EstimateAudit[]
+  changeOrders ChangeOrder[]  // change orders originating from this estimate
 
   @@unique([orgId, number])
   @@index([orgId])
 }
 
 model EstimateItem {
-  id          String   @id @default(cuid())
-  estimateId  String
-  estimate    Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
-  description String
-  quantity    Float    @default(1)
-  unitPrice   Float    @default(0)
-  amount      Float    @default(0)
-  sortOrder   Int      @default(0)
-  sku         String?
+  id           String   @id @default(cuid())
+  estimateId   String
+  estimate     Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  position     Int      @default(0)
+  itemId       String?  // links to a CatalogItem when applicable
+  description  String
+  quantity     Float    @default(1)
+  unit         String   @default("units")
+  unitPrice    Float    @default(0)
+  discountType DiscountType? @default(PERCENT)
+  discountValue Float?  @default(0)
+  taxable      Boolean  @default(false)
+  taxRate      Float    @default(0)
+  lineSubtotal Float    @default(0)
+  lineDiscount Float    @default(0)
+  lineTax      Float    @default(0)
+  lineTotal    Float    @default(0)
+  isOptional   Boolean  @default(false)
+  amount       Float    @default(0) // legacy alias for lineTotal
+  sortOrder    Int      @default(0)
+  sku          String?
 
   @@index([estimateId])
 }
@@ -623,18 +707,133 @@ model ChangeOrder {
   orgId       String
   org         Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   number      String
-  title       String
-  description String?
-  invoiceId   String?
-  invoice     Invoice?          @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  customerId  String?
+  customer    Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
   projectId   String?
   project     Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  amount      Float             @default(0)
-  status      ChangeOrderStatus @default(PROPOSED)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  estimateId  String?           // the estimate this change order modifies
+  estimate    Estimate?         @relation(fields: [estimateId], references: [id], onDelete: SetNull)
+   contractId  String?           // optional external contract reference
+   invoiceId   String?           // invoice generated from an approved change order (optional)
+   invoice     Invoice?          @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+   status      ChangeOrderStatus @default(DRAFT)
+   issueDate   DateTime          @default(now())
+   effectiveDate DateTime?       // when scope changes take effect
+   reason      String?
+   description String?
+
+   // Scope & schedule change description
+   scopeChangeDescription   String?
+   scheduleImpactDescription String?
+
+   // Financial: originals preserved, deltas computed
+   originalTotal   Float  @default(0)   // contract value before this change
+   amount          Float  @default(0)   // legacy: total amount of this change order
+   changeAmount    Float  @default(0)   // net delta (this change order only)
+   revisedTotal    Float  @default(0)   // originalTotal + approved changeAmount
+
+  currency        String         @default("USD")
+
+  // Prose fields
+   customerNotes       String?
+   internalNotes       String?
+   termsAndConditions  String?
+   title               String
+   notes               String?
+
+  // Approval workflow
+  approvedAt  DateTime?
+  approvedBy  String?
+  rejectedAt  DateTime?
+  rejectedBy  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     ChangeOrderLineItem[]
+  auditLogs ChangeOrderAudit[]
+
+  @@unique([orgId, number])
+  @@index([orgId])
+  @@index([estimateId])
+  @@index([projectId])
+  @@index([customerId])
+}
+
+model ChangeOrderLineItem {
+  id                   String      @id @default(cuid())
+  changeOrderId        String
+  changeOrder          ChangeOrder @relation(fields: [changeOrderId], references: [id], onDelete: Cascade)
+  position             Int         @default(0)
+  changeType           ChangeType
+  originalLineItemId   String?     // links to the EstimateItem/InvoiceItem being modified
+  itemId               String?     // links to a CatalogItem when applicable
+  description          String
+  quantityBefore       Float?
+  quantityAfter        Float?
+  quantityDelta        Float?      // quantityAfter - quantityBefore (computed)
+  unit                 String?     @default("units")
+  unitPriceBefore      Float?
+  unitPriceAfter       Float?
+  unitPriceDelta       Float?      // unitPriceAfter - unitPriceBefore (computed)
+  lineAmount           Float       @default(0)   // line-level dollar delta
+  taxable                Boolean     @default(false)
+  taxRate                Float       @default(0)
+  lineTax                Float       @default(0)
+
+  @@index([changeOrderId])
+}
+
+// ---------------------------------------------------------------------------
+// Change Order Audit Trail (approval workflow, status changes)
+// ---------------------------------------------------------------------------
+
+model ChangeOrderAudit {
+  id             String          @id @default(cuid())
+  changeOrderId  String
+  changeOrder    ChangeOrder     @relation(fields: [changeOrderId], references: [id], onDelete: Cascade)
+  orgId          String
+  org            Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  action         String          // CREATED, SUBMITTED, APPROVED, REJECTED, CANCELLED, VOIDED
+  fromStatus     ChangeOrderStatus?
+  toStatus       ChangeOrderStatus?
+  changedBy      String?
+  changedAt      DateTime        @default(now())
+  metadata       Json?
+
+  @@index([changeOrderId])
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Unified Document Audit Log
+// ---------------------------------------------------------------------------
+// Append-only trail shared by estimates, change orders, and invoices. Each
+// entry references exactly one document via document_type + document_id so the
+// three document types keep separate business semantics while sharing the same
+// audit infrastructure. Events: ESTIMATE_CREATED, ESTIMATE_SENT,
+// ESTIMATE_ACCEPTED, CHANGE_ORDER_CREATED, CHANGE_ORDER_SUBMITTED,
+// CHANGE_ORDER_APPROVED, CHANGE_ORDER_REJECTED, INVOICE_CREATED,
+// INVOICE_SENT, PAYMENT_RECORDED, INVOICE_PAID, INVOICE_VOIDED.
+
+model DocumentAuditLog {
+  id             String        @id @default(cuid())
+  orgId          String
+  org            Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  documentType   String    // "estimate" | "change_order" | "invoice"
+  documentId     String
+  action         String
+  previousStatus String?
+  newStatus      String?
+  changedBy      String?
+  changedAt      DateTime  @default(now())
+  metadata       Json?
 
   @@index([orgId])
+  @@index([documentType, documentId])
+  @@index([documentType, action])
+  @@index([changedAt])
 }
 
 // ---------------------------------------------------------------------------
@@ -805,17 +1004,23 @@ model Payment {
   invoice             Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   orgId               String
   org                 Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customerId          String?       // for tracing which customer paid
+  paymentDate         DateTime?     // when the payment was actually received
   amount              Float
+  currency            String        @default("USD")
   method              PaymentMethod @default(OTHER)
+  reference           String?       // check #, transaction ref, etc.
   status              PaymentStatus @default(COMPLETED)
   stripePaymentId     String?
   paypalTransactionId String?
   note                String?
+  createdById         String?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
   @@index([invoiceId])
   @@index([orgId])
+  @@index([customerId])
 }
 
 // ---------------------------------------------------------------------------

@@ -187,7 +187,7 @@ export async function createChangeOrder(input: {
       }
     }
 
-    const number = await getNextChangeOrderNumber(db, orgId);
+     const number = await getNextChangeOrderNumber(db, orgId);
     const co = await db["changeOrder"]["create"]({
       data: {
         orgId,
@@ -197,6 +197,8 @@ export async function createChangeOrder(input: {
         projectId: input["projectId"] ?? null,
         invoiceId: input["invoiceId"] ?? null,
         amount: input["amount"],
+        changeAmount: input["amount"],
+        revisedTotal: input["amount"],
       },
     });
     await revalidateWithLocale("/dashboard/change-orders");
