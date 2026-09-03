@@ -116,7 +116,6 @@ export function computeChangeOrderTotals(input: ChangeOrderTotalsInput): ChangeO
 		deltaCents += delta;
 
 		// Categorise the delta by change type for reporting.
-		const abs = Math["abs"](delta);
 		switch (it["changeType"]) {
 			case "ADD":
 				addCents += delta;

@@ -3,191 +3,158 @@
 -- Apply with: npx prisma migrate deploy
 -- The application's isMissingColumnError fallbacks also tolerate an unmigrated
 -- database, so deploying the code before this migration is safe.
---
--- NOTE: PostgreSQL does not allow `ALTER TYPE ... ADD VALUE` inside a
--- transaction block (which Prisma Migrate uses). Following the pattern from
--- 2026082502_repair_estimate_enhancements, each enum that needs new values is
--- recreated atomically: drop default → cast to TEXT → drop type → create
--- type with all values → cast back → restore default.
 
 -- ---------------------------------------------------------------------------
--- 1. Create new enums (CREATE TYPE is transactional — safe inside a migration
---    transaction)
--- ---------------------------------------------------------------------------
-
-CREATE TYPE IF NOT EXISTS "ChangeType" AS ENUM ('ADD', 'REMOVE', 'MODIFY', 'REPLACE');
-CREATE TYPE IF NOT EXISTS "DiscountType" AS ENUM ('PERCENT', 'FIXED');
-
--- ---------------------------------------------------------------------------
--- 2. Recreate PaymentMethod enum (add CARD, WIRE, ACH)
---    Only referenced by Payment.method
+-- 1. Create new enums
 -- ---------------------------------------------------------------------------
 
 DO $$
-DECLARE
-    has_card BOOLEAN;
 BEGIN
-    SELECT EXISTS (
-        SELECT 1 FROM pg_enum pe
-        JOIN pg_type pt ON pe.enumtypid = pt.oid
-        WHERE pt.typname = 'PaymentMethod' AND pe.enumlabel = 'CARD'
-    ) INTO has_card;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ChangeType') THEN
+        CREATE TYPE "ChangeType" AS ENUM ('ADD', 'REMOVE', 'MODIFY', 'REPLACE');
+    END IF;
+END $$;
 
-    IF NOT has_card THEN
-        ALTER TABLE "Payment" ALTER COLUMN "method" DROP DEFAULT;
-        ALTER TABLE "Payment" ALTER COLUMN "method" TYPE TEXT USING "method"::TEXT;
-
-        DROP TYPE "PaymentMethod";
-        CREATE TYPE "PaymentMethod" AS ENUM (
-            'CASH', 'CHECK', 'CREDIT_CARD', 'STRIPE', 'PAYPAL',
-            'BANK_TRANSFER', 'OTHER', 'CARD', 'WIRE', 'ACH'
-        );
-
-        ALTER TABLE "Payment" ALTER COLUMN "method" TYPE "PaymentMethod"
-            USING "method"::"PaymentMethod";
-        ALTER TABLE "Payment" ALTER COLUMN "method" SET DEFAULT 'OTHER'::"PaymentMethod";
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'DiscountType') THEN
+        CREATE TYPE "DiscountType" AS ENUM ('PERCENT', 'FIXED');
     END IF;
 END $$;
 
 -- ---------------------------------------------------------------------------
--- 3. Recreate InvoiceStatus enum (add PARTIALLY_PAID, CANCELLED, WRITTEN_OFF)
---    Only referenced by Invoice.status
+-- 2. Add values to existing enums
+--    PostgreSQL 12+ allows ALTER TYPE ... ADD VALUE inside a transaction
+--    (proven by 0004_reconcile_schema_drift migration which uses this pattern).
 -- ---------------------------------------------------------------------------
 
+-- PaymentMethod: add CARD, WIRE, ACH
 DO $$
-DECLARE
-    has_partially_paid BOOLEAN;
 BEGIN
-    SELECT EXISTS (
-        SELECT 1 FROM pg_enum pe
-        JOIN pg_type pt ON pe.enumtypid = pt.oid
-        WHERE pt.typname = 'InvoiceStatus' AND pe.enumlabel = 'PARTIALLY_PAID'
-    ) INTO has_partially_paid;
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PaymentMethod') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'PaymentMethod' AND pe.enumlabel = 'CARD'
+        ) THEN
+            ALTER TYPE "PaymentMethod" ADD VALUE 'CARD';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'PaymentMethod' AND pe.enumlabel = 'WIRE'
+        ) THEN
+            ALTER TYPE "PaymentMethod" ADD VALUE 'WIRE';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'PaymentMethod' AND pe.enumlabel = 'ACH'
+        ) THEN
+            ALTER TYPE "PaymentMethod" ADD VALUE 'ACH';
+        END IF;
+    END IF;
+END $$;
 
-    IF NOT has_partially_paid THEN
-        ALTER TABLE "Invoice" ALTER COLUMN "status" DROP DEFAULT;
-        ALTER TABLE "Invoice" ALTER COLUMN "status" TYPE TEXT USING "status"::TEXT;
+-- InvoiceStatus: add PARTIALLY_PAID, CANCELLED, WRITTEN_OFF
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'InvoiceStatus') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'InvoiceStatus' AND pe.enumlabel = 'PARTIALLY_PAID'
+        ) THEN
+            ALTER TYPE "InvoiceStatus" ADD VALUE 'PARTIALLY_PAID';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'InvoiceStatus' AND pe.enumlabel = 'CANCELLED'
+        ) THEN
+            ALTER TYPE "InvoiceStatus" ADD VALUE 'CANCELLED';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'InvoiceStatus' AND pe.enumlabel = 'WRITTEN_OFF'
+        ) THEN
+            ALTER TYPE "InvoiceStatus" ADD VALUE 'WRITTEN_OFF';
+        END IF;
+    END IF;
+END $$;
 
-        DROP TYPE "InvoiceStatus";
-        CREATE TYPE "InvoiceStatus" AS ENUM (
-            'DRAFT', 'SENT', 'VIEWED', 'PARTIALLY_PAID', 'PAID',
-            'UNPAID', 'OVERDUE', 'VOID', 'CANCELLED', 'WRITTEN_OFF'
-        );
+-- EstimateStatus: add CANCELLED, CONVERTED
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'EstimateStatus') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'EstimateStatus' AND pe.enumlabel = 'CANCELLED'
+        ) THEN
+            ALTER TYPE "EstimateStatus" ADD VALUE 'CANCELLED';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'EstimateStatus' AND pe.enumlabel = 'CONVERTED'
+        ) THEN
+            ALTER TYPE "EstimateStatus" ADD VALUE 'CONVERTED';
+        END IF;
+    END IF;
+END $$;
 
-        ALTER TABLE "Invoice" ALTER COLUMN "status" TYPE "InvoiceStatus"
-            USING "status"::"InvoiceStatus";
-        ALTER TABLE "Invoice" ALTER COLUMN "status" SET DEFAULT 'DRAFT'::"InvoiceStatus";
+-- ChangeOrderStatus: add DRAFT, PENDING_APPROVAL, CANCELLED, VOID
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ChangeOrderStatus') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'ChangeOrderStatus' AND pe.enumlabel = 'DRAFT'
+        ) THEN
+            ALTER TYPE "ChangeOrderStatus" ADD VALUE 'DRAFT';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'ChangeOrderStatus' AND pe.enumlabel = 'PENDING_APPROVAL'
+        ) THEN
+            ALTER TYPE "ChangeOrderStatus" ADD VALUE 'PENDING_APPROVAL';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'ChangeOrderStatus' AND pe.enumlabel = 'CANCELLED'
+        ) THEN
+            ALTER TYPE "ChangeOrderStatus" ADD VALUE 'CANCELLED';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'ChangeOrderStatus' AND pe.enumlabel = 'VOID'
+        ) THEN
+            ALTER TYPE "ChangeOrderStatus" ADD VALUE 'VOID';
+        END IF;
+    END IF;
+END $$;
+
+-- EntityType: add CHANGE_ORDER, PAYMENT
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'EntityType') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'EntityType' AND pe.enumlabel = 'CHANGE_ORDER'
+        ) THEN
+            ALTER TYPE "EntityType" ADD VALUE 'CHANGE_ORDER';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_enum pe JOIN pg_type pt ON pe.enumtypid = pt.oid
+            WHERE pt.typname = 'EntityType' AND pe.enumlabel = 'PAYMENT'
+        ) THEN
+            ALTER TYPE "EntityType" ADD VALUE 'PAYMENT';
+        END IF;
     END IF;
 END $$;
 
 -- ---------------------------------------------------------------------------
--- 4. Recreate EstimateStatus enum (add CANCELLED, CONVERTED; normalize
---    DECLINED → REJECTED)
---    Only referenced by Estimate.status
--- ---------------------------------------------------------------------------
-
-DO $$
-DECLARE
-    has_cancelled BOOLEAN;
-BEGIN
-    SELECT EXISTS (
-        SELECT 1 FROM pg_enum pe
-        JOIN pg_type pt ON pe.enumtypid = pt.oid
-        WHERE pt.typname = 'EstimateStatus' AND pe.enumlabel = 'CANCELLED'
-    ) INTO has_cancelled;
-
-    IF NOT has_cancelled THEN
-        ALTER TABLE "Estimate" ALTER COLUMN "status" DROP DEFAULT;
-        ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE TEXT USING "status"::TEXT;
-
-        -- Normalize any legacy DECLINED values to REJECTED
-        UPDATE "Estimate" SET "status" = 'REJECTED' WHERE "status" = 'DECLINED';
-
-        DROP TYPE "EstimateStatus";
-        CREATE TYPE "EstimateStatus" AS ENUM (
-            'DRAFT', 'SENT', 'VIEWED', 'ACCEPTED', 'REJECTED',
-            'EXPIRED', 'INVOICED', 'CANCELLED', 'CONVERTED'
-        );
-
-        ALTER TABLE "Estimate" ALTER COLUMN "status" TYPE "EstimateStatus"
-            USING "status"::"EstimateStatus";
-        ALTER TABLE "Estimate" ALTER COLUMN "status" SET DEFAULT 'DRAFT'::"EstimateStatus";
-    END IF;
-END $$;
-
--- ---------------------------------------------------------------------------
--- 5. Recreate ChangeOrderStatus enum (add DRAFT, PENDING_APPROVAL,
---    CANCELLED, VOID; reorder to match Prisma schema)
---    Only referenced by ChangeOrder.status
--- ---------------------------------------------------------------------------
-
-DO $$
-DECLARE
-    has_draft BOOLEAN;
-BEGIN
-    SELECT EXISTS (
-        SELECT 1 FROM pg_enum pe
-        JOIN pg_type pt ON pe.enumtypid = pt.oid
-        WHERE pt.typname = 'ChangeOrderStatus' AND pe.enumlabel = 'DRAFT'
-    ) INTO has_draft;
-
-    IF NOT has_draft THEN
-        ALTER TABLE "ChangeOrder" ALTER COLUMN "status" DROP DEFAULT;
-        ALTER TABLE "ChangeOrder" ALTER COLUMN "status" TYPE TEXT USING "status"::TEXT;
-
-        DROP TYPE "ChangeOrderStatus";
-        CREATE TYPE "ChangeOrderStatus" AS ENUM (
-            'DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED',
-            'CANCELLED', 'VOID', 'PROPOSED', 'INVOICED'
-        );
-
-        ALTER TABLE "ChangeOrder" ALTER COLUMN "status" TYPE "ChangeOrderStatus"
-            USING "status"::"ChangeOrderStatus";
-        ALTER TABLE "ChangeOrder" ALTER COLUMN "status" SET DEFAULT 'DRAFT'::"ChangeOrderStatus";
-    END IF;
-END $$;
-
--- ---------------------------------------------------------------------------
--- 6. Recreate EntityType enum (add CHANGE_ORDER, PAYMENT)
---    Only referenced by PhotoAttachment.entityType
--- ---------------------------------------------------------------------------
-
-DO $$
-DECLARE
-    has_change_order BOOLEAN;
-BEGIN
-    SELECT EXISTS (
-        SELECT 1 FROM pg_enum pe
-        JOIN pg_type pt ON pe.enumtypid = pt.oid
-        WHERE pt.typname = 'EntityType' AND pe.enumlabel = 'CHANGE_ORDER'
-    ) INTO has_change_order;
-
-    IF NOT has_change_order THEN
-        ALTER TABLE "PhotoAttachment" ALTER COLUMN "entityType" DROP DEFAULT;
-        ALTER TABLE "PhotoAttachment" ALTER COLUMN "entityType" TYPE TEXT USING "entityType"::Text;
-
-        DROP TYPE "EntityType";
-        CREATE TYPE "EntityType" AS ENUM (
-            'INVOICE', 'ESTIMATE', 'CHANGE_ORDER', 'EXPENSE',
-            'PROJECT', 'PAYMENT'
-        );
-
-        ALTER TABLE "PhotoAttachment" ALTER COLUMN "entityType" TYPE "EntityType"
-            USING "entityType"::"EntityType";
-        ALTER TABLE "PhotoAttachment" ALTER COLUMN "entityType" SET DEFAULT 'INVOICE'::"EntityType";
-    END IF;
-END $$;
-
--- ---------------------------------------------------------------------------
--- 7. Add columns to Project
---   (id, orgId, org, customerId, customer, name, address, startDate, endDate,
---    status, createdAt, updatedAt already exist)
+-- 3. Add columns to Project
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "number" TEXT;
 
 -- ---------------------------------------------------------------------------
--- 8. Add columns to Invoice
+-- 4. Add columns to Invoice
 --   (billToAddress, shipToAddress, logoUrl, estimateId, notes already exist)
 -- ---------------------------------------------------------------------------
 
@@ -202,7 +169,7 @@ ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "termsAndConditions" TEXT;
 ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "paymentTerms" TEXT NOT NULL DEFAULT 'NET_30';
 
 -- ---------------------------------------------------------------------------
--- 9. Add columns to InvoiceItem
+-- 5. Add columns to InvoiceItem
 --   (id, invoiceId, invoice, description, quantity, unitPrice, amount,
 --    sortOrder, sku already exist)
 -- ---------------------------------------------------------------------------
@@ -222,7 +189,7 @@ ALTER TABLE "InvoiceItem" ADD COLUMN IF NOT EXISTS "sourceId" TEXT;
 CREATE INDEX IF NOT EXISTS "InvoiceItem_sourceType_sourceId_idx" ON "InvoiceItem" ("sourceType", "sourceId");
 
 -- ---------------------------------------------------------------------------
--- 10. Add columns to Estimate
+-- 6. Add columns to Estimate
 --   (id, orgId, number, customerId, customer, projectId, project, status,
 --    issueDate, validUntil, currency, subtotal, taxRate, taxAmount, discount,
 --    total, notes, shareToken, viewedAt, acceptedAt, rejectedAt,
@@ -232,9 +199,9 @@ CREATE INDEX IF NOT EXISTS "InvoiceItem_sourceType_sourceId_idx" ON "InvoiceItem
 
 ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "acceptedBy" TEXT;
 ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "expirationDate" TIMESTAMP WITH TIME ZONE;
-ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "discountTotal" REAL NOT NULL DEFAULT 0;
-ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "taxTotal" REAL NOT NULL DEFAULT 0;
-ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "feeTotal" REAL NOT NULL DEFAULT 0;
+ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "discountTotal" REAL DEFAULT 0;
+ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "taxTotal" REAL DEFAULT 0;
+ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "feeTotal" REAL DEFAULT 0;
 ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "signatureId" TEXT;
 ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "signedAt" TIMESTAMP WITH TIME ZONE;
 ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "signedBy" TEXT;
@@ -244,7 +211,7 @@ ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "internalNotes" TEXT;
 ALTER TABLE "Estimate" ADD COLUMN IF NOT EXISTS "termsAndConditions" TEXT;
 
 -- ---------------------------------------------------------------------------
--- 11. Add columns to EstimateItem
+-- 7. Add columns to EstimateItem
 --   (id, estimateId, estimate, description, quantity, unitPrice, amount,
 --    sortOrder, sku already exist)
 -- ---------------------------------------------------------------------------
@@ -265,7 +232,7 @@ ALTER TABLE "EstimateItem" ADD COLUMN IF NOT EXISTS "isOptional" BOOLEAN NOT NUL
 CREATE INDEX IF NOT EXISTS "EstimateItem_itemId_idx" ON "EstimateItem" ("itemId");
 
 -- ---------------------------------------------------------------------------
--- 12. Add columns to ChangeOrder
+-- 8. Add columns to ChangeOrder
 --   (id, orgId, number, title, description, invoiceId, invoice, projectId,
 --    project, amount, status, createdAt, updatedAt already exist)
 -- ---------------------------------------------------------------------------
@@ -295,7 +262,10 @@ ALTER TABLE "ChangeOrder" ADD COLUMN IF NOT EXISTS "daysAdded" INTEGER;
 ALTER TABLE "ChangeOrder" ADD COLUMN IF NOT EXISTS "newCompletionDate" TIMESTAMP WITH TIME ZONE;
 ALTER TABLE "ChangeOrder" ADD COLUMN IF NOT EXISTS "billToAddress" TEXT;
 
--- Add unique constraint on [orgId, number] (matches @@unique in Prisma schema)
+-- Update default on status column from PROPOSED to DRAFT
+ALTER TABLE "ChangeOrder" ALTER COLUMN "status" SET DEFAULT 'DRAFT';
+
+-- Add unique constraint on [orgId, number]
 CREATE UNIQUE INDEX IF NOT EXISTS "ChangeOrder_orgId_number_key" ON "ChangeOrder" ("orgId", "number");
 
 -- Add FK constraints for new FK columns
@@ -327,7 +297,7 @@ CREATE INDEX IF NOT EXISTS "ChangeOrder_estimateId_idx" ON "ChangeOrder" ("estim
 CREATE INDEX IF NOT EXISTS "ChangeOrder_customerId_idx" ON "ChangeOrder" ("customerId");
 
 -- ---------------------------------------------------------------------------
--- 13. Add columns to Payment
+-- 9. Add columns to Payment
 --   (id, invoiceId, invoice, orgId, org, amount, method, status,
 --    stripePaymentId, paypalTransactionId, note, createdAt, updatedAt
 --    already exist)
@@ -342,7 +312,7 @@ ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "createdById" TEXT;
 CREATE INDEX IF NOT EXISTS "Payment_customerId_idx" ON "Payment" ("customerId");
 
 -- ---------------------------------------------------------------------------
--- 14. Create ChangeOrderLineItem table
+-- 10. Create ChangeOrderLineItem table
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS "ChangeOrderLineItem" (
@@ -373,7 +343,7 @@ CREATE TABLE IF NOT EXISTS "ChangeOrderLineItem" (
 CREATE INDEX IF NOT EXISTS "ChangeOrderLineItem_changeOrderId_idx" ON "ChangeOrderLineItem" ("changeOrderId");
 
 -- ---------------------------------------------------------------------------
--- 15. Create ChangeOrderAudit table
+-- 11. Create ChangeOrderAudit table
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS "ChangeOrderAudit" (
@@ -399,7 +369,7 @@ CREATE INDEX IF NOT EXISTS "ChangeOrderAudit_changeOrderId_idx" ON "ChangeOrderA
 CREATE INDEX IF NOT EXISTS "ChangeOrderAudit_orgId_idx" ON "ChangeOrderAudit" ("orgId");
 
 -- ---------------------------------------------------------------------------
--- 16. Create DocumentAuditLog table
+-- 12. Create DocumentAuditLog table
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS "DocumentAuditLog" (
