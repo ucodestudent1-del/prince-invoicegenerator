@@ -44,6 +44,7 @@ export default async function EstimatePrintPage({
           template: true,
           layout: true,
           currency: true,
+          logoUrl: true,
         },
       }),
     ]);
@@ -87,6 +88,7 @@ export default async function EstimatePrintPage({
             template: true,
             layout: true,
             currency: true,
+            logoUrl: true,
           },
         }),
       ]);

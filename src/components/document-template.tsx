@@ -140,10 +140,10 @@ function EstimateDocumentBody({
       {/* 1. Estimate Details */}
       <header className="estimate-header">
         <div className="brand">
-          {doc?.["logoUrl"] && (
+          {org?.["logoUrl"] && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={doc["logoUrl"]}
+              src={org["logoUrl"]}
               alt={org?.["name"] ?? labels["title"]}
               className="brand-mark"
             />

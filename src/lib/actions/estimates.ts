@@ -601,7 +601,7 @@ export async function getEstimateDetail(estimateId: string) {
           project: true,
           items: { orderBy: { sortOrder: "asc" } },
           linkedInvoice: { select: { id: true, number: true, status: true, total: true } },
-          org: { select: { name: true } },
+          org: { select: { name: true, logoUrl: true } },
         },
       });
     } catch (err) {
@@ -677,7 +677,7 @@ export async function getEstimateByShareToken(token: string) {
           customer: true,
           project: true,
           items: { orderBy: { sortOrder: "asc" } },
-          org: { select: { name: true } },
+          org: { select: { name: true, logoUrl: true } },
         },
       });
       if (!estimate) actionError("Estimate not found");
