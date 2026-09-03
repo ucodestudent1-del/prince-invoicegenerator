@@ -108,6 +108,7 @@ async function getDocumentData(entityType: EntityType, docId: string, orgId: str
       where: { id: docId, orgId },
       include: {
         project: true,
+        customer: true,
         invoice: { select: { id: true, number: true, status: true, total: true } },
       },
     });
@@ -187,9 +188,10 @@ async function getDocumentData(entityType: EntityType, docId: string, orgId: str
           updatedAt: true,
           issueDate: true,
           projectId: true,
-          invoiceId: true,
-          customerId: true,
-          billToAddress: true,
+            invoiceId: true,
+            customerId: true,
+            customer: true,
+            billToAddress: true,
           daysAdded: true,
           originalCompletionDate: true,
           newCompletionDate: true,

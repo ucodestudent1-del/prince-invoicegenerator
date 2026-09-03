@@ -20,11 +20,11 @@ export default async function ChangeOrderDetailPage({
   const orgId = user["organizationId"];
   const t = await getTranslations("changeOrders");
 
-  let changeOrder;
+   let changeOrder;
   let org;
   let customer;
   try {
-    [changeOrder, org, customer] = await Promise["all"]([
+    [changeOrder, org] = await Promise["all"]([
       db["changeOrder"]["findFirst"]({
         where: { id: params["id"], orgId },
         include: {
@@ -36,10 +36,6 @@ export default async function ChangeOrderDetailPage({
       db["organization"]["findUnique"]({
         where: { id: orgId },
         select: { id: true, name: true },
-      }),
-      db["customer"]["findFirst"]({
-        where: { id: params["id"], orgId },
-        select: { id: true, name: true, company: true },
       }),
     ]);
   } catch (err) {
@@ -63,6 +59,7 @@ export default async function ChangeOrderDetailPage({
             projectId: true,
             invoiceId: true,
             customerId: true,
+            customer: true,
             billToAddress: true,
             daysAdded: true,
             originalCompletionDate: true,
