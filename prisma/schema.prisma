@@ -636,6 +636,8 @@ model Estimate {
   internalNotes       String?
   termsAndConditions  String?
   notes               String?
+  title               String?
+  billToAddress       String?
 
   // Conversion to invoice
   linkedInvoiceId String?

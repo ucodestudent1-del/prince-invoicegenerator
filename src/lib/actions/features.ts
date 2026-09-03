@@ -14,13 +14,17 @@ import { logServerError } from "@/lib/errors";
 // --------------------------- Estimates ---------------------------
 
 export async function createEstimate(input: {
-  customerId: string;
-  projectId?: string | null;
-  validUntil?: string | null;
-  taxRate: number;
-  discount: number;
-  notes?: string;
-  items: { description: string; quantity: number; unitPrice: number; sku?: string | null }[];
+   customerId: string;
+   projectId?: string | null;
+   title?: string;
+   issueDate?: string | null;
+   billToAddress?: string | null;
+   validUntil?: string | null;
+   taxRate: number;
+   discount: number;
+   notes?: string;
+   termsAndConditions?: string;
+   items: { description: string; quantity: number; unitPrice: number; unit?: string; sku?: string | null }[];
 }) {
   return withActionError("createEstimate", async () => {
     const user = await requireUser();
@@ -69,58 +73,63 @@ export async function createEstimate(input: {
 
     let estimate;
     try {
-      estimate = await db["estimate"]["create"]({
-        data: {
-          orgId,
-          number,
-          customerId: input["customerId"],
-          projectId: input["projectId"] ?? null,
-          validUntil: input["validUntil"] ? new Date(input["validUntil"]) : null,
-          taxRate: input["taxRate"],
-          discount: input["discount"],
-          subtotal,
-          taxAmount,
-          total,
-          notes: input["notes"],
-          status: "DRAFT" as EstimateStatus,
-          items: {
-            create: validItems["map"]((it, i) => ({
-              description: it["description"],
-              quantity: it["quantity"],
-              unitPrice: it["unitPrice"],
-              amount: it["quantity"] * it["unitPrice"],
-              sortOrder: i,
-              sku: it["sku"] || null,
-            })),
-          },
-        },
-      });
-    } catch (err) {
-      if (isMissingColumnError(err)) {
-        estimate = await db["estimate"]["create"]({
-          data: {
-            orgId,
-            number,
-            customerId: input["customerId"],
-            projectId: input["projectId"] ?? null,
-            validUntil: input["validUntil"] ? new Date(input["validUntil"]) : null,
-            taxRate: input["taxRate"],
-            discount: input["discount"],
-            subtotal,
-            taxAmount,
-            total,
-            notes: input["notes"],
-            status: "DRAFT" as EstimateStatus,
-            items: {
-              create: validItems["map"]((it, i) => ({
-                description: it["description"],
-                quantity: it["quantity"],
-                unitPrice: it["unitPrice"],
-                amount: it["quantity"] * it["unitPrice"],
-                sortOrder: i,
-              })),
-            },
-          },
+       estimate = await db["estimate"]["create"]({
+         data: {
+           orgId,
+           number,
+           title: input["title"],
+           customerId: input["customerId"],
+           projectId: input["projectId"] ?? null,
+           issueDate: input["issueDate"] ? new Date(input["issueDate"]) : undefined,
+           billToAddress: input["billToAddress"],
+           validUntil: input["validUntil"] ? new Date(input["validUntil"]) : null,
+           taxRate: input["taxRate"],
+           discount: input["discount"],
+           subtotal,
+           taxAmount,
+           total,
+           notes: input["notes"],
+           termsAndConditions: input["termsAndConditions"],
+           status: "DRAFT" as EstimateStatus,
+           items: {
+             create: validItems["map"]((it, i) => ({
+               description: it["description"],
+               quantity: it["quantity"],
+               unit: it["unit"] || "units",
+               unitPrice: it["unitPrice"],
+               amount: it["quantity"] * it["unitPrice"],
+               sortOrder: i,
+               sku: it["sku"] || null,
+             })),
+           },
+         },
+       });
+     } catch (err) {
+       if (isMissingColumnError(err)) {
+         estimate = await db["estimate"]["create"]({
+           data: {
+             orgId,
+             number,
+             customerId: input["customerId"],
+             projectId: input["projectId"] ?? null,
+             validUntil: input["validUntil"] ? new Date(input["validUntil"]) : null,
+             taxRate: input["taxRate"],
+             discount: input["discount"],
+             subtotal,
+             taxAmount,
+             total,
+             notes: input["notes"],
+             status: "DRAFT" as EstimateStatus,
+             items: {
+               create: validItems["map"]((it, i) => ({
+                 description: it["description"],
+                 quantity: it["quantity"],
+                 unitPrice: it["unitPrice"],
+                 amount: it["quantity"] * it["unitPrice"],
+                 sortOrder: i,
+               })),
+             },
+           },
           select: {
             id: true,
             number: true,

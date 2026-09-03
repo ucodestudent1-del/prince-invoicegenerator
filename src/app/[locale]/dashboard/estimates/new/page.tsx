@@ -12,21 +12,32 @@ export default async function NewEstimatePage({ params }: { params: { locale: st
   if (!user || !user["organizationId"]) return null;
   const plan = await getActivePlan(user);
   let customers;
+  let projects;
   try {
-    customers = await db["customer"]["findMany"]({
-      where: { orgId: user["organizationId"] },
-      orderBy: { name: "asc" },
-    });
-  } catch (err) {
-    if (isMissingColumnError(err)) {
-      customers = await db["customer"]["findMany"]({
+    [customers, projects] = await Promise["all"]([
+      db["customer"]["findMany"]({
         where: { orgId: user["organizationId"] },
         orderBy: { name: "asc" },
-        select: {
-          id: true,
-          name: true,
-        },
-      }) as any;
+      }),
+      db["project"]["findMany"]({
+        where: { orgId: user["organizationId"] },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+  } catch (err) {
+    if (isMissingColumnError(err)) {
+      [customers, projects] = await Promise["all"]([
+        db["customer"]["findMany"]({
+          where: { orgId: user["organizationId"] },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        }) as any,
+        db["project"]["findMany"]({
+          where: { orgId: user["organizationId"] },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true, number: true },
+        }) as any,
+      ]);
     } else {
       logServerError("NewEstimatePage", err);
       throw err;
@@ -35,7 +46,11 @@ export default async function NewEstimatePage({ params }: { params: { locale: st
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t("newEstimate")}</h1>
-      <EstimateForm customers={customers} canUseCatalog={hasFeature(plan, "catalogItems")} />
+      <EstimateForm
+        customers={customers}
+        projects={projects ?? []}
+        canUseCatalog={hasFeature(plan, "catalogItems")}
+      />
     </div>
   );
 }
