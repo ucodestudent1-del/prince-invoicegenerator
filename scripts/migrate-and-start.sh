@@ -145,10 +145,15 @@ else
 
     # -------------------------------------------------------------------------
     # Resolve the failed 20260830000001_add_change_order_structured_fields migration.
-    # The original SQL had syntax errors (IF NOT NULL instead of IF NOT EXISTS)
-    # and incorrect nullability on nullable columns. The fixed SQL is now in
-    # the migration file. Mark as rolled back so prisma migrate deploy can
-    # re-apply it cleanly against production.
+    # The original SQL had syntax errors (IF NOT NULL instead of IF NOT EXISTS),
+    # incorrect nullability on nullable columns, AND a PostgreSQL enum transaction
+    # boundary issue: ALTER TYPE ... ADD VALUE 'DRAFT' and ALTER COLUMN ...
+    # SET DEFAULT 'DRAFT' in the same migration transaction triggers error 55P04
+    # ("unsafe use of new value"). Fixed by splitting enum additions into the
+    # earlier 20260829000000_add_enums_before_change_order migration, which commits
+    # the new enum values before this migration references them. Mark as rolled
+    # back so prisma migrate deploy re-applies it (along with the new earlier
+    # migration) cleanly.
     # -------------------------------------------------------------------------
     echo "Resolving failed migration 20260830000001_add_change_order_structured_fields..."
     npx prisma migrate resolve --rolled-back 20260830000001_add_change_order_structured_fields || true
