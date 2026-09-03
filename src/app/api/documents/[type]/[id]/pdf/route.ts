@@ -161,6 +161,9 @@ async function getDocumentData(entityType: EntityType, docId: string, orgId: str
             discount: true,
             total: true,
             notes: true,
+            title: true,
+            billToAddress: true,
+            termsAndConditions: true,
             customerId: true,
             projectId: true,
             createdAt: true,
@@ -219,6 +222,7 @@ async function getOrgData(orgId: string): Promise<any> {
       template: true,
       layout: true,
       currency: true,
+      logoUrl: true,
     },
   });
   if (!org) return null;

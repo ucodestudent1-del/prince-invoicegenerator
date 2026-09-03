@@ -4,12 +4,14 @@ import { db } from "@/lib/db";
 import { requireUser, getActivePlan } from "@/lib/org";
 import { isMissingColumnError } from "@/lib/db-drift";
 import { withActionError, actionError } from "@/lib/action-errors";
-import { getNextEstimateNumber, getNextChangeOrderNumber } from "@/lib/numbering";
+import { getNextEstimateNumber, getNextChangeOrderNumber, getNextProjectNumber } from "@/lib/numbering";
 import { revalidateWithLocale } from "@/lib/revalidate";
 import { coerceEnum } from "@/lib/utils";
 import { hasFeature } from "@/lib/plans";
 import { ExpenseCategory, type EstimateStatus } from "@prisma/client";
 import { logServerError } from "@/lib/errors";
+import { roundMoney } from "@/lib/money";
+import { computeEstimateTotals } from "@/lib/estimate-totals";
 
 // --------------------------- Estimates ---------------------------
 
@@ -65,9 +67,15 @@ export async function createEstimate(input: {
       actionError("At least one line item is required.");
     }
 
-    const subtotal = validItems["reduce"]((a, i) => a + i["quantity"] * i["unitPrice"], 0);
-    const taxAmount = (subtotal * input["taxRate"]) / 100;
-    const total = subtotal + taxAmount - input["discount"];
+    const totals = computeEstimateTotals({
+      items: validItems["map"]((i) => ({ quantity: i["quantity"], unitPrice: i["unitPrice"] })),
+      discountType: input["discount"] > 0 ? "FIXED" : undefined,
+      discountValue: input["discount"] > 0 ? input["discount"] : undefined,
+      taxRate: input["taxRate"],
+    });
+    const subtotal = totals["subtotal"];
+    const taxAmount = totals["taxTotal"];
+    const total = totals["total"];
 
     const number = await getNextEstimateNumber(db, orgId);
 
@@ -95,11 +103,11 @@ export async function createEstimate(input: {
              create: validItems["map"]((it, i) => ({
                description: it["description"],
                quantity: it["quantity"],
-               unit: it["unit"] || "units",
-               unitPrice: it["unitPrice"],
-               amount: it["quantity"] * it["unitPrice"],
-               sortOrder: i,
-               sku: it["sku"] || null,
+                unit: it["unit"] || "units",
+                unitPrice: it["unitPrice"],
+                amount: roundMoney(it["quantity"] * it["unitPrice"]),
+                sortOrder: i,
+                sku: it["sku"] || null,
              })),
            },
          },
@@ -124,10 +132,10 @@ export async function createEstimate(input: {
                create: validItems["map"]((it, i) => ({
                  description: it["description"],
                  quantity: it["quantity"],
-                 unitPrice: it["unitPrice"],
-                 amount: it["quantity"] * it["unitPrice"],
-                 sortOrder: i,
-               })),
+                  unitPrice: it["unitPrice"],
+                  amount: roundMoney(it["quantity"] * it["unitPrice"]),
+                  sortOrder: i,
+                })),
              },
            },
           select: {
@@ -273,23 +281,41 @@ export async function createProject(input: {
   address?: string;
   startDate?: string | null;
   endDate?: string | null;
+  estCompletionDate?: string | null;
+  contractValue?: number;
+  paymentTerms?: string;
+  taxRate?: number;
+  retainageRate?: number;
+  depositRequired?: number;
+  projectManager?: string;
 }) {
   return withActionError("createProject", async () => {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
     const plan = await getActivePlan(user);
     if (!hasFeature(plan, "projectManagement")) actionError("Project management requires a paid plan.");
 
     if (!input["name"]) actionError("Name is required.");
 
+    const number = await getNextProjectNumber(db, orgId);
+
     const project = await db["project"]["create"]({
       data: {
         orgId: user["organizationId"],
         name: input["name"],
+        number,
         customerId: input["customerId"] ?? null,
         address: input["address"],
         startDate: input["startDate"] ? new Date(input["startDate"]) : null,
         endDate: input["endDate"] ? new Date(input["endDate"]) : null,
+        estCompletionDate: input["estCompletionDate"] ? new Date(input["estCompletionDate"]) : null,
+        contractValue: input["contractValue"] ?? 0,
+        paymentTerms: input["paymentTerms"] ?? "NET_30",
+        taxRate: input["taxRate"] ?? 0,
+        retainageRate: input["retainageRate"] ?? 0,
+        depositRequired: input["depositRequired"] ?? 0,
+        projectManager: input["projectManager"] ?? null,
       },
     });
     await revalidateWithLocale("/dashboard/projects");

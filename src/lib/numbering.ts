@@ -38,9 +38,21 @@ export async function getNextChangeOrderNumber(
   return nextFromLast("CO-", last?.number, MAX_PAD);
 }
 
+export async function getNextProjectNumber(
+  prisma: PrismaClient,
+  orgId: string
+): Promise<string> {
+  const last = await prisma.project.findFirst({
+    select: { number: true },
+    where: { orgId, number: { startsWith: "PROJ-" } },
+    orderBy: { number: "desc" },
+  });
+  return nextFromLast("PROJ-", last?.number, MAX_PAD);
+}
+
 function nextFromLast(
   prefix: string,
-  lastNumber: string | undefined,
+  lastNumber: string | null | undefined,
   pad: number
 ): string {
   const lastNum =

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!action || typeof action !== "string") {
       return NextResponse["json"]({ error: "Missing 'action' field." }, { status: 400 });
     }
-    const validActions = Object["keys"](CHANGE_ORDER_ACTIONS);
+    const validActions = CHANGE_ORDER_ACTIONS;
     if (!validActions["includes"](action)) {
       return NextResponse["json"](
         { error: `Invalid action. Must be one of: ${validActions["join"](", ")}.` },

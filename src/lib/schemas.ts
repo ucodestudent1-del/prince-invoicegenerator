@@ -54,12 +54,17 @@ export const CreateEstimateSchema = z["object"]({
   taxRate: z["number"]()["finite"]()["min"](0)["max"](100),
   discount: finiteNonNegative,
   notes: z["string"]()["optional"]()["nullable"](),
+  title: z["string"]()["optional"]()["nullable"](),
+  billToAddress: z["string"]()["optional"]()["nullable"](),
+  termsAndConditions: z["string"]()["optional"]()["nullable"](),
   items: z
     ["array"](
       z["object"]({
         description: z["string"]()["min"](1),
         quantity: z["number"]()["finite"]()["positive"](),
         unitPrice: z["number"]()["finite"]()["min"](0),
+        unit: z["string"]()["default"]("units"),
+        sku: z["string"]()["optional"]()["nullable"](),
       })
     )
     ["min"](1, "At least one item is required"),
