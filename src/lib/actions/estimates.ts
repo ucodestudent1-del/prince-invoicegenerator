@@ -694,6 +694,46 @@ export async function getEstimateByShareToken(token: string) {
   });
 }
 
+export async function deleteEstimate(estimateId: string) {
+  return withActionError("deleteEstimate", async () => {
+    const user = await requireUser();
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
+
+    await db["$transaction"](async (tx) => {
+      try {
+        await tx["invoice"]["updateMany"]({
+          where: { estimateId, orgId },
+          data: { estimateId: null },
+        });
+        await tx["changeOrder"]["updateMany"]({
+          where: { estimateId, orgId },
+          data: { estimateId: null },
+        });
+        await tx["estimate"]["deleteMany"]({ where: { id: estimateId, orgId } });
+      } catch (err) {
+        if (isMissingColumnError(err)) {
+          await tx["estimate"]["deleteMany"]({ where: { id: estimateId, orgId } });
+          return;
+        }
+        throw err;
+      }
+    });
+
+    await logEstimateAudit(
+      estimateId,
+      orgId,
+      "DELETED",
+      null,
+      null,
+      undefined,
+      user["id"]
+    );
+
+    await revalidateWithLocale("/dashboard/estimates");
+  });
+}
+
 export async function checkExpiredEstimates() {
   return withActionError("checkExpiredEstimates", async () => {
     const now = new Date();

@@ -12,6 +12,7 @@ import { ExpenseCategory, type EstimateStatus } from "@prisma/client";
 import { logServerError } from "@/lib/errors";
 import { roundMoney } from "@/lib/money";
 import { computeEstimateTotals } from "@/lib/estimate-totals";
+import { CreateEstimateSchema, CreateChangeOrderSchema, formatZodError } from "@/lib/schemas";
 
 // --------------------------- Estimates ---------------------------
 
@@ -29,6 +30,8 @@ export async function createEstimate(input: {
    items: { description: string; quantity: number; unitPrice: number; unit?: string; sku?: string | null }[];
 }) {
   return withActionError("createEstimate", async () => {
+    const parsed = CreateEstimateSchema["safeParse"](input);
+    if (!parsed["success"]) actionError(formatZodError(parsed["error"]));
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
@@ -173,7 +176,9 @@ export async function createChangeOrder(input: {
    scheduleImpactDescription?: string;
 }) {
    return withActionError("createChangeOrder", async () => {
-     const user = await requireUser();
+      const parsed = CreateChangeOrderSchema["safeParse"](input);
+      if (!parsed["success"]) actionError(formatZodError(parsed["error"]));
+      const user = await requireUser();
      if (!user["organizationId"]) actionError("No organization");
      const orgId = user["organizationId"];
      const plan = await getActivePlan(user);

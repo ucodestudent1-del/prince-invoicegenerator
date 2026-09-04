@@ -1,7 +1,7 @@
 import { Link, redirect } from "@/i18n/navigation";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { db } from "@/lib/db";
-import { sendEstimate, convertEstimateToInvoice } from "@/lib/actions/estimates";
+import { sendEstimate, convertEstimateToInvoice, deleteEstimate } from "@/lib/actions/estimates";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import {
   FileText,
   ExternalLink,
   Download,
+  Trash2,
 } from "lucide-react";
 import { EstimateAuditLog } from "@/components/estimate-audit-log";
 import { CopyShareLinkButton } from "@/components/copy-share-link-button";
@@ -361,7 +362,17 @@ export default async function EstimateDetailPage({
               <Download className="mr-2 h-4 w-4" /> Download PDF
             </a>
           </Button>
-          </CardContent>
+          <form
+            action={async () => {
+              "use server";
+              await deleteEstimate(estimate["id"]);
+            }}
+          >
+            <Button type="submit" variant="destructive" size="sm" className="w-full">
+              <Trash2 className="mr-2 h-4 w-4" /> {t("delete")}
+            </Button>
+          </form>
+        </CardContent>
         </Card>
 
         <EstimateAuditLog estimateId={estimate["id"]} />

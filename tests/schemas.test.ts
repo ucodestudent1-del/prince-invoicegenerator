@@ -3,6 +3,7 @@ import {
   CreateInvoiceSchema,
   CreateCustomerSchema,
   CreateEstimateSchema,
+  CreateChangeOrderSchema,
   RecordPaymentSchema,
   formatZodError,
 } from "@/lib/schemas";
@@ -116,6 +117,42 @@ describe("RecordPaymentSchema (B1, B4)", () => {
   it("rejects a negative amount", () => {
     expect(
       RecordPaymentSchema["safeParse"]({ invoiceId: "inv_1", amount: -1 })["success"]
+    )["toBe"](false);
+  });
+});
+
+describe("CreateChangeOrderSchema (B4)", () => {
+  const valid = {
+    title: "Deck extension",
+    amount: 5000,
+    originalTotal: 100000,
+  };
+
+  it("accepts a well-formed change order", () => {
+    expect(CreateChangeOrderSchema["safeParse"](valid)["success"])["toBe"](true);
+  });
+
+  it("rejects a change order with no title", () => {
+    expect(
+      CreateChangeOrderSchema["safeParse"]({ ...valid, title: "" })["success"]
+    )["toBe"](false);
+  });
+
+  it("rejects an Infinity amount", () => {
+    expect(
+      CreateChangeOrderSchema["safeParse"]({ ...valid, amount: Infinity })["success"]
+    )["toBe"](false);
+  });
+
+  it("rejects a NaN amount", () => {
+    expect(
+      CreateChangeOrderSchema["safeParse"]({ ...valid, amount: NaN })["success"]
+    )["toBe"](false);
+  });
+
+  it("rejects a negative amount", () => {
+    expect(
+      CreateChangeOrderSchema["safeParse"]({ ...valid, amount: -100 })["success"]
     )["toBe"](false);
   });
 });

@@ -70,6 +70,22 @@ export const CreateEstimateSchema = z["object"]({
     ["min"](1, "At least one item is required"),
 });
 
+export const CreateChangeOrderSchema = z["object"]({
+  title: z["string"]()["min"](1, "Title is required"),
+  description: z["string"]()["optional"]()["nullable"](),
+  projectId: z["string"]()["optional"]()["nullable"](),
+  invoiceId: z["string"]()["optional"]()["nullable"](),
+  customerId: z["string"]()["optional"]()["nullable"](),
+  amount: z["number"]()["finite"]()["nonnegative"]("Amount must be a non-negative number"),
+  originalTotal: z["number"]()["finite"]()["nonnegative"]()["optional"](),
+  daysAdded: z["number"]()["finite"]()["nonnegative"]()["optional"]()["nullable"](),
+  originalCompletionDate: z["string"]()["optional"]()["nullable"](),
+  newCompletionDate: z["string"]()["optional"]()["nullable"](),
+  billToAddress: z["string"]()["optional"]()["nullable"](),
+  scopeChangeDescription: z["string"]()["optional"]()["nullable"](),
+  scheduleImpactDescription: z["string"]()["optional"]()["nullable"](),
+});
+
 /**
  * Schema for `recordPayment`. Constrains amount to a finite positive number
  * (Plan B1) and normalises optional fields.
@@ -86,6 +102,7 @@ export const RecordPaymentSchema = z["object"]({
 export type CreateInvoiceInput = z.infer<typeof CreateInvoiceSchema>;
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
 export type CreateEstimateInput = z.infer<typeof CreateEstimateSchema>;
+export type CreateChangeOrderInput = z.infer<typeof CreateChangeOrderSchema>;
 export type RecordPaymentInput = z.infer<typeof RecordPaymentSchema>;
 
 /** Format a Zod error into a single human-readable message. */
