@@ -298,7 +298,12 @@
     "recentActivity": "Recent activity",
     "viewAll": "View all",
     "noActivity": "No recent activity",
-    "noInvoices": "No invoices yet."
+    "noInvoices": "No invoices yet.",
+    "allCaughtUp": "Nothing needs your attention right now.",
+    "attentionCount": "{count, plural, one {# item needs your attention} other {# items need your attention}}",
+    "monthlyRevenueDescription": "Revenue and collected by month, last 12 months",
+    "recentActivityDescription": "Latest invoices, payments, expenses, and change orders.",
+    "chartAriaLabel": "Revenue and collected by month, last 12 months"
   },
   "invoices": {
     "title": "Invoices",

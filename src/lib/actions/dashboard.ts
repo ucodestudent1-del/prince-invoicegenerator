@@ -1,14 +1,25 @@
 "use server";
 
+import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/org";
 import { isMissingColumnError } from "@/lib/db-drift";
 import { withActionError } from "@/lib/action-errors";
 import { computeDashboardData, type DashboardDerived, type DashboardInvoiceInput } from "@/lib/dashboard";
 import { getUnbilledRevenue } from "@/lib/actions/unbilled-revenue";
+import { DASHBOARD_CACHE_TTL_SECONDS, dashboardCacheTag } from "@/lib/dashboard-cache";
 
 export interface DashboardData extends DashboardDerived {
 	recentInvoices: DashboardInvoiceInput[];
+}
+
+/**
+ * Invalidate the dashboard cache for an organization. Call from any server
+ * action that mutates invoices, payments, expenses, or change orders so the
+ * next dashboard render shows fresh numbers.
+ */
+export async function invalidateDashboard(orgId: string) {
+	revalidateTag(dashboardCacheTag(orgId));
 }
 
 /**
@@ -21,6 +32,12 @@ export interface DashboardData extends DashboardDerived {
  * Currency is an organization-level single source of truth (projects,
  * expenses, milestones and change-order detection live in org currency), so
  * every derived input is stamped with the org's currency.
+ *
+ * The result is cached per-organization for `DASHBOARD_CACHE_TTL_SECONDS`
+ * via `unstable_cache`. Mutations on invoices/payments/expenses/change orders
+ * should call `invalidateDashboard(orgId)` to flush the cache immediately
+ * (the TTL is a safety net for the common case where mutations happen in
+ * other entry points like API routes).
  */
 export async function getDashboardData(): Promise<DashboardData> {
 	return withActionError("getDashboardData", async () => {
@@ -28,39 +45,58 @@ export async function getDashboardData(): Promise<DashboardData> {
 		if (!user["organizationId"]) throw new Error("No organization");
 		const orgId = user["organizationId"];
 
-		// Org currency (single source).
-		let orgCurrency = "USD";
-		try {
-			const org = await db["organization"]["findUnique"]({
-				where: { id: orgId },
-				select: { currency: true },
-			});
-			orgCurrency = org?.["currency"] ?? "USD";
-		} catch (err) {
-			if (!isMissingColumnError(err)) throw err;
-		}
-
-		const [invoiceRows, paymentRows, expenseRows, changeOrderRows, unbilledSummary] = await Promise.all([
-			fetchInvoices(orgId, orgCurrency),
-			fetchPayments(orgId, orgCurrency),
-			fetchExpenses(orgId, orgCurrency),
-			fetchChangeOrders(orgId, orgCurrency),
-			fetchUnbilledTotal(orgId),
-		]);
-
-		const derived = computeDashboardData({
-			invoices: invoiceRows,
-			payments: paymentRows,
-			expenses: expenseRows,
-			changeOrders: changeOrderRows,
-			projects: [],
-			unbilledTotal: unbilledSummary,
-			currency: orgCurrency,
-			now: new Date(),
-		});
-
-		return { ...derived, recentInvoices: invoiceRows };
+		return loadCachedDashboard(orgId);
 	});
+}
+
+async function loadCachedDashboard(orgId: string): Promise<DashboardData> {
+	const fetcher = unstable_cache(
+		async (key: string) => {
+			void key;
+			return loadDashboardFromDb(orgId);
+		},
+		["dashboard-data", orgId],
+		{
+			tags: [dashboardCacheTag(orgId)],
+			revalidate: DASHBOARD_CACHE_TTL_SECONDS,
+		}
+	);
+	return fetcher(dashboardCacheTag(orgId));
+}
+
+async function loadDashboardFromDb(orgId: string): Promise<DashboardData> {
+	// Org currency (single source).
+	let orgCurrency = "USD";
+	try {
+		const org = await db["organization"]["findUnique"]({
+			where: { id: orgId },
+			select: { currency: true },
+		});
+		orgCurrency = org?.["currency"] ?? "USD";
+	} catch (err) {
+		if (!isMissingColumnError(err)) throw err;
+	}
+
+	const [invoiceRows, paymentRows, expenseRows, changeOrderRows, unbilledSummary] = await Promise.all([
+		fetchInvoices(orgId, orgCurrency),
+		fetchPayments(orgId, orgCurrency),
+		fetchExpenses(orgId, orgCurrency),
+		fetchChangeOrders(orgId, orgCurrency),
+		fetchUnbilledTotal(orgId),
+	]);
+
+	const derived = computeDashboardData({
+		invoices: invoiceRows,
+		payments: paymentRows,
+		expenses: expenseRows,
+		changeOrders: changeOrderRows,
+		projects: [],
+		unbilledTotal: unbilledSummary,
+		currency: orgCurrency,
+		now: new Date(),
+	});
+
+	return { ...derived, recentInvoices: invoiceRows };
 }
 
 async function fetchInvoices(orgId: string, currency: string) {

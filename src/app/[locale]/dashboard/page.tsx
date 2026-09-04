@@ -90,12 +90,12 @@ export default async function DashboardPage({ params }: { params: { locale: stri
 				<div className="flex items-center gap-2">
 					<Button variant="outline" size="sm" asChild>
 						<Link href="/api/export/invoices?format=csv">
-							<Download className="h-4 w-4 mr-2" /> Export CSV
+							<Download className="h-4 w-4 mr-2" aria-hidden="true" /> Export CSV
 						</Link>
 					</Button>
 					<Button asChild>
 						<Link href="/dashboard/invoices/new">
-							<Plus className="h-4 w-4 mr-2" /> {t("newInvoice")}
+							<Plus className="h-4 w-4 mr-2" aria-hidden="true" /> {t("newInvoice")}
 						</Link>
 					</Button>
 				</div>
@@ -122,13 +122,13 @@ export default async function DashboardPage({ params }: { params: { locale: stri
 						<CardTitle className="text-lg">{t("needsAttention")}</CardTitle>
 						<CardDescription>
 							{attentionItems.length > 0
-								? `${attentionItems.length} item${attentionItems.length === 1 ? "" : "s"} need${attentionItems.length === 1 ? "" : "s"} your attention`
-								: "Nothing needs your attention right now."}
+								? t("attentionCount", { count: attentionItems.length })
+								: t("allCaughtUp")}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						{attentionItems.length === 0 ? (
-							<p className="text-sm text-muted-foreground">All caught up.</p>
+							<p className="text-sm text-muted-foreground">{t("allCaughtUp")}</p>
 						) : (
 							<ul className="space-y-3">
 								{attentionItems.map((item) => (
@@ -152,12 +152,17 @@ export default async function DashboardPage({ params }: { params: { locale: stri
 				<Card>
 					<CardHeader>
 						<CardTitle className="text-lg">{t("monthlyRevenue")}</CardTitle>
-						<CardDescription>
-							{t("revenue")} vs {t("collected")} over the last 12 months
-						</CardDescription>
+						<CardDescription>{t("monthlyRevenueDescription")}</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<RevenueChart points={monthlyRevenue} maxValue={maxRevenue} currency={stats["currency"]} revenueLabel={t("revenue")} collectedLabel={t("collected")} />
+						<RevenueChart
+							points={monthlyRevenue}
+							maxValue={maxRevenue}
+							currency={stats["currency"]}
+							revenueLabel={t("revenue")}
+							collectedLabel={t("collected")}
+							ariaLabel={t("chartAriaLabel")}
+						/>
 					</CardContent>
 				</Card>
 			</div>
@@ -165,7 +170,7 @@ export default async function DashboardPage({ params }: { params: { locale: stri
 			<Card>
 				<CardHeader>
 					<CardTitle className="text-lg">{t("recentActivity")}</CardTitle>
-					<CardDescription>Latest invoices, payments, expenses, and change orders.</CardDescription>
+					<CardDescription>{t("recentActivityDescription")}</CardDescription>
 				</CardHeader>
 				<CardContent>
 					{recentActivity.length === 0 ? (
@@ -194,11 +199,11 @@ export default async function DashboardPage({ params }: { params: { locale: stri
 				<CardHeader>
 					<div className="flex items-center justify-between">
 						<CardTitle className="text-lg">{t("recentInvoices")}</CardTitle>
-						<Button variant="outline" size="sm" asChild>
-							<Link href="/dashboard/invoices">
-								{t("viewAll")} <ExternalLink className="h-3 w-3 ml-1" />
-							</Link>
-						</Button>
+					<Button variant="outline" size="sm" asChild>
+						<Link href="/dashboard/invoices">
+							{t("viewAll")} <ExternalLink className="h-3 w-3 ml-1" aria-hidden="true" />
+						</Link>
+					</Button>
 					</div>
 				</CardHeader>
 				<CardContent>
@@ -261,23 +266,23 @@ function emptyDashboard(): DashboardData {
 function ActivityIcon({ type }: { type: string }) {
 	switch (type) {
 		case "payment":
-			return <Receipt className="h-4 w-4 text-muted-foreground" />;
+			return <Receipt className="h-4 w-4 text-muted-foreground" aria-hidden="true" />;
 		case "expense":
-			return <CreditCard className="h-4 w-4 text-muted-foreground" />;
+			return <CreditCard className="h-4 w-4 text-muted-foreground" aria-hidden="true" />;
 		case "change_order":
-			return <FileText className="h-4 w-4 text-muted-foreground" />;
+			return <FileText className="h-4 w-4 text-muted-foreground" aria-hidden="true" />;
 		default:
-			return <FileText className="h-4 w-4 text-muted-foreground" />;
+			return <FileText className="h-4 w-4 text-muted-foreground" aria-hidden="true" />;
 	}
 }
 
-function RevenueChart({ points, maxValue, currency, revenueLabel, collectedLabel }: { points: MonthlyPoint[]; maxValue: number; currency: string; revenueLabel: string; collectedLabel: string }) {
+function RevenueChart({ points, maxValue, currency, revenueLabel, collectedLabel, ariaLabel }: { points: MonthlyPoint[]; maxValue: number; currency: string; revenueLabel: string; collectedLabel: string; ariaLabel: string }) {
 	const width = (value: number) => `${Math["round"]((value / (maxValue || 1)) * 100)}%`;
 	return (
-		<div className="space-y-3">
+		<div className="space-y-3" role="img" aria-label={ariaLabel}>
 			<div className="flex items-center justify-end gap-6 text-xs text-muted-foreground">
-				<span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-primary" /> {revenueLabel}</span>
-				<span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-teal-500" /> {collectedLabel}</span>
+				<span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-primary" aria-hidden="true" /> {revenueLabel}</span>
+				<span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-teal-500" aria-hidden="true" /> {collectedLabel}</span>
 			</div>
 			{points.map((m) => (
 				<div key={m["label"]} className="flex items-center gap-3">

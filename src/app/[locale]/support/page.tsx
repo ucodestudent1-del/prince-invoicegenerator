@@ -1,9 +1,17 @@
 import { Link } from "@/i18n/navigation";
+import type { Metadata } from "next";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, BookOpen, MessageSquare } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+
+export const metadata: Metadata = {
+	title: "Support",
+	description:
+		"Get help with Prince. Documentation, support tickets, and product feedback channels.",
+	alternates: { canonical: "/support" },
+};
 
 const supportOptions = [
   {
@@ -28,11 +36,6 @@ const supportOptions = [
     label: "Share feedback",
   },
 ];
-
-export const metadata = {
-  title: "Support — Prince Invoice Generator",
-  description: "Get help with Prince Invoice Generator. Find documentation, email support, and submit feedback.",
-};
 
 export default async function SupportPage({ params }: { params: { locale: string } }) {
   const t = await getTranslations("support");

@@ -13,6 +13,7 @@ import { coerceEnum } from "@/lib/utils";
 import { CreateInvoiceSchema, RecordPaymentSchema, formatZodError } from "@/lib/schemas";
 import { computeInvoiceTotals } from "@/lib/invoice-totals";
 import { logServerError } from "@/lib/errors";
+import { invalidateDashboard } from "@/lib/actions/dashboard";
 
 export interface InvoiceItemInput {
   description: string;
@@ -223,6 +224,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
 
     await revalidateWithLocale("/dashboard/invoices");
     await revalidateWithLocale("/dashboard");
+    await invalidateDashboard(orgId);
     return invoice;
   });
 }
@@ -282,6 +284,7 @@ export async function markInvoiceStatus(id: string, status: InvoiceStatus) {
     }
 
     await revalidateWithLocale(`/dashboard/invoices/${id}`);
+    await invalidateDashboard(orgId);
   });
 }
 
@@ -406,6 +409,7 @@ export async function recordPayment(input: {
 
     await revalidateWithLocale("/dashboard/invoices");
     await revalidateWithLocale(`/dashboard/invoices/${input["invoiceId"]}`);
+    await invalidateDashboard(orgId);
   });
 }
 
@@ -871,6 +875,7 @@ export async function deleteInvoice(id: string) {
     });
 
     await revalidateWithLocale("/dashboard/invoices");
+    await invalidateDashboard(orgId);
   });
 }
 

@@ -7,6 +7,7 @@ import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
 import { computeUnbilledRevenue, type UnbilledRevenueItem } from "@/lib/unbilled-revenue";
 import { createInvoice as createInvoiceAction } from "@/lib/actions/invoices";
+import { invalidateDashboard } from "@/lib/actions/dashboard";
 import { addDays } from "date-fns";
 
 export async function getUnbilledRevenue() {
@@ -218,6 +219,7 @@ export async function createInvoiceFromUnbilledItem(item: UnbilledRevenueItem) {
 
 		await revalidateWithLocale("/dashboard/unbilled-revenue");
 		await revalidateWithLocale("/dashboard");
+		await invalidateDashboard(orgId);
 		return invoice;
 	});
 }

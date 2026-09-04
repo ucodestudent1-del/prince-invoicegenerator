@@ -1,9 +1,19 @@
 import { Link } from "@/i18n/navigation";
+import type { Metadata } from "next";
 import { FileText, Calculator, Camera, Users, Repeat, ShieldCheck } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getTranslations } from "next-intl/server";
+
+export const metadata: Metadata = {
+	title: "Construction Invoice Generator",
+	description:
+		"Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
+	alternates: {
+		canonical: "/",
+	},
+};
 
 export default async function HomePage() {
   const t = await getTranslations("home");

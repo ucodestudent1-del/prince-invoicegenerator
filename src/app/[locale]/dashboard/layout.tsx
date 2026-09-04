@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import { redirect } from "@/i18n/navigation";
+import type { Metadata } from "next";
 import { requireUser, ensureOrganization, getCurrentOrg, getActivePlan, ensureEnv, isMissingColumnError } from "@/lib/org";
 import { hasFeature, type FeatureKey } from "@/lib/plans";
 import {
@@ -25,6 +26,7 @@ import { UserMenu } from "@/components/user-menu";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggleForm } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { DashboardBrandColor } from "@/components/dashboard-brand-color";
 import { getTranslations } from "next-intl/server";
 import { getLocaleSafe } from "@/lib/locale";
 import { APP_NAME } from "@/lib/app-name";
@@ -52,6 +54,11 @@ const nav = [
 ];
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+	robots: { index: false, follow: false },
+	title: "Dashboard",
+};
 
 export default async function DashboardLayout({
   children,
@@ -103,6 +110,7 @@ export default async function DashboardLayout({
 
   return (
     <div className={`flex min-h-screen ${org["theme"] === "dark" ? "dark" : ""}`}>
+      <DashboardBrandColor brandColor={org["brandColor"] ?? null} />
       <aside className="hidden w-60 flex-col border-r bg-muted/30 p-4 md:flex">
         <Link href="/" className="mb-6 flex items-center gap-2 font-bold">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs">

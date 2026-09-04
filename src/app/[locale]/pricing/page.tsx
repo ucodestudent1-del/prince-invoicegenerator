@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import type { Metadata } from "next";
 import { Check } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PLANS, FEATURE_LABELS, type FeatureKey } from "@/lib/plans";
 import { PricingCheckout } from "@/components/pricing-checkout";
 import { getTranslations } from "next-intl/server";
+
+export const metadata: Metadata = {
+	title: "Pricing",
+	description:
+		"Simple, transparent pricing for Prince. Start free and upgrade as your crew grows.",
+	alternates: { canonical: "/pricing" },
+};
 
 const display = PLANS["map"]((p) => ({
   id: p["id"],

@@ -12,10 +12,7 @@ import "@/styles/change-order.css";
 import { ThemeClient } from "@/components/theme-client";
 import { CookieConsent } from "@/components/cookie-consent";
 import { Analytics } from "@/components/analytics";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { isMissingColumnError, ensureEnv } from "@/lib/org";
+import { JsonLd } from "@/components/json-ld";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,114 +36,72 @@ const playfair = Playfair_Display({
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: {
-    default: "Prince — Construction Invoice Generator",
-    template: "%s — Prince",
-  },
-  description:
-    "Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://princeinvoicegenerator.up.railway.app",
-    title: "Prince — Construction Invoice Generator",
-    description:
-      "Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
-    siteName: "Prince Invoice Generator",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Prince — Construction Invoice Generator",
-    description:
-      "Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
-  },
-  alternates: {
-    canonical: "https://princeinvoicegenerator.up.railway.app",
-  },
-  other: {
-    "application/ld+json": JSON["stringify"]({
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      name: "Prince Invoice Generator",
-      applicationCategory: "BusinessApplication",
-      operatingSystem: "Web",
-      description:
-        "Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
-      url: "https://princeinvoicegenerator.up.railway.app",
-      provider: {
-        "@type": "Organization",
-        name: "Prince Invoice Generator",
-      },
-    }),
-  },
+	metadataBase: new URL("https://princeinvoicegenerator.up.railway.app"),
+	title: {
+		default: "Prince — Construction Invoice Generator",
+		template: "%s — Prince",
+	},
+	description:
+		"Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
+	openGraph: {
+		type: "website",
+		locale: "en_US",
+		url: "https://princeinvoicegenerator.up.railway.app",
+		title: "Prince — Construction Invoice Generator",
+		description:
+			"Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
+		siteName: "Prince Invoice Generator",
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Prince — Construction Invoice Generator",
+		description:
+			"Professional invoicing, estimates, change orders, and retainage tracking for construction contractors.",
+	},
+	alternates: {
+		canonical: "https://princeinvoicegenerator.up.railway.app",
+	},
+	manifest: "/manifest.webmanifest",
+	icons: {
+		icon: [{ url: "/icon", type: "image/png" }],
+		apple: [{ url: "/apple-icon", type: "image/png" }],
+	},
 };
 
-async function getInitialTheme() {
-  try {
-    const cookieTheme = cookies()["get"]("theme")?.["value"];
-    const session = await getServerSession(authOptions);
-    if (!session?.["user"]?.["id"]) {
-      return {
-        theme: cookieTheme === "dark" || cookieTheme === "light" ? cookieTheme : "light",
-        brandColor: null,
-        fontFamily: null,
-      };
-    }
-
-    try {
-      const user = await db["user"]["findUnique"]({
-        where: { id: session["user"]["id"] },
-        select: {
-          organization: {
-            select: { theme: true, brandColor: true, fontFamily: true },
-          },
-        },
-      });
-      return {
-        theme: user?.["organization"]?.["theme"] ?? cookieTheme ?? "light",
-        brandColor: user?.["organization"]?.["brandColor"] ?? null,
-        fontFamily: user?.["organization"]?.["fontFamily"] ?? null,
-      };
-    } catch (dbErr) {
-      if (isMissingColumnError(dbErr) && cookieTheme) {
-        return {
-          theme: cookieTheme === "dark" ? "dark" : "light",
-          brandColor: null,
-          fontFamily: null,
-        };
-      }
-      console["error"]("getInitialTheme DB error:", dbErr);
-      return { theme: "light", brandColor: null, fontFamily: null };
-    }
-  } catch {
-    return { theme: "light", brandColor: null, fontFamily: null };
-  }
+async function getInitialTheme(): Promise<"light" | "dark"> {
+	// Marketing layout: only the cookie. The dashboard layout overrides this
+	// with the org's persisted preference once a session is established.
+	try {
+		const cookieTheme = cookies()["get"]("theme")?.["value"];
+		return cookieTheme === "dark" ? "dark" : "light";
+	} catch {
+		return "light";
+	}
 }
 
 export default async function RootLayout({
-  children,
-  params,
+	children,
+	params,
 }: {
-  children: React.ReactNode;
-  params: { locale: string };
+	children: React.ReactNode;
+	params: { locale: string };
 }) {
-  const messages = await getMessages();
-  ensureEnv();
-  const { theme, brandColor } = await getInitialTheme();
+	const messages = await getMessages();
+	const theme = await getInitialTheme();
 
-  return (
-    <html lang={params["locale"]}>
-      <body className={`min-h-screen antialiased ${inter["variable"]} ${playfair["variable"]}`}>
-        <NextIntlClientProvider locale={params["locale"]} messages={messages}>
-          <LocaleRedirectGuard />
-          <ThemeClient
-            initialTheme={theme}
-            brandColor={brandColor}
-          />
-          <CookieConsent />
-          <Analytics />
-          {children}
-        </NextIntlClientProvider>
+	return (
+		<html lang={params["locale"]}>
+		<head>
+			<JsonLd />
+		</head>
+		<body className={`min-h-screen antialiased ${inter["variable"]} ${playfair["variable"]}`}>
+		<NextIntlClientProvider locale={params["locale"]} messages={messages}>
+			<LocaleRedirectGuard />
+			<ThemeClient initialTheme={theme} brandColor={null} />
+			<CookieConsent />
+			<Analytics />
+			{children}
+		</NextIntlClientProvider>
       </body>
     </html>
   );
