@@ -289,17 +289,18 @@ model Organization {
   expenses             Expense[]
   subcontractors       Subcontractor[]
   photoAttachments     PhotoAttachment[]
-  timeEntries          TimeEntry[]
-  invoicePdfs          InvoicePdf[]
-  recurringConfigs     RecurringInvoiceConfig[]
-  payments             Payment[]
-  auditLogs            InvoiceAudit[]
-  reminderConfigs      ReminderConfig[]
-  reminders            Reminder[]
-  reminderSuppressions InvoiceReminderSuppression[]
-  lateFeeConfig        LateFeeConfig?
-  settings             OrganizationSettings?
-  paymentInfo          PaymentInfo?
+   timeEntries          TimeEntry[]
+   invoicePdfs          InvoicePdf[]
+   recurringConfigs     RecurringInvoiceConfig[]
+   payments             Payment[]
+   auditLogs            InvoiceAudit[]
+   reminderConfigs      ReminderConfig[]
+   reminders            Reminder[]
+   reminderSuppressions InvoiceReminderSuppression[]
+   lateFeeConfig        LateFeeConfig?
+   settings             OrganizationSettings?
+   paymentInfo          PaymentInfo?
+   milestones           ProjectMilestone[]
 }
 
 // ---------------------------------------------------------------------------
@@ -483,15 +484,49 @@ model Project {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
-  invoices                 Invoice[]
-  estimates                Estimate[]
-  changeOrders             ChangeOrder[]
-  expenses                 Expense[]
-  subcontractorAssignments SubcontractorProject[]
-  recurringConfigs         RecurringInvoiceConfig[]
-  timeEntries              TimeEntry[]
+   invoices                 Invoice[]
+   estimates                Estimate[]
+   changeOrders             ChangeOrder[]
+   expenses                 Expense[]
+   subcontractorAssignments SubcontractorProject[]
+   recurringConfigs         RecurringInvoiceConfig[]
+   timeEntries              TimeEntry[]
+   milestones               ProjectMilestone[]
 
-  @@index([orgId])
+   @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Project Milestones (Progress billing / Unbilled Revenue)
+// ---------------------------------------------------------------------------
+
+enum MilestoneStatus {
+   PENDING
+   COMPLETED
+   INVOICED
+   CANCELLED
+}
+
+model ProjectMilestone {
+   id          String           @id @default(cuid())
+   orgId       String
+   org         Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+   projectId   String
+   project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+   name        String
+   description String?
+   amount      Float            @default(0) // billable value of this milestone
+   dueDate     DateTime?
+   status      MilestoneStatus  @default(PENDING)
+   completedAt DateTime?          // when the milestone was marked complete
+   invoiceId   String?            // invoice generated for this milestone (optional)
+   invoice     Invoice?           @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+   createdAt   DateTime          @default(now())
+   updatedAt   DateTime          @updatedAt
+
+   @@index([orgId])
+   @@index([orgId, projectId])
+   @@index([orgId, status])
 }
 
 // ---------------------------------------------------------------------------
@@ -557,12 +592,13 @@ model Invoice {
   items                InvoiceItem[]
   payments             Payment[]
   auditLogs            InvoiceAudit[]
-  reminders            Reminder[]
-  reminderSuppressions InvoiceReminderSuppression[]
-  timeEntries          TimeEntry[]
-  invoicePdfs          InvoicePdf[]
+   reminders            Reminder[]
+   reminderSuppressions InvoiceReminderSuppression[]
+   timeEntries          TimeEntry[]
+   invoicePdfs          InvoicePdf[]
+   milestones           ProjectMilestone[]
 
-  @@unique([orgId, number])
+   @@unique([orgId, number])
   @@index([orgId])
   @@index([customerId])
   @@index([estimateId])

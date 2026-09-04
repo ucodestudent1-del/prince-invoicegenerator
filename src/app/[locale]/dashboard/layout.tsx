@@ -33,6 +33,7 @@ import { db } from "@/lib/db";
 const nav = [
   { href: "/dashboard", label: "navigation.overview", icon: LayoutDashboard },
   { href: "/dashboard/invoices", label: "navigation.invoices", icon: FileText, feature: "invoicesPerMonth" as FeatureKey },
+  { href: "/dashboard/unbilled-revenue", label: "navigation.unbilledRevenue", icon: Receipt },
   { href: "/dashboard/estimates", label: "navigation.estimates", icon: Calculator, feature: "estimates" as FeatureKey },
   { href: "/dashboard/settings/catalog", label: "navigation.catalog", icon: Package, feature: "catalogItems" as FeatureKey },
   { href: "/dashboard/time-tracking", label: "navigation.timeTracking", icon: Clock, feature: "timeTracking" as FeatureKey },
