@@ -36,17 +36,19 @@ ENV NEXT_IGNORE_INCORRECT_LOCKFILE=true
 # Provide OpenSSL 3.x (libssl.so.3) + glibc compat symbols for the Prisma
 # OpenSSL-3 musl Query Engine stitched by the builder (see binaryTargets).
 RUN apk add --no-cache libc6-compat openssl
-# Copy the standalone server output (self-contained, includes trimmed node_modules)
-COPY --from=builder /app/.next/standalone ./
-# Copy static assets and public files
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
-# Copy Prisma schema, migrations, CLI, and generated client for runtime migrations
-COPY --from=builder /app/prisma ./prisma
+# Copy production deps (includes @prisma/engines needed by the prisma CLI)
+COPY --from=deps /app/node_modules ./node_modules
+# Copy generated Prisma client + engine binaries from builder
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+# Copy prisma CLI and schema/migrations from builder so migrate-deploy works at runtime
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=builder /app/prisma ./prisma
+# Copy build output and public assets from builder
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY package*.json ./
 # Copy startup script
 COPY scripts/migrate-and-start.sh ./scripts/migrate-and-start.sh
 RUN chmod +x ./scripts/migrate-and-start.sh

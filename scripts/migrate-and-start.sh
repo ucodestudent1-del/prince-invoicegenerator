@@ -195,5 +195,4 @@ else
  fi
 
 # Start the application
-# With output: "standalone", the server is at server.js (not `next start`).
-exec node server.js
+exec npm start
