@@ -10,6 +10,9 @@ export function ensureEnv() {
     validateEnv();
   } catch (err: any) {
     console["error"]("[env] Environment validation failed:", err["message"]);
+    if (process["env"]["NODE_ENV"] === "production") {
+      throw err;
+    }
   } finally {
     validated = true;
   }

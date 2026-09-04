@@ -19,6 +19,26 @@ else
   echo "Running database migrations..."
 
   # -------------------------------------------------------------------------
+  # Wait for the database to be ready before running any migration commands.
+  # The resolve commands below must succeed against a live database; running
+  # them before the DB is ready causes silent failures (|| true suppresses
+  # the error), leaving failed migration states in _prisma_migrations that
+  # cause `prisma migrate deploy` to abort even after retries.
+  # -------------------------------------------------------------------------
+  echo "Waiting for database to be ready..."
+  db_retry=0
+  until npx prisma db pull >/dev/null 2>&1; do
+    db_retry=$((db_retry + 1))
+    if [ $db_retry -ge 30 ]; then
+      echo "ERROR: Database did not become ready within 150 seconds. Aborting."
+      exit 1
+    fi
+    echo "Database not ready, retrying in 5s... ($db_retry/30)"
+    sleep 5
+  done
+  echo "Database is ready."
+
+  # -------------------------------------------------------------------------
   # Resolve the failed TemplateStyle migration.
   # This migration was reverted from the schema but may still be recorded
   # as failed in production _prisma_migrations. Mark it as rolled back.
@@ -175,4 +195,5 @@ else
  fi
 
 # Start the application
-exec npm start
+# With output: "standalone", the server is at server.js (not `next start`).
+exec node server.js
