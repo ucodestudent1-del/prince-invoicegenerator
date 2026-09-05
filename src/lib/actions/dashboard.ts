@@ -11,6 +11,8 @@ import { DASHBOARD_CACHE_TTL_SECONDS, dashboardCacheTag } from "@/lib/dashboard-
 
 export interface DashboardData extends DashboardDerived {
 	recentInvoices: DashboardInvoiceInput[];
+	/** BCP-47 tag for `Intl.NumberFormat` / `Intl.DateTimeFormat` (org's numberFormat). */
+	locale: string;
 }
 
 /**
@@ -50,29 +52,33 @@ export async function getDashboardData(): Promise<DashboardData> {
 }
 
 async function loadCachedDashboard(orgId: string): Promise<DashboardData> {
+	// unstable_cache takes `keyParts` (positional) for the cache key plus a
+	// tags array. Including `orgId` in keyParts makes the per-org separation
+	// unambiguous; the closure-captured `orgId` is what the inner fetcher
+	// actually uses to query. Tag invalidation still works through
+	// `dashboardCacheTag(orgId)`.
 	const fetcher = unstable_cache(
-		async (key: string) => {
-			void key;
-			return loadDashboardFromDb(orgId);
-		},
+		async () => loadDashboardFromDb(orgId),
 		["dashboard-data", orgId],
 		{
 			tags: [dashboardCacheTag(orgId)],
 			revalidate: DASHBOARD_CACHE_TTL_SECONDS,
 		}
 	);
-	return fetcher(dashboardCacheTag(orgId));
+	return fetcher();
 }
 
 async function loadDashboardFromDb(orgId: string): Promise<DashboardData> {
-	// Org currency (single source).
+	// Org-level display settings (single source).
 	let orgCurrency = "USD";
+	let orgNumberFormat = "en-US";
 	try {
 		const org = await db["organization"]["findUnique"]({
 			where: { id: orgId },
-			select: { currency: true },
+			select: { currency: true, numberFormat: true },
 		});
 		orgCurrency = org?.["currency"] ?? "USD";
+		orgNumberFormat = org?.["numberFormat"] ?? "en-US";
 	} catch (err) {
 		if (!isMissingColumnError(err)) throw err;
 	}
@@ -96,7 +102,7 @@ async function loadDashboardFromDb(orgId: string): Promise<DashboardData> {
 		now: new Date(),
 	});
 
-	return { ...derived, recentInvoices: invoiceRows };
+	return { ...derived, recentInvoices: invoiceRows, locale: orgNumberFormat };
 }
 
 async function fetchInvoices(orgId: string, currency: string) {
@@ -193,6 +199,7 @@ async function fetchChangeOrders(orgId: string, currency: string) {
 			changeAmount: true,
 			status: true,
 			projectId: true,
+			updatedAt: true,
 		},
 		orderBy: { updatedAt: "desc" },
 		take: 10,
@@ -204,6 +211,7 @@ async function fetchChangeOrders(orgId: string, currency: string) {
 		status: co["status"],
 		projectId: co["projectId"],
 		invoiced: false,
+		updatedAt: co["updatedAt"] ?? new Date(),
 	}));
 }
 

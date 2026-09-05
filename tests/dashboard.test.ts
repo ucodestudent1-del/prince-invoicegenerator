@@ -239,3 +239,91 @@ describe("computeDashboardData — attention items", () => {
 		expect(d["attentionItems"])["toEqual"]([]);
 	});
 });
+
+describe("computeDashboardData — attention item de-duplication", () => {
+	it("does not surface a duplicate 'money owed' item when there is already an overdue entry", () => {
+		const d = computeDashboardData({
+			invoices: [inv({ id: "ov1", dueDate: "2024-09-01T00:00:00Z", total: 1000, status: "SENT" })],
+			payments: [],
+			expenses: [],
+			changeOrders: [],
+			projects: PROJECTS,
+			unbilledTotal: 0,
+			currency: "USD",
+			now: NOW,
+		});
+		// Only the overdue entry should appear, not a separate "money owed".
+		const owed = d["attentionItems"].filter((a) => a["id"] === "owed");
+		const overdue = d["attentionItems"].filter((a) => a["id"] === "overdue");
+		expect(overdue)["toHaveLength"](1);
+		expect(owed)["toHaveLength"](0);
+	});
+
+	it("surfaces a 'money owed' entry when nothing is overdue but money is still outstanding", () => {
+		const d = computeDashboardData({
+			invoices: [inv({ id: "future1", dueDate: "2024-12-01T00:00:00Z", total: 1000, status: "SENT" })],
+			payments: [],
+			expenses: [],
+			changeOrders: [],
+			projects: PROJECTS,
+			unbilledTotal: 0,
+			currency: "USD",
+			now: NOW,
+		});
+		const owed = d["attentionItems"].find((a) => a["id"] === "owed");
+		expect(owed)["toBeDefined"]();
+		expect(owed?.["amount"])["toBe"](1000);
+	});
+});
+
+describe("computeDashboardData — recent activity", () => {
+	it("uses the change order's own updatedAt timestamp", () => {
+		const lastWeek = new Date(2024, 8, 8, 10, 0, 0);
+		const d = computeDashboardData({
+			invoices: [],
+			payments: [],
+			expenses: [],
+			changeOrders: [
+				{
+					id: "co1",
+					number: "CO-0001",
+					changeAmount: 6500,
+					status: "APPROVED",
+					invoiced: false,
+					updatedAt: lastWeek,
+				},
+			],
+			projects: PROJECTS,
+			unbilledTotal: 0,
+			currency: "USD",
+			now: NOW,
+		});
+		const co = d["recentActivity"].find((e) => e["id"] === "co:co1");
+		expect(co)["toBeDefined"]();
+		// Without this, all change orders would have the same timestamp
+		// (`now`) and pile up at the top of the feed.
+		expect(co?.["date"]["getTime"]())["toBe"](lastWeek["getTime"]());
+	});
+
+	it("marks paid invoices so the UI can hide the $0.00 outstanding amount", () => {
+		const d = computeDashboardData({
+			invoices: [
+				inv({ id: "paid1", status: "PAID", total: 1000, amountPaid: 1000 }),
+				inv({ id: "out1", status: "SENT", total: 1000, amountPaid: 200 }),
+			],
+			payments: [],
+			expenses: [],
+			changeOrders: [],
+			projects: PROJECTS,
+			unbilledTotal: 0,
+			currency: "USD",
+			now: NOW,
+		});
+		const paidEvent = d["recentActivity"].find((e) => e["id"] === "inv:paid1");
+		const openEvent = d["recentActivity"].find((e) => e["id"] === "inv:out1");
+		expect(paidEvent?.["paid"])["toBe"](true);
+		expect(paidEvent?.["amount"])["toBe"](0);
+		expect(openEvent?.["paid"])["toBe"](false);
+		expect(openEvent?.["amount"])["toBe"](800);
+	});
+});

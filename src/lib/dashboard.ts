@@ -55,6 +55,7 @@ export interface DashboardChangeOrderInput {
 	status: string;
 	projectId?: string | null;
 	invoiced: boolean;
+	updatedAt?: Date | string;
 }
 
 export interface DashboardProjectInput {
@@ -92,7 +93,19 @@ export interface DashboardDerived {
 	stats: DashboardStats;
 	attentionItems: AttentionItem[];
 	monthlyRevenue: MonthlyPoint[];
-	recentActivity: { id: string; type: string; title: string; subtitle?: string; amount?: number; date: Date; }[];
+	recentActivity: {
+		id: string;
+		type: string;
+		title: string;
+		/** Optional second-line detail. */
+		subtitle?: string;
+		/** Money amount in the org currency. */
+		amount?: number;
+		/** Event date (drives the feed's chronological order). */
+		date: Date;
+		/** Hint for the UI: "paid" hides the zero-outstanding footgun. */
+		paid?: boolean;
+	}[];
 }
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -207,7 +220,11 @@ export function computeDashboardData(input: {
 		});
 	}
 
-	if (moneyOwed > 0) {
+	// "Money currently owed" is the same money as the overdue item above when
+	// there are any past-due invoices, so showing both wastes an attention
+	// slot. Only surface it as a distinct item when nothing is overdue but
+	// money is still outstanding (e.g. future-due invoices).
+	if (moneyOwed > 0 && overdueAmount <= 0) {
 		attentionItems.push({
 			id: "owed",
 			title: "Money currently owed",
@@ -284,16 +301,28 @@ function buildRecentActivity(
 	now: Date,
 	currency: string
 ) {
-	const events: { id: string; type: string; title: string; subtitle?: string; amount?: number; date: Date }[] = [];
+	const events: {
+		id: string;
+		type: string;
+		title: string;
+		subtitle?: string;
+		amount?: number;
+		date: Date;
+		paid?: boolean;
+	}[] = [];
 
 	invoices.slice(0, 5).forEach((inv) => {
+		const outstanding = roundMoney(inv.total) - roundMoney(inv.amountPaid);
 		events.push({
 			id: `inv:${inv.id}`,
 			type: "invoice",
 			title: `Invoice ${inv.number} ${inv.status}`,
 			subtitle: inv.customerName ?? undefined,
-			amount: roundMoney(inv.total) - roundMoney(inv.amountPaid),
+			amount: outstanding > 0 ? outstanding : 0,
 			date: new Date(inv.issueDate),
+			// Paid invoices still appear in the activity feed but the UI hides
+			// the $0.00 "outstanding" amount that would otherwise confuse.
+			paid: inv.status === "PAID",
 		});
 	});
 
@@ -319,12 +348,16 @@ function buildRecentActivity(
 	});
 
 	changeOrders.slice(0, 3).forEach((co) => {
+		// Use the change order's own updatedAt when available. Without it, all
+		// change-order events end up with the same timestamp and cluster at the
+		// top of the feed, which is misleading.
+		const eventDate = co.updatedAt ? new Date(co.updatedAt) : now;
 		events.push({
 			id: `co:${co.id}`,
 			type: "change_order",
 			title: `Change order ${co.number} ${co.status}`,
 			amount: roundMoney(co.changeAmount),
-			date: now,
+			date: eventDate,
 		});
 	});
 

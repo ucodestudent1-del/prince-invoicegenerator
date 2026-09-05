@@ -303,7 +303,13 @@
     "attentionCount": "{count, plural, one {# item needs your attention} other {# items need your attention}}",
     "monthlyRevenueDescription": "Revenue and collected by month, last 12 months",
     "recentActivityDescription": "Latest invoices, payments, expenses, and change orders.",
-    "chartAriaLabel": "Revenue and collected by month, last 12 months"
+    "chartAriaLabel": "Revenue and collected by month, last 12 months",
+    "chartAriaLabelEmpty": "Revenue chart, no data yet",
+    "chartEmpty": "No revenue recorded in the last 12 months yet.",
+    "exportCsv": "Export CSV",
+    "paid": "Paid",
+    "welcomeBackDefault": "Welcome back",
+    "profitLoss": "Expenses exceed collected cash this month"
   },
   "invoices": {
     "title": "Invoices",
