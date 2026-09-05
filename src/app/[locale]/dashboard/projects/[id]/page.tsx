@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ProjectFinancialCards } from "@/components/project-financial-cards";
+import { ProfitabilityChart } from "@/components/project-profitability-chart";
 import { ProjectStatusBadge } from "@/components/project-status-badge";
 import { PROJECT_TYPE_LABEL, coerceProjectType } from "@/lib/project-types";
 import { EditProjectForm } from "@/components/project-edit-form";
@@ -32,7 +33,7 @@ import {
   Folder,
 } from "lucide-react";
 
-const TAB_VALUES = ["overview", "invoices", "payments", "costs", "changeOrders", "documents", "settings"] as const;
+const TAB_VALUES = ["overview", "financials", "invoices", "payments", "costs", "changeOrders", "documents", "activity", "settings"] as const;
 
 export const dynamic = "force-dynamic";
 
@@ -352,12 +353,14 @@ export default async function ProjectWorkspacePage({
             const isActive = tab === validTab;
             let label: string;
             if (tab === "overview") label = t("overview");
+            else if (tab === "financials") label = t("financialsTab") ?? "Financials";
             else if (tab === "invoices") label = tInvoices("title");
             else if (tab === "payments") label = tPayments("title");
             else if (tab === "costs") label = tExpenses("title");
             else if (tab === "changeOrders") label = "Change Orders";
             else if (tab === "documents") label = t("documents");
-            else label = "Settings";
+            else if (tab === "activity") label = t("activity");
+            else label = t("settings");
 
             return (
               <Link
@@ -638,6 +641,11 @@ function TabContent({
           </div>
         </CardContent>
       </Card>
+      </div>
+
+      {/* Financials Tab */}
+      <div className={activeTab === "financials" ? "block" : "hidden"}>
+        <ProfitabilityChart financials={financials} t={t} />
       </div>
 
       {/* Invoices Tab */}
