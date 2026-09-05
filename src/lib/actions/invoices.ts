@@ -849,9 +849,10 @@ export async function deleteInvoice(id: string) {
 
     // Run the cleanup + delete inside a single transaction so a partial
     // failure cannot leave orphan references pointing at a now-missing
-    // invoice (changeOrder.invoiceId, recurringInvoiceConfig.lastInvoiceId).
-    // Each cleanup tolerates the column being missing on a drifted schema
-    // by falling back to the raw deleteMany.
+    // invoice (changeOrder.invoiceId, projectMilestone.invoiceId,
+    // recurringInvoiceConfig.lastInvoiceId). Each cleanup tolerates the
+    // column being missing on a drifted schema by falling back to the raw
+    // deleteMany.
     await db["$transaction"](async (tx) => {
       try {
         await tx["changeOrder"]["updateMany"]({
@@ -861,6 +862,15 @@ export async function deleteInvoice(id: string) {
         await tx["recurringInvoiceConfig"]["updateMany"]({
           where: { lastInvoiceId: id, orgId },
           data: { lastInvoiceId: null },
+        });
+        // ProjectMilestone.invoiceId is onDelete: SetNull in the schema, but
+        // the column is nullable and breaking the link explicitly avoids the
+        // "ON UPDATE / ON DELETE pending" round-trip in Postgres.
+        await tx["projectMilestone"]["updateMany"]({
+          where: { invoiceId: id, orgId },
+          data: { invoiceId: null },
+        }).catch((err) => {
+          if (!isMissingColumnError(err)) throw err;
         });
         await tx["invoice"]["deleteMany"]({ where: { id, orgId } });
       } catch (err) {

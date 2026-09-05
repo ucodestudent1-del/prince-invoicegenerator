@@ -72,25 +72,51 @@ export default async function ProjectsPage({
     });
   } catch (err) {
     if (isMissingColumnError(err)) {
-      projects = await db["project"]["findMany"]({
-        where: { orgId },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          name: true,
-          number: true,
-          address: true,
-          startDate: true,
-          endDate: true,
-          status: true,
-          contractValue: true,
-          customerId: true,
-          createdAt: true,
-          updatedAt: true,
-          customer: { select: { id: true, name: true, company: true, email: true } },
-          _count: { select: { invoices: true, expenses: true } },
-        },
-      });
+      try {
+        projects = await db["project"]["findMany"]({
+          where: { orgId },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            name: true,
+            number: true,
+            address: true,
+            startDate: true,
+            endDate: true,
+            status: true,
+            contractValue: true,
+            customerId: true,
+            createdAt: true,
+            updatedAt: true,
+            customer: { select: { id: true, name: true, company: true, email: true } },
+            _count: { select: { invoices: true, expenses: true } },
+          },
+        });
+      } catch (innerErr) {
+        // Last-resort fallback: no `_count`, no nested `customer`. The page
+        // still renders even on a fully drifted database.
+        if (isMissingColumnError(innerErr)) {
+          logServerError("ProjectsPage (final fallback)", innerErr);
+          projects = await db["project"]["findMany"]({
+            where: { orgId },
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              name: true,
+              number: true,
+              address: true,
+              startDate: true,
+              endDate: true,
+              status: true,
+              contractValue: true,
+              customerId: true,
+              createdAt: true,
+            },
+          });
+        } else {
+          throw innerErr;
+        }
+      }
     } else {
       logServerError("ProjectsPage", err);
       throw err;

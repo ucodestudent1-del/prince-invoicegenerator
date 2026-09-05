@@ -6,8 +6,8 @@ import { requireUser } from "@/lib/org";
 import { isMissingColumnError } from "@/lib/db-drift";
 import { withActionError } from "@/lib/action-errors";
 import { computeDashboardData, type DashboardDerived, type DashboardInvoiceInput } from "@/lib/dashboard";
-import { getUnbilledRevenue } from "@/lib/actions/unbilled-revenue";
 import { DASHBOARD_CACHE_TTL_SECONDS, dashboardCacheTag } from "@/lib/dashboard-cache";
+import { logServerError } from "@/lib/errors";
 
 export interface DashboardData extends DashboardDerived {
 	recentInvoices: DashboardInvoiceInput[];
@@ -27,22 +27,15 @@ export async function invalidateDashboard(orgId: string) {
 /**
  * Fetch the rows the dashboard needs and derive the dashboard view model.
  *
- * All DB access for the dashboard lives here per the `lib/dashboard.ts`
- * contract. Monetary math is delegated to `computeDashboardData`; this module
- * is only responsible for turning Prisma rows into `Dashboard*Input` shapes.
- *
- * Currency is an organization-level single source of truth (projects,
- * expenses, milestones and change-order detection live in org currency), so
- * every derived input is stamped with the org's currency.
- *
- * The result is cached per-organization for `DASHBOARD_CACHE_TTL_SECONDS`
- * via `unstable_cache`. Mutations on invoices/payments/expenses/change orders
- * should call `invalidateDashboard(orgId)` to flush the cache immediately
- * (the TTL is a safety net for the common case where mutations happen in
- * other entry points like API routes).
+ * The dynamic (per-request) part of the pipeline — auth/session — is resolved
+ * outside the cache. The cache scope receives a primitive (`orgId`) so it
+ * never touches `headers()` / `cookies()` and never trips Next.js'
+ * "dynamic data in a cached function" error.
  */
 export async function getDashboardData(): Promise<DashboardData> {
 	return withActionError("getDashboardData", async () => {
+		// requireUser() uses cookies()/headers() internally; it MUST be outside
+		// the cached function or Next.js will throw a runtime error.
 		const user = await requireUser();
 		if (!user["organizationId"]) throw new Error("No organization");
 		const orgId = user["organizationId"];
@@ -52,11 +45,6 @@ export async function getDashboardData(): Promise<DashboardData> {
 }
 
 async function loadCachedDashboard(orgId: string): Promise<DashboardData> {
-	// unstable_cache takes `keyParts` (positional) for the cache key plus a
-	// tags array. Including `orgId` in keyParts makes the per-org separation
-	// unambiguous; the closure-captured `orgId` is what the inner fetcher
-	// actually uses to query. Tag invalidation still works through
-	// `dashboardCacheTag(orgId)`.
 	const fetcher = unstable_cache(
 		async () => loadDashboardFromDb(orgId),
 		["dashboard-data", orgId],
@@ -216,16 +204,58 @@ async function fetchChangeOrders(orgId: string, currency: string) {
 }
 
 /**
- * Reuses the existing unbilled-revenue engine so the dashboard's "potentially
- * unbilled revenue" figure stays consistent with the dedicated page. Best
- * effort: a failure to compute unbilled revenue must not take down the whole
- * dashboard.
+ * Compute a cheap "unbilled revenue" total from the same rows the dashboard
+ * already pulls. This deliberately inlines a small computation so the cached
+ * data layer can stay free of dynamic calls (Server Actions, headers, cookies).
+ *
+ * A failure here is non-fatal: the dashboard renders without an unbilled
+ * total and the dedicated Unbilled Revenue page remains the source of truth.
  */
 async function fetchUnbilledTotal(orgId: string): Promise<number> {
 	try {
-		const summary = await getUnbilledRevenue();
-		return Number(summary?.["total"] ?? 0);
+		// Approved change orders whose net delta is not yet invoiced.
+		const changeOrders = await db["changeOrder"].findMany({
+			where: { orgId, status: "APPROVED", invoiceId: null },
+			select: { changeAmount: true },
+		});
+		const changeOrderTotal = changeOrders.reduce(
+			(sum, co) => sum + Number(co["changeAmount"] ?? 0),
+			0
+		);
+
+		// Completed project milestones that have not been invoiced. Tolerate a
+		// missing ProjectMilestone table or MilestoneStatus type so the dashboard
+		// still renders on a drifted database.
+		let milestoneTotal = 0;
+		try {
+			const milestones = await db["projectMilestone"].findMany({
+				where: { orgId, status: "COMPLETED", invoiceId: null },
+				select: { amount: true },
+			});
+			milestoneTotal = milestones.reduce(
+				(sum, m) => sum + Number(m["amount"] ?? 0),
+				0
+			);
+		} catch (err) {
+			if (!isMissingColumnError(err)) throw err;
+		}
+
+		// Billable expenses assigned to a project that are not yet invoiced.
+		// The Expense model has no `invoiced` flag, so we approximate by
+		// including all billable expenses assigned to a project. The dedicated
+		// Unbilled Revenue page does the rigorous per-line calculation.
+		const expenses = await db["expense"].findMany({
+			where: { orgId, projectId: { not: null } },
+			select: { amount: true },
+		});
+		const expenseTotal = expenses.reduce(
+			(sum, e) => sum + Number(e["amount"] ?? 0),
+			0
+		);
+
+		return Math.max(0, changeOrderTotal + milestoneTotal + expenseTotal);
 	} catch (err) {
+		logServerError("Dashboard.fetchUnbilledTotal", err);
 		return 0;
 	}
 }

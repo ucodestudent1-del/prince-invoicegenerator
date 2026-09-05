@@ -695,43 +695,54 @@ export async function getEstimateByShareToken(token: string) {
 }
 
 export async function deleteEstimate(estimateId: string) {
-  return withActionError("deleteEstimate", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
-    const orgId = user["organizationId"];
+	return withActionError("deleteEstimate", async () => {
+		const user = await requireUser();
+		if (!user["organizationId"]) actionError("No organization");
+		const orgId = user["organizationId"];
 
-    await db["$transaction"](async (tx) => {
-      try {
-        await tx["invoice"]["updateMany"]({
-          where: { estimateId, orgId },
-          data: { estimateId: null },
-        });
-        await tx["changeOrder"]["updateMany"]({
-          where: { estimateId, orgId },
-          data: { estimateId: null },
-        });
-        await tx["estimate"]["deleteMany"]({ where: { id: estimateId, orgId } });
-      } catch (err) {
-        if (isMissingColumnError(err)) {
-          await tx["estimate"]["deleteMany"]({ where: { id: estimateId, orgId } });
-          return;
-        }
-        throw err;
-      }
-    });
+		// Write the audit row BEFORE the delete. After the parent row is gone
+		// the foreign key constraint `EstimateAudit_estimateId_fkey` rejects
+		// the insert, so logging after the delete always failed.
+		await logEstimateAudit(
+			estimateId,
+			orgId,
+			"DELETED",
+			null,
+			null,
+			undefined,
+			user["id"]
+		);
 
-    await logEstimateAudit(
-      estimateId,
-      orgId,
-      "DELETED",
-      null,
-      null,
-      undefined,
-      user["id"]
-    );
+		await db["$transaction"](async (tx) => {
+			try {
+				await tx["invoice"]["updateMany"]({
+					where: { estimateId, orgId },
+					data: { estimateId: null },
+				});
+				await tx["changeOrder"]["updateMany"]({
+					where: { estimateId, orgId },
+					data: { estimateId: null },
+				});
+				// `estimateItem` and `estimateAudit` have onDelete: Cascade on the
+				// `estimateId` FK, so the parent delete will clean them up.
+				// Older schemas may lack the estimateItem/estimateAudit tables or
+				// the estimateId column; the missing-column branch below handles
+				// the legacy path.
+				await tx["estimateItem"]["deleteMany"]({ where: { estimateId } }).catch((err) => {
+					if (!isMissingColumnError(err)) throw err;
+				});
+				await tx["estimate"]["deleteMany"]({ where: { id: estimateId, orgId } });
+			} catch (err) {
+				if (isMissingColumnError(err)) {
+					await tx["estimate"]["deleteMany"]({ where: { id: estimateId, orgId } });
+					return;
+				}
+				throw err;
+			}
+		});
 
-    await revalidateWithLocale("/dashboard/estimates");
-  });
+		await revalidateWithLocale("/dashboard/estimates");
+	});
 }
 
 export async function checkExpiredEstimates() {

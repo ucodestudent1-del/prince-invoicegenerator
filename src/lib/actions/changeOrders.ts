@@ -327,7 +327,7 @@ export async function deleteChangeOrder(changeOrderId: string) {
 
 		const changeOrder = await db["changeOrder"]["findFirst"]({
 			where: { id: changeOrderId, orgId },
-			select: { id: true, status: true },
+			select: { id: true, status: true, invoiceId: true },
 		});
 		if (!changeOrder) actionError("Change order not found");
 
@@ -336,10 +336,8 @@ export async function deleteChangeOrder(changeOrderId: string) {
 			actionError("Only draft or pending change orders can be deleted");
 		}
 
-		await db["changeOrder"]["delete"]({
-			where: { id: changeOrderId, orgId },
-		});
-
+		// Audit row must be written BEFORE the parent row is gone, otherwise
+		// the FK constraint `ChangeOrderAudit_changeOrderId_fkey` rejects it.
 		await logChangeOrderAudit(
 			changeOrderId,
 			orgId,
@@ -349,6 +347,32 @@ export async function deleteChangeOrder(changeOrderId: string) {
 			undefined,
 			user["id"]
 		);
+
+		await db["$transaction"](async (tx) => {
+			try {
+				// If the change order was linked to an invoice, break the link so
+				// the invoice remains a valid record after the CO is gone.
+				if (changeOrder["invoiceId"]) {
+					await tx["changeOrder"]["updateMany"]({
+						where: { id: changeOrderId, orgId },
+						data: { invoiceId: null },
+					});
+				}
+				// `changeOrderLineItem` and `changeOrderAudit` cascade on the
+				// `changeOrderId` FK. Some legacy schemas are missing the
+				// `lineItems` relation; tolerate that.
+				await tx["changeOrderLineItem"]["deleteMany"]({ where: { changeOrderId } }).catch((err) => {
+					if (!isMissingColumnError(err)) throw err;
+				});
+				await tx["changeOrder"]["deleteMany"]({ where: { id: changeOrderId, orgId } });
+			} catch (err) {
+				if (isMissingColumnError(err)) {
+					await tx["changeOrder"]["deleteMany"]({ where: { id: changeOrderId, orgId } });
+					return;
+				}
+				throw err;
+			}
+		});
 
 		await revalidateWithLocale("/dashboard/change-orders");
 		return { success: true };

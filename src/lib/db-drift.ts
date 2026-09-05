@@ -19,14 +19,21 @@ export { dbWithRetry as withRetry };
 
 /**
  * Detects Prisma errors where a database column is missing (schema drift).
+ * Also returns true for missing enum/sequence types (PostgreSQL 42704) and
+ * missing relations (42P01), because all of them are "the schema is behind
+ * the client" errors and the application wants the same recovery: fall back
+ * to a safer query that does not reference the missing object.
  */
 export function isMissingColumnError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   const msg = err["message"];
+  if (!msg) return false;
   return (
-    Boolean(msg && msg["includes"]("does not exist in the current database")) ||
-    (Boolean(msg && msg["includes"]("column")) && Boolean(msg && msg["includes"]("does not exist"))) ||
-    Boolean(msg && msg["includes"]("42703")) // PostgreSQL undefined_column
+    msg["includes"]("does not exist in the current database") ||
+    msg["includes"]("column") && msg["includes"]("does not exist") ||
+    msg["includes"]("42703") || // undefined_column
+    msg["includes"]("42704") || // undefined_object (e.g. missing enum type)
+    msg["includes"]("42P01")    // undefined_table
   );
 }
 
