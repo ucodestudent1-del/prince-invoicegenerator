@@ -282,12 +282,15 @@ export async function createChangeOrder(input: {
 
 export async function createProject(input: {
   name: string;
+  description?: string | null;
+  projectType?: string;
   customerId?: string | null;
   address?: string;
   startDate?: string | null;
   endDate?: string | null;
   estCompletionDate?: string | null;
   contractValue?: number;
+  estimatedCost?: number;
   paymentTerms?: string;
   taxRate?: number;
   retainageRate?: number;
@@ -310,12 +313,15 @@ export async function createProject(input: {
         orgId: user["organizationId"],
         name: input["name"],
         number,
+        description: input["description"] ?? null,
+        projectType: (input["projectType"] as any) ?? "GENERAL_CONTRACTING",
         customerId: input["customerId"] ?? null,
         address: input["address"],
         startDate: input["startDate"] ? new Date(input["startDate"]) : null,
         endDate: input["endDate"] ? new Date(input["endDate"]) : null,
         estCompletionDate: input["estCompletionDate"] ? new Date(input["estCompletionDate"]) : null,
         contractValue: input["contractValue"] ?? 0,
+        estimatedCost: input["estimatedCost"] ?? 0,
         paymentTerms: input["paymentTerms"] ?? "NET_30",
         taxRate: input["taxRate"] ?? 0,
         retainageRate: input["retainageRate"] ?? 0,
@@ -392,5 +398,72 @@ export async function createSubcontractor(input: {
     });
     await revalidateWithLocale("/dashboard/subcontractors");
     return sub;
+  });
+}
+
+// --------------------------- Estimate → Project ---------------------------
+
+/**
+ * Convert an accepted estimate into a new project, carrying across the
+ * customer, line-item pricing, address, payment terms, and tax rate. The
+ * estimate's status is flipped to CONVERTED and linked to the new project so
+ * the document audit trail is preserved.
+ */
+export async function convertEstimateToProject(estimateId: string) {
+  return withActionError("convertEstimateToProject", async () => {
+    const user = await requireUser();
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
+    const plan = await getActivePlan(user);
+    if (!hasFeature(plan, "projectManagement")) actionError("Project management requires a paid plan.");
+
+    const estimate = await db["estimate"]["findFirst"]({
+      where: { id: estimateId, orgId },
+      include: { customer: true, items: true },
+    });
+    if (!estimate) actionError("Estimate not found");
+    if (estimate["status"] === "CONVERTED") {
+      actionError("This estimate has already been converted to a project.");
+    }
+
+    // Derive project name from estimate title or customer.
+    const projectName =
+      estimate["title"]?.trim() ||
+      (estimate["customer"]?.["name"]
+        ? `${estimate["customer"]["name"]} — Project`
+        : `Project from ${estimate["number"]}`);
+
+    const number = await getNextProjectNumber(db, orgId);
+
+    // Build description from the estimate's notes or items list.
+    const itemLines = estimate["items"]?.["map"]
+      ? estimate["items"]["map"]((it: any) => `• ${it["description"]} (${it["quantity"]} × $${Number(it["unitPrice"] || 0).toFixed(2)})`).join("\n")
+      : "";
+    const description = estimate["notes"] ?? (itemLines ? `Carried from estimate ${estimate["number"]}:\n${itemLines}` : null);
+
+    const project = await db["project"]["create"]({
+      data: {
+        orgId,
+        number,
+        name: projectName,
+        description,
+        projectType: "GENERAL_CONTRACTING",
+        customerId: estimate["customerId"],
+        address: estimate["billToAddress"] ?? null,
+        contractValue: Number(estimate["total"] ?? 0),
+        paymentTerms: "NET_30",
+        taxRate: Number(estimate["taxRate"] ?? 0),
+        status: "APPROVED",
+      },
+    });
+
+    await db["estimate"]["update"]({
+      where: { id: estimateId },
+      data: { status: "CONVERTED", convertedAt: new Date(), projectId: project["id"] },
+    });
+
+    await revalidateWithLocale("/dashboard/projects");
+    await revalidateWithLocale("/dashboard/estimates");
+    return project;
   });
 }

@@ -26,9 +26,11 @@ export function InvoiceForm({
   hasSavedAddresses,
   canUseCatalog,
   canUseTimeTracking,
+  preselectedProject,
+  projectFinancials,
 }: {
   customers: { id: string; name: string }[];
-  projects: { id: string; name: string }[];
+  projects: { id: string; name: string; customerId?: string | null; contractValue?: number | null; estimatedCost?: number | null; taxRate?: number | null; paymentTerms?: string | null }[];
   canRetainage: boolean;
   canProgress: boolean;
   canRecurring: boolean;
@@ -37,19 +39,39 @@ export function InvoiceForm({
   hasSavedAddresses: boolean;
   canUseCatalog: boolean;
   canUseTimeTracking: boolean;
+  preselectedProject?: {
+    id: string;
+    name: string;
+    customerId: string | null;
+    contractValue: number;
+    estimatedCost: number;
+    taxRate: number;
+    paymentTerms: string;
+  } | null;
+  projectFinancials?: {
+    currentContractValue: number;
+    totalInvoiced: number;
+    remainingBillable: number;
+    outstandingBalance: number;
+    currency: string;
+  } | null;
 }) {
   const t = useTranslations("invoices");
+  const tProjects = useTranslations("projects");
   const router = useRouter();
   const [error, setError] = React["useState"]<string | null>(null);
   const [saving, setSaving] = React["useState"](false);
-  const [customerId, setCustomerId] = React["useState"]("");
-  const [projectId, setProjectId] = React["useState"]("");
+  const [customerId, setCustomerId] = React["useState"](preselectedProject?.["customerId"] ?? "");
+  const [projectId, setProjectId] = React["useState"](preselectedProject?.["id"] ?? "");
+  const [billingIntent, setBillingIntent] = React["useState"]<"DEPOSIT" | "PROGRESS" | "FINAL" | "CUSTOM">(
+    preselectedProject ? "PROGRESS" : "CUSTOM",
+  );
   const [type, setType] = React["useState"]<"STANDARD" | "PROGRESS" | "RECURRING">("STANDARD");
   const [issueDate, setIssueDate] = React["useState"](
     new Date()["toISOString"]()["slice"](0, 10)
   );
   const [dueDate, setDueDate] = React["useState"]("");
-  const [taxRate, setTaxRate] = React["useState"]<string | number>(0);
+  const [taxRate, setTaxRate] = React["useState"]<string | number>(preselectedProject?.["taxRate"] ?? 0);
   const [discount, setDiscount] = React["useState"]<string | number>(0);
   const [retainageRate, setRetainageRate] = React["useState"]<string | number>(0);
   const [invoiceNumber, setInvoiceNumber] = React["useState"]("");
@@ -63,6 +85,19 @@ export function InvoiceForm({
     { description: "", quantity: 1, unitPrice: 0, sku: "" },
   ]);
   const [trackedTime, setTrackedTime] = React["useState"]<any[] | null>(null);
+
+  // When the user picks a different project in the dropdown, refresh the
+  // customer if the project knows its customer.
+  function onProjectChange(newProjectId: string) {
+    setProjectId(newProjectId);
+    const proj = projects.find((p) => p.id === newProjectId);
+    if (proj?.["customerId"] && !customerId) {
+      setCustomerId(proj["customerId"]);
+    }
+    if (proj && typeof proj["taxRate"] === "number") {
+      setTaxRate(proj["taxRate"]);
+    }
+  }
 
   const handleAddTrackedTime = (entries: any[]) => {
     entries["forEach"]((entry) => {
@@ -151,6 +186,12 @@ export function InvoiceForm({
       setError("Please select a customer.");
       return;
     }
+    if (projectId && projectFinancials && subtotal > projectFinancials.remainingBillable + 0.01) {
+      setError(
+        `This invoice total (${subtotal.toFixed(2)}) exceeds the remaining contract balance (${projectFinancials.remainingBillable.toFixed(2)}). Please reduce the amount or remove the project.`,
+      );
+      return;
+    }
     if (saving) return;
     setSaving(true);
     try {
@@ -162,6 +203,10 @@ export function InvoiceForm({
           console["error"]("Logo upload failed, continuing without logo:", logoErr);
         }
       }
+      const intentPrefix =
+        projectId && billingIntent !== "CUSTOM"
+          ? `[${billingIntent}] `
+          : "";
         const invoice = await createInvoice({
           customerId,
           projectId: projectId || null,
@@ -171,7 +216,7 @@ export function InvoiceForm({
           taxRate: Number(taxRate) || 0,
           discount: Number(discount) || 0,
           retainageRate: canRetainage ? Number(retainageRate) || 0 : 0,
-          notes,
+          notes: intentPrefix + (notes ?? ""),
           invoiceNumber: canCustomizeInvoiceNumber ? invoiceNumber || null : null,
           logoUrl: uploadedLogoUrl ?? logoUrl ?? null,
           billToAddress: billToAddress || null,
@@ -257,7 +302,7 @@ export function InvoiceForm({
                 name="project"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                 value={projectId}
-                onChange={(e) => setProjectId(e["target"]["value"])}
+                onChange={(e) => onProjectChange(e["target"]["value"])}
               >
                 <option value="">None</option>
                 {projects["map"]((p) => (
@@ -266,6 +311,68 @@ export function InvoiceForm({
                   </option>
                 ))}
               </select>
+            )}
+            {projectId && projectFinancials && (
+              <div className="mt-2 rounded-md border border-blue-200 bg-blue-50/40 p-3 text-xs space-y-1">
+                <div className="font-medium text-blue-900">{tProjects("projectFinancials")}</div>
+                <div className="grid grid-cols-2 gap-1 text-blue-800">
+                  <div>{tProjects("currentContractValue")}: <span className="font-semibold">{formatCurrency(projectFinancials.currentContractValue)}</span></div>
+                  <div>{tProjects("totalInvoiced")}: <span className="font-semibold">{formatCurrency(projectFinancials.totalInvoiced)}</span></div>
+                  <div className="col-span-2">{tProjects("remainingBillable")}: <span className="font-semibold">{formatCurrency(projectFinancials.remainingBillable)}</span></div>
+                </div>
+                {subtotal > projectFinancials.remainingBillable + 0.01 && (
+                  <div className="mt-2 rounded border border-red-200 bg-red-50 p-2 text-red-800">
+                    {tProjects("overbilledWarning", {
+                      attempted: formatCurrency(subtotal),
+                      available: formatCurrency(projectFinancials.remainingBillable),
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+            {projectId && (
+              <div className="mt-2 space-y-1">
+                <Label htmlFor="billingIntent">{tProjects("billingIntent")}</Label>
+                <select
+                  id="billingIntent"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                  value={billingIntent}
+                  onChange={(e) => setBillingIntent(e["target"]["value"] as "DEPOSIT" | "PROGRESS" | "FINAL" | "CUSTOM")}
+                >
+                  <option value="DEPOSIT">{tProjects("billingIntentDeposit")}</option>
+                  <option value="PROGRESS">{tProjects("billingIntentProgress")}</option>
+                  <option value="FINAL">{tProjects("billingIntentFinal")}</option>
+                  <option value="CUSTOM">{tProjects("billingIntentCustom")}</option>
+                </select>
+                {billingIntent === "FINAL" && items.length === 1 && items[0]["description"] === "" && projectFinancials && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-1"
+                    onClick={() => {
+                      const remaining = projectFinancials.remainingBillable;
+                      setItems([{ description: "Final invoice — remaining contract balance", quantity: 1, unitPrice: Math.max(0, remaining), sku: "" }]);
+                    }}
+                  >
+                    {tProjects("fillRemaining")}
+                  </Button>
+                )}
+                {billingIntent === "DEPOSIT" && items.length === 1 && items[0]["description"] === "" && projectFinancials && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-1"
+                    onClick={() => {
+                      const depositAmt = Math.round(projectFinancials.currentContractValue * 0.1 * 100) / 100;
+                      setItems([{ description: "Project deposit (10%)", quantity: 1, unitPrice: depositAmt, sku: "" }]);
+                    }}
+                  >
+                    {tProjects("suggestDeposit")}
+                  </Button>
+                )}
+              </div>
             )}
           </div>
           <div className="space-y-1">

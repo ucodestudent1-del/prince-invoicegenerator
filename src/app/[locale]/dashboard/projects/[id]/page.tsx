@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ProjectFinancialCards } from "@/components/project-financial-cards";
 import { ProjectStatusBadge } from "@/components/project-status-badge";
+import { PROJECT_TYPE_LABEL, coerceProjectType } from "@/lib/project-types";
 import { EditProjectForm } from "@/components/project-edit-form";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
@@ -23,9 +24,13 @@ import {
   ArrowLeft,
   Plus,
   Printer,
-  Download,
+  MoreHorizontal,
+  AlertCircle,
+  FileEdit,
+  Receipt,
+  Wallet,
+  Folder,
 } from "lucide-react";
-import { Suspense } from "react";
 
 const TAB_VALUES = ["overview", "invoices", "payments", "costs", "changeOrders", "documents", "settings"] as const;
 
@@ -78,6 +83,11 @@ export default async function ProjectWorkspacePage({
     redirect({ href: "/dashboard/projects", locale: params["locale"] });
     throw new Error("Unreachable: redirect should have exited");
   }
+
+  // The action returns a union (data | error). Coerce to `any` for safe
+  // bracket access; the page renders even when fields are missing
+  // (schema-drift tolerant).
+  const projectData = project as any;
 
   // Fetch customers for the edit form
   let customers: { id: string; name: string }[] = [];
@@ -148,36 +158,70 @@ export default async function ProjectWorkspacePage({
               <ArrowLeft className="mr-2 h-4 w-4" /> {t("back")}
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold">{project["name"] || project["number"] || "—"}</h1>
+          <h1 className="text-2xl font-bold">{projectData["name"] || projectData["number"] || "—"}</h1>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/dashboard/projects/${project["id"]}/print`} target="_blank">
-              <Printer className="mr-2 h-4 w-4" /> {t("exportPdf")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <a href={`/api/documents/projects/${project["id"]}/pdf`} download>
-              <Download className="mr-2 h-4 w-4" /> Download PDF
-            </a>
-          </Button>
+        <div className="flex flex-wrap gap-2">
           <Button asChild size="sm">
-            <Link href={`/dashboard/invoices/new?projectId=${project["id"]}`}>
+            <Link href={`/dashboard/invoices/new?projectId=${projectData["id"]}`}>
               <Plus className="mr-2 h-4 w-4" /> {t("createInvoice")}
             </Link>
           </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/dashboard/change-orders/new?projectId=${projectData["id"]}`}>
+              <FileEdit className="mr-2 h-4 w-4" /> {t("addChangeOrder")}
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/dashboard/expenses/new?projectId=${projectData["id"]}`}>
+              <Wallet className="mr-2 h-4 w-4" /> {t("addExpense")}
+            </Link>
+          </Button>
+          <div className="relative">
+            <details className="relative">
+              <summary className="inline-flex h-9 cursor-pointer list-none items-center gap-1 rounded-md border border-input bg-background px-3 text-sm hover:bg-accent">
+                <MoreHorizontal className="h-4 w-4" /> {t("more")}
+              </summary>
+              <div className="absolute right-0 z-10 mt-1 w-56 rounded-md border bg-background p-1 shadow-md">
+                <Link
+                  href={`/dashboard/invoices/new?projectId=${projectData["id"]}&intent=deposit`}
+                  className="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                >
+                  <Receipt className="mr-2 inline h-4 w-4" /> {t("depositInvoice")}
+                </Link>
+                <Link
+                  href={`/dashboard/payments/new?invoiceId=latest&projectId=${projectData["id"]}`}
+                  className="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                >
+                  <Plus className="mr-2 inline h-4 w-4" /> {t("recordPayment")}
+                </Link>
+                <Link
+                  href={`/dashboard/projects/${projectData["id"]}?tab=documents`}
+                  className="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                >
+                  <Folder className="mr-2 inline h-4 w-4" /> {t("uploadDocument")}
+                </Link>
+                <Link
+                  href={`/dashboard/projects/${projectData["id"]}/print`}
+                  target="_blank"
+                  className="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                >
+                  <Printer className="mr-2 inline h-4 w-4" /> {t("exportPdf")}
+                </Link>
+              </div>
+            </details>
+          </div>
         </div>
       </div>
 
       {/* Project meta */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
                 {t("jobAddress")}
               </p>
-              <p className="text-sm">{project["address"] || "—"}</p>
+              <p className="text-sm">{projectData["address"] || "—"}</p>
             </div>
             <div>
               <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
@@ -185,20 +229,95 @@ export default async function ProjectWorkspacePage({
               </p>
               <p className="text-sm">{customerName}</p>
             </div>
+            <div>
+              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
+                {t("projectType")}
+              </p>
+              <p className="text-sm">
+                {projectData["projectType"]
+                  ? PROJECT_TYPE_LABEL[coerceProjectType(projectData["projectType"])] ?? projectData["projectType"]
+                  : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
+                {t("projectManager")}
+              </p>
+              <p className="text-sm">{projectData["projectManager"] || "—"}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
+                {t("startDate")}
+              </p>
+              <p className="text-sm">{formatDate(projectData["startDate"])}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
+                {t("estCompletionDate")}
+              </p>
+              <p className="text-sm">{formatDate(projectData["estCompletionDate"])}</p>
+            </div>
           </div>
-          {project["number"] && (
-            <p className="text-sm text-muted-foreground mt-2">
-              <span className="font-medium">{t("projectNumber")}:</span> {project["number"]}
-            </p>
+          {projectData["description"] && (
+            <div className="mt-3 border-t pt-3">
+              <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-1">
+                {t("description")}
+              </p>
+              <p className="text-sm whitespace-pre-line">{projectData["description"]}</p>
+            </div>
           )}
-          <div className="mt-3">
-            <ProjectStatusBadge status={project["status"] ?? "ACTIVE"} />
+          <div className="mt-3 flex items-center gap-2">
+            {projectData["number"] && (
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{t("projectNumber")}:</span> {projectData["number"]}
+              </p>
+            )}
+            <span className="text-muted-foreground">·</span>
+            <ProjectStatusBadge status={projectData["status"] ?? "ACTIVE"} />
           </div>
         </CardContent>
       </Card>
 
+      {/* Needs Attention */}
+      <NeedsAttention
+        project={projectData}
+        overdueInvoices={overdueInvoices}
+        pendingChangeOrders={changeOrders.filter(
+          (co: any) => co["status"] === "PENDING_APPROVAL" || co["status"] === "DRAFT" || co["status"] === "SENT",
+        )}
+        t={t}
+        currency={currency}
+      />
+
       {/* Financial Summary Cards */}
       <ProjectFinancialCards financials={financials} />
+
+      {/* Financial Progress Bars (invoiced vs collected) */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {t("financialProgress")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <ProgressRow
+            label={t("invoicedPercent")}
+            percent={financials["invoicedPercent"]}
+            amount={invoicesTotal}
+            total={financials["currentContractValue"]}
+            currency={currency}
+            tone="bg-blue-500"
+          />
+          <ProgressRow
+            label={t("collectedPercent")}
+            percent={financials["collectedPercent"]}
+            amount={financials["totalCollected"]}
+            total={financials["currentContractValue"]}
+            currency={currency}
+            tone="bg-emerald-500"
+          />
+        </CardContent>
+      </Card>
 
       {/* Progress indicator */}
       {totalDays > 0 && (
@@ -260,7 +379,7 @@ export default async function ProjectWorkspacePage({
       {/* Tab Content */}
       <TabContent
         activeTab={validTab}
-        project={project}
+        project={projectData}
         financials={financials}
         invoices={invoices}
         payments={payments}
@@ -655,12 +774,15 @@ function TabContent({
           initial={{
             name: project["name"] ?? "",
             number: project["number"] ?? null,
+            description: project["description"] ?? null,
+            projectType: project["projectType"] ?? null,
             address: project["address"] ?? null,
             customerId: project["customerId"] ?? project["customer"]?.["id"] ?? null,
             startDate: project["startDate"] ?? null,
             endDate: project["endDate"] ?? null,
             estCompletionDate: project["estCompletionDate"] ?? null,
             contractValue: Number(project["contractValue"]) || 0,
+            estimatedCost: Number(project["estimatedCost"]) || 0,
             paymentTerms: project["paymentTerms"] ?? "NET_30",
             taxRate: Number(project["taxRate"]) || 0,
             retainageRate: Number(project["retainageRate"]) || 0,
@@ -672,5 +794,116 @@ function TabContent({
         />
       </div>
     </>
+  );
+}
+
+function NeedsAttention({
+  project,
+  overdueInvoices,
+  pendingChangeOrders,
+  t,
+  currency,
+}: {
+  project: any;
+  overdueInvoices: any[];
+  pendingChangeOrders: any[];
+  t: any;
+  currency: string;
+}) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const estCompletion = project?.["estCompletionDate"]
+    ? new Date(project["estCompletionDate"])
+    : null;
+  const daysPastDue =
+    estCompletion && estCompletion < today
+      ? Math.floor((today.getTime() - estCompletion.getTime()) / 86400000)
+      : 0;
+  const items: { icon: any; title: string; body: string; tone: string }[] = [];
+  if (overdueInvoices.length > 0) {
+    const total = overdueInvoices.reduce(
+      (sum, inv) => sum + ((Number(inv["total"]) || 0) - (Number(inv["amountPaid"]) || 0)),
+      0,
+    );
+    items.push({
+      icon: AlertCircle,
+      title: t("attentionOverdueInvoices", { count: overdueInvoices.length }),
+      body: t("attentionOverdueInvoicesBody", { amount: total.toFixed(2) }),
+      tone: "bg-red-50 border-red-200 text-red-900",
+    });
+  }
+  if (pendingChangeOrders.length > 0) {
+    items.push({
+      icon: FileEdit,
+      title: t("attentionPendingCO", { count: pendingChangeOrders.length }),
+      body: pendingChangeOrders
+        .slice(0, 2)
+        .map((co: any) => `${co["number"]} — ${co["title"]}`)
+        .join("; "),
+      tone: "bg-amber-50 border-amber-200 text-amber-900",
+    });
+  }
+  if (daysPastDue > 0 && project["status"] !== "COMPLETED" && project["status"] !== "CLOSED" && project["status"] !== "CANCELLED") {
+    items.push({
+      icon: AlertCircle,
+      title: t("attentionPastCompletion", { days: daysPastDue }),
+      body: t("attentionPastCompletionBody"),
+      tone: "bg-amber-50 border-amber-200 text-amber-900",
+    });
+  }
+  if (items.length === 0) return null;
+  return (
+    <Card className="border-amber-200">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold">{t("needsAttention")}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {items.map((it, i) => {
+          const Icon = it.icon;
+          return (
+            <div key={i} className={`flex items-start gap-2 rounded-md border p-3 text-sm ${it.tone}`}>
+              <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <div>
+                <p className="font-medium">{it.title}</p>
+                <p className="text-xs opacity-80">{it.body}</p>
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProgressRow({
+  label,
+  percent,
+  amount,
+  total,
+  currency,
+  tone,
+}: {
+  label: string;
+  percent: number;
+  amount: number;
+  total: number;
+  currency: string;
+  tone: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="text-muted-foreground">
+          {percent.toFixed(0)}% · {formatCurrency(amount, currency)} / {formatCurrency(total, currency)}
+        </span>
+      </div>
+      <div className="w-full bg-muted rounded-full h-2">
+        <div
+          className={`h-2 rounded-full ${tone}`}
+          style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+        />
+      </div>
+    </div>
   );
 }

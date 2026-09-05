@@ -145,6 +145,19 @@ enum AddressType {
   SHIPPING
 }
 
+enum ProjectType {
+  RESIDENTIAL_REMODEL
+  NEW_CONSTRUCTION
+  COMMERCIAL
+  ROOFING
+  ELECTRICAL
+  PLUMBING
+  HVAC
+  LANDSCAPING
+  GENERAL_CONTRACTING
+  OTHER
+}
+
 enum TemplateStyle {
   STANDARD
   MODERN
@@ -469,18 +482,21 @@ model Project {
    name       String
    number     String?  // project number / job number
    address    String?
+   description String? // free-text job description
+   projectType ProjectType @default(GENERAL_CONTRACTING) // work category
   startDate  DateTime?
   endDate    DateTime?
    // Construction-specific fields
   estCompletionDate DateTime? // estimated completion date
   contractValue       Float     @default(0) // original contract value
+  estimatedCost       Float     @default(0) // contractor's estimated cost baseline
   paymentTerms       String     @default("NET_30") // e.g. "NET_30", "COD"
   taxRate             Float      @default(0) // default tax rate for project invoices
   retainageRate       Float      @default(0) // retainage percentage withheld
   depositRequired     Float      @default(0) // deposit amount or percentage
   depositPaid         Float      @default(0) // deposit already paid
   projectManager      String?    // name/email of project manager
-  status     String       @default("ACTIVE") // ACTIVE, COMPLETED, ON_HOLD, CANCELLED
+  status     String       @default("ACTIVE") // ACTIVE, COMPLETED, ON_HOLD, CANCELLED, DRAFT, ESTIMATE, PENDING_APPROVAL, APPROVED, SCHEDULED, IN_PROGRESS, CLOSED
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
@@ -494,6 +510,7 @@ model Project {
    milestones               ProjectMilestone[]
 
    @@index([orgId])
+   @@index([projectType])
 }
 
 // ---------------------------------------------------------------------------

@@ -1,20 +1,19 @@
 import { Badge } from "@/components/ui/badge";
+import {
+  PROJECT_STATUSES,
+  PROJECT_STATUS_VARIANT,
+  PROJECT_STATUS_LABEL,
+  type ProjectStatus,
+} from "@/lib/project-status";
 
-export const PROJECT_STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | null | undefined> = {
-  ACTIVE: "default",
-  COMPLETED: "success",
-  ON_HOLD: "warning",
-  CANCELLED: "destructive",
-  DEAD: "destructive",
-};
-
-export const PROJECT_STATUS_LABEL: Record<string, string> = {
-  ACTIVE: "Active",
-  COMPLETED: "Completed",
-  ON_HOLD: "On Hold",
-  CANCELLED: "Cancelled",
-  DEAD: "Dead",
-};
+export {
+  PROJECT_STATUSES,
+  PROJECT_STATUS_VARIANT,
+  PROJECT_STATUS_LABEL,
+  PROJECT_STATUS_TONE,
+  PROJECT_STATUS_GROUP,
+} from "@/lib/project-status";
+export type { ProjectStatus } from "@/lib/project-status";
 
 export function ProjectStatusBadge({ status }: { status: string }) {
   return (

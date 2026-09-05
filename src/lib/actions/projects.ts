@@ -13,12 +13,15 @@ import type { ExpenseCategory } from "@prisma/client";
 export interface UpdateProjectInput {
   name?: string;
   number?: string;
+  description?: string | null;
+  projectType?: string;
   address?: string | null;
   customerId?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   estCompletionDate?: string | null;
   contractValue?: number;
+  estimatedCost?: number;
   paymentTerms?: string;
   taxRate?: number;
   retainageRate?: number;
@@ -55,8 +58,11 @@ const PROJECT_BASE_SELECT_OLD = {
 
 const PROJECT_BASE_SELECT_NEW = {
   ...PROJECT_BASE_SELECT_OLD,
+  description: true,
+  projectType: true,
   estCompletionDate: true,
   contractValue: true,
+  estimatedCost: true,
   paymentTerms: true,
   taxRate: true,
   retainageRate: true,
@@ -81,7 +87,12 @@ export async function getProjectDetail(projectId: string) {
       if (isMissingColumnError(err)) {
         project = await db["project"]["findFirst"]({
           where: { id: projectId, orgId },
-          select: PROJECT_BASE_SELECT_OLD,
+          select: {
+            ...PROJECT_BASE_SELECT_OLD,
+            description: true,
+            projectType: true,
+            estimatedCost: true,
+          },
         });
       } else {
         throw err;
@@ -105,6 +116,7 @@ export async function getProjectFinancials(projectId: string) {
         where: { id: projectId, orgId },
         select: {
           contractValue: true,
+          estimatedCost: true,
           depositPaid: true,
         },
       });
@@ -112,7 +124,7 @@ export async function getProjectFinancials(projectId: string) {
       if (isMissingColumnError(err)) {
         project = await db["project"]["findFirst"]({
           where: { id: projectId, orgId },
-          select: { id: true },
+          select: { id: true, estimatedCost: true },
         });
       } else {
         throw err;
@@ -122,6 +134,7 @@ export async function getProjectFinancials(projectId: string) {
 
     const p = project as any;
     const contractValue = Number(p["contractValue"] ?? 0);
+    const estimatedCost = Number(p["estimatedCost"] ?? 0);
     const depositPaid = Number(p["depositPaid"] ?? 0);
 
     // Fetch invoices for this project
@@ -185,6 +198,7 @@ export async function getProjectFinancials(projectId: string) {
 
     const financials = computeProjectFinancials({
       originalContractValue: contractValue,
+      estimatedCost,
       depositPaid,
       currency: invoices[0]?.["currency"] ?? "USD",
       invoices: invoices["map"]((i) => ({
@@ -419,6 +433,8 @@ export async function updateProject(projectId: string, input: UpdateProjectInput
     const updates: Record<string, unknown> = {};
     if (input["name"] !== undefined) updates["name"] = input["name"];
     if (input["number"] !== undefined) updates["number"] = input["number"];
+    if (input["description"] !== undefined) updates["description"] = input["description"];
+    if (input["projectType"] !== undefined) updates["projectType"] = input["projectType"];
     if (input["address"] !== undefined) updates["address"] = input["address"];
     if (input["customerId"] !== undefined) updates["customerId"] = input["customerId"];
     if (input["startDate"] !== undefined) {
@@ -433,6 +449,7 @@ export async function updateProject(projectId: string, input: UpdateProjectInput
         : null;
     }
     if (input["contractValue"] !== undefined) updates["contractValue"] = roundMoney(input["contractValue"]);
+    if (input["estimatedCost"] !== undefined) updates["estimatedCost"] = roundMoney(input["estimatedCost"]);
     if (input["paymentTerms"] !== undefined) updates["paymentTerms"] = input["paymentTerms"];
     if (input["taxRate"] !== undefined) updates["taxRate"] = input["taxRate"];
     if (input["retainageRate"] !== undefined) updates["retainageRate"] = input["retainageRate"];

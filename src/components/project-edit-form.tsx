@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslations } from "next-intl";
+import {
+  PROJECT_STATUSES,
+  PROJECT_STATUS_LABEL,
+} from "@/components/project-status-badge";
+import { PROJECT_TYPES, PROJECT_TYPE_LABEL, type ProjectTypeKey, coerceProjectType } from "@/lib/project-types";
 
 interface Customer {
   id: string;
@@ -20,12 +25,15 @@ interface EditProjectFormProps {
   initial: {
     name: string;
     number: string | null;
+    description?: string | null;
+    projectType?: string | null;
     address: string | null;
     customerId: string | null;
     startDate: string | null;
     endDate: string | null;
     estCompletionDate: string | null;
     contractValue: number;
+    estimatedCost?: number;
     paymentTerms: string;
     taxRate: number;
     retainageRate: number;
@@ -44,23 +52,30 @@ export function EditProjectForm({ projectId, initial, customers }: EditProjectFo
 
   const [name, setName] = React.useState(initial["name"] ?? "");
   const [number, setNumber] = React.useState(initial["number"] ?? "");
+  const [description, setDescription] = React.useState(initial["description"] ?? "");
+  const [projectType, setProjectType] = React.useState<ProjectTypeKey>(
+    coerceProjectType(initial["projectType"]),
+  );
   const [address, setAddress] = React.useState(initial["address"] ?? "");
   const [customerId, setCustomerId] = React.useState(initial["customerId"] ?? "");
   const [startDate, setStartDate] = React.useState(initial["startDate"]?.slice(0, 10) ?? "");
   const [endDate, setEndDate] = React.useState(initial["endDate"]?.slice(0, 10) ?? "");
   const [estCompletionDate, setEstCompletionDate] = React.useState(
-    initial["estCompletionDate"]?.slice(0, 10) ?? ""
+    initial["estCompletionDate"]?.slice(0, 10) ?? "",
   );
   const [contractValue, setContractValue] = React.useState(
-    String(initial["contractValue"] ?? 0)
+    String(initial["contractValue"] ?? 0),
+  );
+  const [estimatedCost, setEstimatedCost] = React.useState(
+    String(initial["estimatedCost"] ?? 0),
   );
   const [paymentTerms, setPaymentTerms] = React.useState(initial["paymentTerms"] ?? "NET_30");
   const [taxRate, setTaxRate] = React.useState(String(initial["taxRate"] ?? 0));
   const [retainageRate, setRetainageRate] = React.useState(
-    String(initial["retainageRate"] ?? 0)
+    String(initial["retainageRate"] ?? 0),
   );
   const [depositRequired, setDepositRequired] = React.useState(
-    String(initial["depositRequired"] ?? 0)
+    String(initial["depositRequired"] ?? 0),
   );
   const [projectManager, setProjectManager] = React.useState(initial["projectManager"] ?? "");
   const [status, setStatus] = React.useState(initial["status"] ?? "ACTIVE");
@@ -73,12 +88,15 @@ export function EditProjectForm({ projectId, initial, customers }: EditProjectFo
       await updateProject(projectId, {
         name: name || undefined,
         number: number || undefined,
+        description: description || null,
+        projectType,
         address: address || null,
         customerId: customerId || null,
         startDate: startDate || null,
         endDate: endDate || null,
         estCompletionDate: estCompletionDate || null,
         contractValue: Number(contractValue) || 0,
+        estimatedCost: Number(estimatedCost) || 0,
         paymentTerms: paymentTerms || undefined,
         taxRate: Number(taxRate) || 0,
         retainageRate: Number(retainageRate) || 0,
@@ -121,21 +139,38 @@ export function EditProjectForm({ projectId, initial, customers }: EditProjectFo
         </div>
       </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="customerId">{t("customer")}</Label>
-        <select
-          id="customerId"
-          value={customerId}
-          onChange={(e) => setCustomerId(e.target.value || "")}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-        >
-          <option value="">{t("none")}</option>
-          {customers["map"]((c) => (
-            <option key={c["id"]} value={c["id"]}>
-              {c["name"]}
-            </option>
-          ))}
-        </select>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="customerId">{t("customer")}</Label>
+          <select
+            id="customerId"
+            value={customerId}
+            onChange={(e) => setCustomerId(e.target.value || "")}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+          >
+            <option value="">{t("none")}</option>
+            {customers["map"]((c) => (
+              <option key={c["id"]} value={c["id"]}>
+                {c["name"]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="projectType">{t("projectType")}</Label>
+          <select
+            id="projectType"
+            value={projectType}
+            onChange={(e) => setProjectType(coerceProjectType(e.target.value))}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+          >
+            {PROJECT_TYPES.map((pt) => (
+              <option key={pt} value={pt}>
+                {PROJECT_TYPE_LABEL[pt]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="space-y-1">
@@ -145,6 +180,16 @@ export function EditProjectForm({ projectId, initial, customers }: EditProjectFo
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           rows={2}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="description">{t("description")}</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
         />
       </div>
 
@@ -190,6 +235,16 @@ export function EditProjectForm({ projectId, initial, customers }: EditProjectFo
           />
         </div>
         <div className="space-y-1">
+          <Label htmlFor="estimatedCost">{t("estimatedCost")}</Label>
+          <Input
+            id="estimatedCost"
+            type="number"
+            step="0.01"
+            value={estimatedCost}
+            onChange={(e) => setEstimatedCost(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
           <Label htmlFor="taxRate">{t("taxRate")}</Label>
           <Input
             id="taxRate"
@@ -199,6 +254,9 @@ export function EditProjectForm({ projectId, initial, customers }: EditProjectFo
             onChange={(e) => setTaxRate(e.target.value)}
           />
         </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-1">
           <Label htmlFor="retainageRate">{t("retainageRate")}</Label>
           <Input
@@ -209,9 +267,6 @@ export function EditProjectForm({ projectId, initial, customers }: EditProjectFo
             onChange={(e) => setRetainageRate(e.target.value)}
           />
         </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-1">
           <Label htmlFor="depositRequired">{t("depositRequired")}</Label>
           <Input
@@ -230,6 +285,9 @@ export function EditProjectForm({ projectId, initial, customers }: EditProjectFo
             onChange={(e) => setPaymentTerms(e.target.value)}
           />
         </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="projectManager">{t("projectManager")}</Label>
           <Input
@@ -238,21 +296,21 @@ export function EditProjectForm({ projectId, initial, customers }: EditProjectFo
             onChange={(e) => setProjectManager(e.target.value)}
           />
         </div>
-      </div>
-
-      <div className="space-y-1">
-        <Label htmlFor="status">{t("status")}</Label>
-        <select
-          id="status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-        >
-          <option value="ACTIVE">{t("statusActive")}</option>
-          <option value="COMPLETED">{t("statusCompleted")}</option>
-          <option value="ON_HOLD">{t("statusOnHold")}</option>
-          <option value="CANCELLED">{t("statusCancelled")}</option>
-        </select>
+        <div className="space-y-1">
+          <Label htmlFor="status">{t("status")}</Label>
+          <select
+            id="status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+          >
+            {PROJECT_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {PROJECT_STATUS_LABEL[s]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="flex justify-end gap-2 pt-2">

@@ -17,6 +17,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslations } from "next-intl";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { PROJECT_TYPES, PROJECT_TYPE_LABEL, DEFAULT_PROJECT_TYPE, type ProjectTypeKey } from "@/lib/project-types";
+import { formatCurrency } from "@/lib/utils";
 
 interface Customer {
   id: string;
@@ -27,7 +29,7 @@ interface ProjectFormProps {
   customers: Customer[];
 }
 
-const STEPS = ["projectInfo", "contract", "review"] as const;
+const STEPS = ["projectInfo", "financials", "review"] as const;
 
 export function ProjectForm({ customers }: ProjectFormProps) {
   const t = useTranslations("projects");
@@ -37,14 +39,19 @@ export function ProjectForm({ customers }: ProjectFormProps) {
   const [saving, setSaving] = React.useState(false);
   const [step, setStep] = React.useState(0);
 
+  // Step 0 — project info
   const [name, setName] = React.useState("");
   const [number, setNumber] = React.useState("");
   const [customerId, setCustomerId] = React.useState("");
+  const [projectType, setProjectType] = React.useState<ProjectTypeKey>(DEFAULT_PROJECT_TYPE);
   const [address, setAddress] = React.useState("");
+  const [description, setDescription] = React.useState("");
   const [startDate, setStartDate] = React.useState("");
   const [endDate, setEndDate] = React.useState("");
 
+  // Step 1 — financials
   const [contractValue, setContractValue] = React.useState("");
+  const [estimatedCost, setEstimatedCost] = React.useState("");
   const [estCompletionDate, setEstCompletionDate] = React.useState("");
   const [paymentTerms, setPaymentTerms] = React.useState("NET_30");
   const [taxRate, setTaxRate] = React.useState("");
@@ -65,12 +72,15 @@ export function ProjectForm({ customers }: ProjectFormProps) {
     try {
       await createProject({
         name: name.trim(),
+        description: description.trim() || null,
+        projectType,
         customerId: customerId || null,
         address: address || undefined,
         startDate: startDate || null,
         endDate: endDate || null,
         estCompletionDate: estCompletionDate || null,
         contractValue: Number(contractValue) || 0,
+        estimatedCost: Number(estimatedCost) || 0,
         paymentTerms,
         taxRate: Number(taxRate) || 0,
         retainageRate: Number(retainageRate) || 0,
@@ -94,6 +104,14 @@ export function ProjectForm({ customers }: ProjectFormProps) {
   }
 
   const customerName = customers.find((c) => c["id"] === customerId)?.["name"] ?? null;
+
+  // Derived values for the final-step financial summary so the contractor can
+  // see the planned financial baseline before committing.
+  const cv = Number(contractValue) || 0;
+  const ec = Number(estimatedCost) || 0;
+  const dep = Number(depositRequired) || 0;
+  const estProfit = cv - ec;
+  const estMargin = cv > 0 ? (estProfit / cv) * 100 : 0;
 
   return (
     <Card className="max-w-2xl">
@@ -172,6 +190,22 @@ export function ProjectForm({ customers }: ProjectFormProps) {
               </div>
 
               <div className="space-y-1">
+                <Label htmlFor="projectType">{t("projectType")}</Label>
+                <Select value={projectType} onValueChange={(v) => setProjectType(v as ProjectTypeKey)}>
+                  <SelectTrigger id="projectType">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROJECT_TYPES.map((pt) => (
+                      <SelectItem key={pt} value={pt}>
+                        {PROJECT_TYPE_LABEL[pt]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
                 <Label htmlFor="address">{t("address")}</Label>
                 <Textarea
                   id="address"
@@ -179,6 +213,17 @@ export function ProjectForm({ customers }: ProjectFormProps) {
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder={t("addressPlaceholder")}
                   rows={2}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="description">{t("description")}</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder={t("descriptionPlaceholder")}
+                  rows={3}
                 />
               </div>
 
@@ -229,6 +274,20 @@ export function ProjectForm({ customers }: ProjectFormProps) {
                   placeholder={t("contractValuePlaceholder")}
                   required
                 />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="estimatedCost">{t("estimatedCost")}</Label>
+                <Input
+                  id="estimatedCost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={estimatedCost}
+                  onChange={(e) => setEstimatedCost(e.target.value)}
+                  placeholder={t("estimatedCostPlaceholder")}
+                />
+                <p className="text-xs text-muted-foreground">{t("estimatedCostHelp")}</p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -303,29 +362,92 @@ export function ProjectForm({ customers }: ProjectFormProps) {
           )}
 
           {step === 2 && (
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="font-medium text-muted-foreground">{t("name")}:</span>{" "}
-                <span>{name || t("notSet")}</span>
-              </div>
-              <div>
-                <span className="font-medium text-muted-foreground">{t("customer")}:</span>{" "}
-                <span>{customerName ?? t("notSet")}</span>
-              </div>
-              <div>
-                <span className="font-medium text-muted-foreground">{t("contractValue")}:</span>{" "}
-                <span>{contractValue ? `$${Number(contractValue).toFixed(2)}` : t("notSet")}</span>
-              </div>
-              <div>
-                <span className="font-medium text-muted-foreground">{t("paymentTerms")}:</span>{" "}
-                <span>{paymentTerms || t("notSet")}</span>
-              </div>
-              {projectManager && (
+            <div className="space-y-4 text-sm">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <span className="font-medium text-muted-foreground">{t("projectManager")}:</span>{" "}
-                  <span>{projectManager}</span>
+                  <span className="font-medium text-muted-foreground">{t("name")}:</span>{" "}
+                  <span>{name || t("notSet")}</span>
                 </div>
-              )}
+                <div>
+                  <span className="font-medium text-muted-foreground">{t("customer")}:</span>{" "}
+                  <span>{customerName ?? t("notSet")}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-muted-foreground">{t("projectType")}:</span>{" "}
+                  <span>{PROJECT_TYPE_LABEL[projectType]}</span>
+                </div>
+                {address && (
+                  <div>
+                    <span className="font-medium text-muted-foreground">{t("address")}:</span>{" "}
+                    <span>{address}</span>
+                  </div>
+                )}
+                {description && (
+                  <div className="sm:col-span-2">
+                    <span className="font-medium text-muted-foreground">{t("description")}:</span>{" "}
+                    <span className="whitespace-pre-line">{description}</span>
+                  </div>
+                )}
+                {(startDate || endDate) && (
+                  <div>
+                    <span className="font-medium text-muted-foreground">{t("startDate")} → {t("endDate")}:</span>{" "}
+                    <span>{startDate || "—"} → {endDate || "—"}</span>
+                  </div>
+                )}
+                {projectManager && (
+                  <div>
+                    <span className="font-medium text-muted-foreground">{t("projectManager")}:</span>{" "}
+                    <span>{projectManager}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold mb-2">{t("financialSummary")}</h3>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div>
+                    <span className="font-medium text-muted-foreground">{t("contractValue")}:</span>{" "}
+                    <span className="font-semibold">{formatCurrency(cv)}</span>
+                  </div>
+                  {ec > 0 && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">{t("estimatedCost")}:</span>{" "}
+                      <span>{formatCurrency(ec)}</span>
+                    </div>
+                  )}
+                  {ec > 0 && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">{t("estimatedProfit")}:</span>{" "}
+                      <span className={estProfit >= 0 ? "text-emerald-600 font-semibold" : "text-red-600 font-semibold"}>
+                        {formatCurrency(estProfit)} ({estMargin.toFixed(1)}%)
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium text-muted-foreground">{t("paymentTerms")}:</span>{" "}
+                    <span>{paymentTerms || t("notSet")}</span>
+                  </div>
+                  {Number(taxRate) > 0 && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">{t("taxRate")}:</span>{" "}
+                      <span>{taxRate}%</span>
+                    </div>
+                  )}
+                  {Number(retainageRate) > 0 && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">{t("retainageRate")}:</span>{" "}
+                      <span>{retainageRate}%</span>
+                    </div>
+                  )}
+                  {dep > 0 && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">{t("depositRequired")}:</span>{" "}
+                      <span>{formatCurrency(dep)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="border-t pt-3 text-xs text-muted-foreground">
                 {t("reviewNote")}
               </div>
