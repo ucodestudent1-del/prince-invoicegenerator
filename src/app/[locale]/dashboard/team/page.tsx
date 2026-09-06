@@ -1,5 +1,7 @@
 import { requireUser, requireFeature } from "@/lib/org";
-import { listMemberships, getRole } from "@/lib/actions/memberships";
+import { listMemberships } from "@/lib/actions/memberships";
+import type { MembershipRow } from "@/lib/actions/memberships";
+import { getRole } from "@/lib/actions/roles";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -23,7 +25,7 @@ export default async function TeamPage({ params }: { params: { locale: string } 
 	const orgId = user["organizationId"];
 	const t = await getTranslations("team");
 
-	let members;
+	let members: MembershipRow[];
 	try {
 		members = await listMemberships(orgId);
 	} catch (err) {

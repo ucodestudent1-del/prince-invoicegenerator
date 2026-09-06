@@ -35,7 +35,9 @@ export type AuditAction =
   // ADMIN
   | "USER_INVITED"
   | "USER_REMOVED"
+  | "MEMBER_REMOVED"
   | "ROLE_CHANGED"
+  | "ROLE_DELETED"
   | "PLAN_CHANGED"
   // SETTINGS
   | "REMINDER_SETTINGS_CHANGED"

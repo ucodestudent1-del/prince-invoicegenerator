@@ -140,7 +140,7 @@ export async function resolveProjectPermissions(
 			db["projectMember"]["findFirst"]({
 				where: { orgId, projectId, userId: userId ?? "" },
 				include: {
-					role: {
+					roleRef: {
 						include: {
 							permissions: { select: { permission: true } },
 						},
@@ -150,7 +150,7 @@ export async function resolveProjectPermissions(
 		);
 		if (!member) return [];
 		const perms = new Set<Permission>();
-		for (const rp of member["role"]?.["permissions"] ?? []) {
+		for (const rp of member["roleRef"]?.["permissions"] ?? []) {
 			perms["add"](rp["permission"] as Permission);
 		}
 		return Array["from"](perms);
