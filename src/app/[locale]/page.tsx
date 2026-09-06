@@ -80,6 +80,9 @@ export default async function HomePage() {
                 <Link href="/#features">{t("seePricing")}</Link>
               </Button>
             </div>
+            <p className="text-sm text-muted-foreground">
+              {t("noCardRequired")}
+            </p>
           </div>
           <div className="relative lg:col-span-3">
             <div className="relative mx-auto h-64 w-full max-w-xs rounded-2xl border bg-gradient-to-br from-primary/5 to-background">

@@ -196,6 +196,7 @@
     "heroDescription": "Facturas de progreso, órdenes de cambio, retenciones y gestión de clientes — todo en un solo lugar. Comienza gratis, crece con tu equipo.",
     "seePricing": "Ver precios",
     "tryFree": "Probar gratis",
+    "noCardRequired": "Sin tarjeta de crédito.",
     "features": {
       "invoices": "Facturas y facturación AIA",
       "invoicesDesc": "Crea facturas profesionales con facturación de progreso, retenciones y seguimiento de impuestos.",

@@ -199,6 +199,7 @@
     "heroDescription": "Progress invoices, change orders, retainage, and customer management — all in one place. Start free, upgrade as your crew grows.",
     "seePricing": "See pricing",
     "tryFree": "Try it free",
+    "noCardRequired": "No credit card required.",
     "features": {
       "invoices": "Invoices & AIA progress billing",
       "invoicesDesc": "Create professional invoices with progress billing, retainage, and tax tracking.",

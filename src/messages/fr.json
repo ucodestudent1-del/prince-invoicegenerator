@@ -196,6 +196,7 @@
     "heroDescription": "Factures de progrès, ordres de modification, retenues et gestion clients — le tout en un seul endroit. Commencez gratuitement, évoluez au rythme de votre équipe.",
     "seePricing": "Voir les tarifs",
     "tryFree": "Essayer gratuitement",
+    "noCardRequired": "Aucune carte bancaire requise.",
     "features": {
       "invoices": "Factures et facturation AIA",
       "invoicesDesc": "Créez des factures professionnelles avec facturation de progrès, retenues et suivi des taxes.",

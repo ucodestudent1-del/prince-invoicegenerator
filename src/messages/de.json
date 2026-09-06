@@ -196,6 +196,7 @@
     "heroDescription": "Fortschrittsrechnungen, Änderungsaufträge, Einbehalte und Kundenverwaltung — alles an einem Ort. Kostenlos starten, mit deinem Team wachsen.",
     "seePricing": "Preise ansehen",
     "tryFree": "Kostenlos testen",
+    "noCardRequired": "Keine Kreditkarte erforderlich.",
     "features": {
       "invoices": "Rechnungen & AIA-Progressabrechnung",
       "invoicesDesc": "Erstelle professionelle Rechnungen mit Progressabrechnung, Einbehalt und Steuerverfolgung.",
