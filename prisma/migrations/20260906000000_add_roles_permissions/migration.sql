@@ -45,10 +45,10 @@ CREATE INDEX IF NOT EXISTS "OrganizationRole_isSystem_idx" ON "OrganizationRole"
 -- System roles (orgId IS NULL) are unique by name; per-org roles are unique per org.
 CREATE UNIQUE INDEX IF NOT EXISTS "OrganizationRole_orgId_name_key"
     ON "OrganizationRole"("orgId", "name")
-    WHERE (orgId IS NOT NULL OR name IS NOT NULL);
+    WHERE ("orgId" IS NOT NULL OR "name" IS NOT NULL);
 CREATE UNIQUE INDEX IF NOT EXISTS "OrganizationRole_system_name_key"
     ON "OrganizationRole"("name")
-    WHERE orgId IS NULL;
+    WHERE "orgId" IS NULL;
 
 DO $$
 BEGIN
