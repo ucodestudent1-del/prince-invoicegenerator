@@ -14,6 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const STATUS_KEYS: Record<string, string> = {
   DRAFT: "draft",
+  PENDING_REVIEW: "pendingReview",
+  APPROVED: "approved",
   SENT: "sent",
   VIEWED: "viewed",
   UNPAID: "unpaid",

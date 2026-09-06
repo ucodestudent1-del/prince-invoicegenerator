@@ -62,10 +62,20 @@ export default async function CustomerDetailPage({
           portalAccess: true,
           createdAt: true,
           updatedAt: true,
-          invoices: {
+           invoices: {
             orderBy: { createdAt: "desc" },
             take: 50,
-            select: { id: true, total: true, amountPaid: true },
+            select: {
+              id: true,
+              number: true,
+              status: true,
+              total: true,
+              amountPaid: true,
+              currency: true,
+              issueDate: true,
+              dueDate: true,
+              payments: { orderBy: { createdAt: "desc" } },
+            },
           },
           estimates: { orderBy: { createdAt: "desc" }, take: 50, select: { id: true, number: true } },
           addresses: {
@@ -208,7 +218,7 @@ export default async function CustomerDetailPage({
       </Card>
 
       {/* Tabs for Invoices, Estimates, Activity */}
-      <ClientDetailView customerId={customer["id"]} />
+      <ClientDetailView customerId={customer["id"]} invoices={customer["invoices"] ?? []} estimates={customer["estimates"] ?? []} />
     </div>
   );
 }

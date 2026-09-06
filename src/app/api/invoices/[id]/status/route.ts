@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await ensureVerified();
     const body = await req["json"]();
     const status = body["status"];
-    const validStatuses = ["DRAFT", "SENT", "VIEWED", "PAID", "UNPAID", "OVERDUE", "VOID"];
+    const validStatuses = ["DRAFT", "PENDING_REVIEW", "APPROVED", "SENT", "VIEWED", "PAID", "UNPAID", "OVERDUE", "VOID"];
     if (!validStatuses["includes"](status)) {
       return NextResponse["json"]({ error: "Invalid status." }, { status: 400 });
     }

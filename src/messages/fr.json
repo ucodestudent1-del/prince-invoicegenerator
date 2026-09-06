@@ -776,6 +776,8 @@
   },
   "status": {
     "draft": "Brouillon",
+    "pendingReview": "En attente d'approbation",
+    "approved": "Approuvée",
     "sent": "Envoyée",
     "viewed": "Vue",
     "unpaid": "Impayée",

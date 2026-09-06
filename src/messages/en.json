@@ -1169,6 +1169,8 @@
   },
   "status": {
     "draft": "Draft",
+    "pendingReview": "Pending Review",
+    "approved": "Approved",
     "sent": "Sent",
     "viewed": "Viewed",
     "unpaid": "Unpaid",

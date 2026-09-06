@@ -106,6 +106,8 @@ export default async function InvoiceDetailPage({
 
   const statusVariant: Record<string, any> = {
     DRAFT: "secondary",
+    PENDING_REVIEW: "outline",
+    APPROVED: "secondary",
     SENT: "default",
     PAID: "success",
     UNPAID: "outline",

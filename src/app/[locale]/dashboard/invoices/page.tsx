@@ -21,6 +21,8 @@ import { getTypeLabel, getTypeBadgeClass } from "@/lib/invoice-types";
 
 const statusVariant: Record<string, any> = {
   DRAFT: "secondary",
+  PENDING_REVIEW: "outline",
+  APPROVED: "secondary",
   SENT: "default",
   PAID: "success",
   UNPAID: "outline",

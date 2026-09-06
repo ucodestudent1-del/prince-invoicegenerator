@@ -768,6 +768,8 @@
   },
   "status": {
     "draft": "Entwurf",
+    "pendingReview": "Warten auf Genehmigung",
+    "approved": "Genehmigt",
     "sent": "Gesendet",
     "viewed": "Angesehen",
     "unpaid": "Unbezahlt",

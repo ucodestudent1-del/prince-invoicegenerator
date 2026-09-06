@@ -768,6 +768,8 @@
   },
   "status": {
     "draft": "Borrador",
+    "pendingReview": "Pendiente de aprobación",
+    "approved": "Aprobada",
     "sent": "Enviada",
     "viewed": "Vista",
     "unpaid": "Sin pagar",
