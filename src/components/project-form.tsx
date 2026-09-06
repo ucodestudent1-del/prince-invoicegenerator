@@ -110,7 +110,7 @@ export function ProjectForm({ customers }: ProjectFormProps) {
   const cv = Number(contractValue) || 0;
   const ec = Number(estimatedCost) || 0;
   const dep = Number(depositRequired) || 0;
-  const estProfit = cv - ec;
+  const estProfit = cv - ec - dep;
   const estMargin = cv > 0 ? (estProfit / cv) * 100 : 0;
 
   return (

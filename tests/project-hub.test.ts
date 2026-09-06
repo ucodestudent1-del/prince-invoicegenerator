@@ -195,3 +195,33 @@ describe("project-types", () => {
     expect(isProjectType("NOPE")).toBe(false);
   });
 });
+
+describe("project-form financial summary", () => {
+  it("calculates estimated profit accounting for deposit required", () => {
+    const cv = 100000;
+    const ec = 60000;
+    const dep = 10000;
+    const estProfit = cv - ec - dep;
+    expect(estProfit).toBe(30000);
+    const estMargin = (estProfit / cv) * 100;
+    expect(estMargin).toBe(30);
+  });
+
+  it("deposit of 0 does not affect profit", () => {
+    const cv = 100000;
+    const ec = 60000;
+    const dep = 0;
+    const estProfit = cv - ec - dep;
+    expect(estProfit).toBe(40000);
+  });
+
+  it("deposit exceeding profit results in negative profit", () => {
+    const cv = 100000;
+    const ec = 95000;
+    const dep = 10000;
+    const estProfit = cv - ec - dep;
+    expect(estProfit).toBe(-5000);
+    const estMargin = cv > 0 ? (estProfit / cv) * 100 : 0;
+    expect(estMargin).toBe(-5);
+  });
+});

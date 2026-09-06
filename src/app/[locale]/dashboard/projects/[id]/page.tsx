@@ -31,6 +31,7 @@ import { ProjectStatusBadge } from "@/components/project-status-badge";
 import { PROJECT_TYPE_LABEL, coerceProjectType } from "@/lib/project-types";
 import { EditProjectForm } from "@/components/project-edit-form";
 import { DocumentUploadForm } from "@/components/project-document-upload-form";
+import { ProjectAssistant } from "@/components/project-assistant";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
 import {
@@ -313,18 +314,29 @@ export default async function ProjectWorkspacePage({
         </CardContent>
       </Card>
 
-      {/* Needs Attention */}
-      <NeedsAttention
-        project={projectData}
-        overdueInvoices={overdueInvoices}
-        pendingChangeOrders={changeOrders.filter(
-          (co: any) => co["status"] === "PENDING_APPROVAL" || co["status"] === "DRAFT" || co["status"] === "SENT",
-        )}
-        t={t}
-        currency={currency}
-      />
+       {/* Needs Attention */}
+       <NeedsAttention
+         project={projectData}
+         overdueInvoices={overdueInvoices}
+         pendingChangeOrders={changeOrders.filter(
+           (co: any) => co["status"] === "PENDING_APPROVAL" || co["status"] === "DRAFT" || co["status"] === "SENT",
+         )}
+         t={t}
+         currency={currency}
+       />
 
-      {/* Financial Summary Cards */}
+       {/* AI Assistant Recommendations */}
+       <ProjectAssistant
+         financials={financials}
+         invoices={invoices}
+         changeOrders={changeOrders}
+         project={project}
+         activeInvoices={activeInvoices}
+         t={t}
+         currency={currency}
+       />
+
+       {/* Financial Summary Cards */}
       <ProjectFinancialCards financials={financials} />
 
       {/* Financial Progress Bars (invoiced vs collected) */}
@@ -1050,7 +1062,7 @@ function TabContent({
         ) : (
           <div className="text-center py-12">
             <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">{tCommon("noDocumentsYet") ?? "No documents yet."}</p>
+            <p className="text-muted-foreground">{t("noDocuments") ?? "No documents yet."}</p>
           </div>
         )}
       </div>
