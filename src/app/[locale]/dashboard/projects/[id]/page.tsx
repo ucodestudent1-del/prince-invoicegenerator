@@ -8,6 +8,7 @@ import {
   getProjectPayments,
   getProjectExpenses,
   getProjectChangeOrders,
+  getProjectDocuments,
 } from "@/lib/actions/projects";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import { ProfitabilityChart } from "@/components/project-profitability-chart";
 import { ProjectStatusBadge } from "@/components/project-status-badge";
 import { PROJECT_TYPE_LABEL, coerceProjectType } from "@/lib/project-types";
 import { EditProjectForm } from "@/components/project-edit-form";
+import { DocumentUploadForm } from "@/components/project-document-upload-form";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
 import {
@@ -31,6 +33,9 @@ import {
   Receipt,
   Wallet,
   Folder,
+  Download,
+  FileText,
+  Upload,
 } from "lucide-react";
 
 const TAB_VALUES = ["overview", "financials", "invoices", "payments", "costs", "changeOrders", "documents", "activity", "settings"] as const;
@@ -65,15 +70,17 @@ export default async function ProjectWorkspacePage({
   let payments;
   let expenses;
   let changeOrders;
+  let projectDocuments;
 
   try {
-    [project, financials, invoices, payments, expenses, changeOrders] = await Promise["all"]([
+    [project, financials, invoices, payments, expenses, changeOrders, projectDocuments] = await Promise["all"]([
       getProjectDetail(params["id"]),
       getProjectFinancials(params["id"]),
       getProjectInvoices(params["id"]),
       getProjectPayments(params["id"]),
       getProjectExpenses(params["id"]),
       getProjectChangeOrders(params["id"]),
+      getProjectDocuments(params["id"]),
     ]);
   } catch (err) {
     logServerError("ProjectWorkspacePage", err);
@@ -387,8 +394,9 @@ export default async function ProjectWorkspacePage({
         invoices={invoices}
         payments={payments}
         expenses={expenses}
-        changeOrders={changeOrders}
-        currency={currency}
+         changeOrders={changeOrders}
+         projectDocuments={projectDocuments}
+         currency={currency}
         customers={customers}
         invoicesTotal={invoicesTotal}
         invoicesPaid={invoicesPaid}
@@ -419,6 +427,7 @@ function TabContent({
   payments,
   expenses,
   changeOrders,
+  projectDocuments,
   currency,
   customers,
   invoicesTotal,
@@ -445,6 +454,7 @@ function TabContent({
   payments: any[];
   expenses: any[];
   changeOrders: any[];
+  projectDocuments: any[];
   currency: string;
   customers: { id: string; name: string }[];
   invoicesTotal: number;
@@ -772,7 +782,44 @@ function TabContent({
 
       {/* Documents Tab */}
       <div className={activeTab === "documents" ? "block" : "hidden"}>
-        <p className="text-muted-foreground">No documents yet.</p>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">{t("documents")}</h2>
+          <DocumentUploadForm projectId={project["id"]} />
+        </div>
+
+        {projectDocuments && projectDocuments.length ? (
+          <div className="space-y-3">
+            {projectDocuments["map"]((doc: any) => (
+              <Card key={doc["id"]}>
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{doc["name"]}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {doc["category"]} · {doc["size"] ?? 0} bytes
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href={doc["url"]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-sm underline"
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    {tCommon("download")}
+                  </a>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">{tCommon("noDocumentsYet") ?? "No documents yet."}</p>
+          </div>
+        )}
       </div>
 
       {/* Settings Tab */}

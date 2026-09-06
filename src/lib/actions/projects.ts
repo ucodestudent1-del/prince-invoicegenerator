@@ -488,8 +488,75 @@ export async function updateProject(projectId: string, input: UpdateProjectInput
       }
     }
 
-    await revalidateWithLocale(`/dashboard/projects/${projectId}`);
-    await revalidateWithLocale("/dashboard/projects");
-    return { success: true };
-  });
+     await revalidateWithLocale(`/dashboard/projects/${projectId}`);
+     await revalidateWithLocale("/dashboard/projects");
+     return { success: true };
+   });
+}
+
+export interface CreateProjectDocumentInput {
+  projectId: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  r2Key: string;
+  url: string;
+  contentType?: string | null;
+  size?: number | null;
+  uploadedByName?: string | null;
+}
+
+export async function createProjectDocument(input: CreateProjectDocumentInput) {
+  return withActionError("createProjectDocument", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const doc = await db["projectDocument"]["create"]({
+       data: {
+         org: { connect: { id: orgId } },
+         project: { connect: { id: input["projectId"] } },
+         name: input["name"],
+         description: input["description"] ?? undefined,
+         category: (input["category"] as any) ?? "OTHER",
+         r2Key: input["r2Key"],
+         url: input["url"],
+         contentType: input["contentType"] ?? undefined,
+         size: input["size"] ?? undefined,
+         uploadedByName: input["uploadedByName"] ?? undefined,
+       },
+     });
+
+     await revalidateWithLocale(`/dashboard/projects/${input["projectId"]}/documents`);
+     return doc;
+   });
+}
+
+export async function getProjectDocuments(projectId: string) {
+  return withActionError("getProjectDocuments", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const docs = await db["projectDocument"]["findMany"]({
+       where: { orgId, projectId },
+       orderBy: { createdAt: "desc" },
+     });
+     return docs;
+   });
+}
+
+export async function deleteProjectDocument(documentId: string) {
+  return withActionError("deleteProjectDocument", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     await db["projectDocument"]["deleteMany"]({
+       where: { id: documentId, orgId },
+     });
+
+     await revalidateWithLocale("/dashboard/projects");
+     return { success: true };
+   });
 }
