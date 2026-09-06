@@ -14,8 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { ProjectStatusBadge, PROJECT_STATUSES, PROJECT_STATUS_LABEL } from "@/components/project-status-badge";
+import { ProjectStatusBadge } from "@/components/project-status-badge";
 import { PROJECT_TYPES, PROJECT_TYPE_LABEL, type ProjectTypeKey } from "@/lib/project-types";
+import { ProjectsFilterBar } from "@/components/projects-filter-bar";
 import {
   Plus,
   Search,
@@ -325,77 +326,15 @@ export default async function ProjectsPage({
           </form>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <select
-            name="status"
-            defaultValue={statusFilter}
-            onChange={(e) => {
-              const url = new URLSearchParams(window.location.search);
-              url.set("status", e.target.value);
-              window.location.search = url.toString();
-            }}
-            className="flex h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-          >
-            <option value="all">{t("allStatuses")}</option>
-            {PROJECT_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {PROJECT_STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-
-          <select
-            name="type"
-            defaultValue={typeFilter}
-            onChange={(e) => {
-              const url = new URLSearchParams(window.location.search);
-              url.set("type", e.target.value);
-              window.location.search = url.toString();
-            }}
-            className="flex h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-          >
-            <option value="all">{t("allTypes")}</option>
-            {PROJECT_TYPES.map((pt) => (
-              <option key={pt} value={pt}>
-                {PROJECT_TYPE_LABEL[pt as ProjectTypeKey]}
-              </option>
-            ))}
-          </select>
-
-          <select
-            name="customer"
-            defaultValue={customerFilter}
-            onChange={(e) => {
-              const url = new URLSearchParams(window.location.search);
-              url.set("customer", e.target.value);
-              window.location.search = url.toString();
-            }}
-            className="flex h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-          >
-            <option value="all">{t("allCustomers")}</option>
-            {customers["map"]((c) => (
-              <option key={c["id"]} value={c["id"]}>
-                {c["name"]}
-              </option>
-            ))}
-          </select>
-
-          <Button
-            asChild={!attentionOnly}
-            variant={attentionOnly ? "default" : "outline"}
-            size="sm"
-          >
-            {attentionOnly ? (
-              <Link href="/dashboard/projects">{t("allProjects")}</Link>
-            ) : (
-              <Link
-                href={`/dashboard/projects?attention=1${query ? `&q=${encodeURIComponent(query)}` : ""}${statusFilter !== "all" ? `&status=${statusFilter}` : ""}${customerFilter !== "all" ? `&customer=${customerFilter}` : ""}${typeFilter !== "all" ? `&type=${typeFilter}` : ""}`}
-              >
-                <AlertCircle className="mr-1 h-3 w-3" /> {t("attentionOnly")}
-              </Link>
-            )}
-          </Button>
-        </div>
+        <ProjectsFilterBar
+          statusFilter={statusFilter}
+          typeFilter={typeFilter}
+          customerFilter={customerFilter}
+          attentionOnly={attentionOnly}
+          query={query}
+          customers={customers}
+          t={t}
+        />
       </div>
 
       {/* Projects Table */}
