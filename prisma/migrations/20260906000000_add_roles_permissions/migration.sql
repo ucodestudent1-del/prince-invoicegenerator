@@ -14,12 +14,12 @@ DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'InvoiceStatus') THEN
         IF NOT EXISTS (
-            SELECT 1 FROM pg_enum WHERE enumtype = 'InvoiceStatus'::regtype AND enumlabel = 'PENDING_REVIEW'
+            SELECT 1 FROM pg_enum WHERE enumtypid = 'InvoiceStatus'::regtype AND enumlabel = 'PENDING_REVIEW'
         ) THEN
             ALTER TYPE "InvoiceStatus" ADD VALUE 'PENDING_REVIEW' AFTER 'DRAFT';
         END IF;
         IF NOT EXISTS (
-            SELECT 1 FROM pg_enum WHERE enumtype = 'InvoiceStatus'::regtype AND enumlabel = 'APPROVED'
+            SELECT 1 FROM pg_enum WHERE enumtypid = 'InvoiceStatus'::regtype AND enumlabel = 'APPROVED'
         ) THEN
             ALTER TYPE "InvoiceStatus" ADD VALUE 'APPROVED' AFTER 'PENDING_REVIEW';
         END IF;
