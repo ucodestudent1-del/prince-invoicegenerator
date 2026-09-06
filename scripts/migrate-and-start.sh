@@ -175,8 +175,20 @@ else
     # back so prisma migrate deploy re-applies it (along with the new earlier
     # migration) cleanly.
     # -------------------------------------------------------------------------
-    echo "Resolving failed migration 20260830000001_add_change_order_structured_fields..."
-    npx prisma migrate resolve --rolled-back 20260830000001_add_change_order_structured_fields || true
+     echo "Resolving failed migration 20260830000001_add_change_order_structured_fields..."
+     npx prisma migrate resolve --rolled-back 20260830000001_add_change_order_structured_fields || true
+
+    # -------------------------------------------------------------------------
+    # Resolve the failed project sections migration (20260905030000).
+    # The migration contained invalid SQL: ALTER INDEX ... DO STRICTLY NOTHING
+    # (invalid PostgreSQL syntax). Since PostgreSQL DDL is transactional, the
+    # entire migration rolled back — none of the new tables/types were created
+    # in production. The migration SQL has been fixed (removed the invalid line,
+    # added missing nextId FK constraint, fixed enum name). Marking as rolled
+    # back allows prisma migrate deploy to re-apply the corrected migration.
+    # -------------------------------------------------------------------------
+    echo "Resolving failed migration 20260905030000_add_project_sections..."
+    npx prisma migrate resolve --rolled-back 20260905030000_add_project_sections || true
 
     # Retry migrations up to 5 times in case database is not ready yet
    max_retries=5

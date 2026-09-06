@@ -733,7 +733,7 @@
     "taskStatus": "Status",
     "taskStatusTODO": "To do",
     "taskStatusIN_PROGRESS": "In progress",
-    "taskStatusDONE": "Done",
+    "taskStatusCOMPLETED": "Done",
     "taskStatusBLOCKED": "Blocked",
     "taskDueDate": "Due",
     "purchaseOrders": "Purchase orders",
