@@ -14,6 +14,9 @@ import {
   getProjectTasks,
   getProjectPurchaseOrders,
   getProjectCostCodes,
+  getProjectRetainage,
+  getProjectDrawSchedules,
+  getProjectLienWaivers,
   createProjectNote,
   addProjectMember,
 } from "@/lib/actions/projects";
@@ -84,9 +87,12 @@ export default async function ProjectWorkspacePage({
   let tasks;
   let purchaseOrders;
   let costCodes;
+  let retainageReleases;
+  let drawSchedules;
+  let lienWaivers;
 
   try {
-    [project, financials, invoices, payments, expenses, changeOrders, projectDocuments, notes, members, tasks, purchaseOrders, costCodes] = await Promise["all"]([
+    [project, financials, invoices, payments, expenses, changeOrders, projectDocuments, notes, members, tasks, purchaseOrders, costCodes, retainageReleases, drawSchedules, lienWaivers] = await Promise["all"]([
       getProjectDetail(params["id"]),
       getProjectFinancials(params["id"]),
       getProjectInvoices(params["id"]),
@@ -99,6 +105,9 @@ export default async function ProjectWorkspacePage({
       getProjectTasks(params["id"]),
       getProjectPurchaseOrders(params["id"]),
       getProjectCostCodes(params["id"]),
+      getProjectRetainage(params["id"]),
+      getProjectDrawSchedules(params["id"]),
+      getProjectLienWaivers(params["id"]),
     ]);
   } catch (err) {
     logServerError("ProjectWorkspacePage", err);
@@ -420,6 +429,9 @@ export default async function ProjectWorkspacePage({
          tasks={tasks}
          purchaseOrders={purchaseOrders}
          costCodes={costCodes}
+         retainageReleases={retainageReleases}
+         drawSchedules={drawSchedules}
+         lienWaivers={lienWaivers}
          currency={currency}
         customers={customers}
         invoicesTotal={invoicesTotal}
@@ -454,11 +466,14 @@ function TabContent({
   changeOrders,
   projectDocuments,
   notes,
-   members,
-   tasks,
-   purchaseOrders,
-   costCodes,
-   currency,
+  members,
+  tasks,
+  purchaseOrders,
+  costCodes,
+  retainageReleases,
+  drawSchedules,
+  lienWaivers,
+  currency,
   customers,
   invoicesTotal,
   invoicesPaid,
@@ -491,6 +506,9 @@ function TabContent({
   tasks: any[];
   purchaseOrders: any[];
   costCodes: any[];
+  retainageReleases: any[];
+  drawSchedules: any[];
+  lienWaivers: any[];
   currency: string;
   customers: { id: string; name: string }[];
   invoicesTotal: number;
@@ -838,6 +856,97 @@ function TabContent({
                       <TableCell>{cc["name"]}</TableCell>
                       <TableCell className="text-right">{formatCurrency(Number(cc["budget"]) || 0, currency)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(Number(cc["actual"]) || 0, currency)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Retainage, Draws, Lien Waivers Section (within Costs tab) */}
+      <div className={activeTab === "costs" ? "block" : "hidden"}>
+        {(retainageReleases && retainageReleases.length > 0) && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">Retainage Releases</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Released By</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {retainageReleases["map"]((r: any) => (
+                    <TableRow key={r["id"]}>
+                      <TableCell>{r["releaseDate"] ? formatDate(r["releaseDate"]) : "—"}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(Number(r["amount"]) || 0, currency)}</TableCell>
+                      <TableCell>{r["releasedByName"] ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {(drawSchedules && drawSchedules.length > 0) && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">Draw Schedules</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>Due Date</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {drawSchedules["map"]((d: any) => (
+                    <TableRow key={d["id"]}>
+                      <TableCell>{d["number"]}</TableCell>
+                      <TableCell>{d["dueDate"] ? formatDate(d["dueDate"]) : "—"}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(Number(d["amount"]) || 0, currency)}</TableCell>
+                      <TableCell>{d["status"]}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {(lienWaivers && lienWaivers.length > 0) && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">Lien Waivers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Signed</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lienWaivers["map"]((lw: any) => (
+                    <TableRow key={lw["id"]}>
+                      <TableCell>{lw["type"]}</TableCell>
+                      <TableCell>{lw["status"]}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(Number(lw["amount"]) || 0, currency)}</TableCell>
+                      <TableCell>{lw["signedDate"] ? formatDate(lw["signedDate"]) : "—"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

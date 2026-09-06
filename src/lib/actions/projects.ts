@@ -706,7 +706,150 @@ export async function updateProjectTask(taskId: string, input: UpdateProjectTask
      });
 
      await revalidateWithLocale(`/dashboard/projects`);
-     return task;
+     return { success: true };
+   });
+}
+
+// Subcontractor actions
+
+export async function getProjectSubcontractors(projectId: string) {
+  return withActionError("getProjectSubcontractors", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const subs = await db["subcontractorProject"]["findMany"]({
+       where: { projectId, subcontractor: { orgId } },
+       include: { subcontractor: true },
+       orderBy: { assignedAt: "desc" },
+     });
+     return subs;
+   });
+}
+
+export async function assignSubcontractor(projectId: string, subcontractorId: string) {
+  return withActionError("assignSubcontractor", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     await db["subcontractorProject"]["create"]({
+       data: {
+         subcontractor: { connect: { id: subcontractorId } },
+         project: { connect: { id: projectId } },
+       },
+     });
+
+     await revalidateWithLocale(`/dashboard/projects/${projectId}/activity`);
+   });
+}
+
+// Retainage
+
+export async function getProjectRetainage(projectId: string) {
+  return withActionError("getProjectRetainage", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const releases = await db["retainageRelease"]["findMany"]({
+       where: { orgId, projectId },
+       orderBy: { createdAt: "desc" },
+     });
+     return releases;
+   });
+}
+
+export interface CreateRetainageReleaseInput {
+  projectId: string;
+  amount: number;
+  releaseDate?: string | null;
+  notes?: string | null;
+}
+
+export async function createRetainageRelease(input: CreateRetainageReleaseInput) {
+  return withActionError("createRetainageRelease", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const release = await db["retainageRelease"]["create"]({
+       data: {
+         org: { connect: { id: orgId } },
+         project: { connect: { id: input["projectId"] } },
+         amount: roundMoney(input["amount"]),
+         releaseDate: input["releaseDate"] ? new Date(input["releaseDate"]) : undefined,
+         notes: input["notes"] ?? undefined,
+       },
+     });
+
+     await revalidateWithLocale(`/dashboard/projects/${input["projectId"]}/costs`);
+     return release;
+   });
+}
+
+// Draw Schedules
+
+export async function getProjectDrawSchedules(projectId: string) {
+  return withActionError("getProjectDrawSchedules", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const draws = await db["drawSchedule"]["findMany"]({
+       where: { orgId, projectId },
+       orderBy: { createdAt: "desc" },
+     });
+     return draws;
+   });
+}
+
+export interface CreateDrawScheduleInput {
+  projectId: string;
+  number: string;
+  title?: string | null;
+  description?: string | null;
+  amount?: number;
+  dueDate?: string | null;
+}
+
+export async function createDrawSchedule(input: CreateDrawScheduleInput) {
+  return withActionError("createDrawSchedule", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const draw = await db["drawSchedule"]["create"]({
+       data: {
+         org: { connect: { id: orgId } },
+         project: { connect: { id: input["projectId"] } },
+         number: input["number"],
+         title: input["title"] ?? undefined,
+         description: input["description"] ?? undefined,
+         amount: roundMoney(input["amount"] ?? 0),
+         dueDate: input["dueDate"] ? new Date(input["dueDate"]) : undefined,
+       },
+     });
+
+     await revalidateWithLocale(`/dashboard/projects/${input["projectId"]}/costs`);
+     return draw;
+   });
+}
+
+// Lien Waivers
+
+export async function getProjectLienWaivers(projectId: string) {
+  return withActionError("getProjectLienWaivers", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const waivers = await db["lienWaiver"]["findMany"]({
+       where: { orgId, projectId },
+       include: { subcontractor: true },
+       orderBy: { createdAt: "desc" },
+     });
+     return waivers;
    });
 }
 
