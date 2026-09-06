@@ -14,7 +14,11 @@ interface ProjectsFilterBarProps {
   attentionOnly: boolean;
   query: string;
   customers: { id: string; name: string }[];
-  t: any;
+  allStatusesLabel: string;
+  allTypesLabel: string;
+  allCustomersLabel: string;
+  allProjectsLabel: string;
+  attentionOnlyLabel: string;
 }
 
 export function ProjectsFilterBar({
@@ -24,7 +28,11 @@ export function ProjectsFilterBar({
   attentionOnly,
   query,
   customers,
-  t,
+  allStatusesLabel,
+  allTypesLabel,
+  allCustomersLabel,
+  allProjectsLabel,
+  attentionOnlyLabel,
 }: ProjectsFilterBarProps) {
   const router = useRouter();
 
@@ -46,7 +54,7 @@ export function ProjectsFilterBar({
         onChange={(e) => updateParam("status", e.target.value)}
         className="flex h-9 rounded-md border border-input bg-transparent px-3 text-sm"
       >
-        <option value="all">{t("allStatuses")}</option>
+        <option value="all">{allStatusesLabel}</option>
         {PROJECT_STATUSES.map((s) => (
           <option key={s} value={s}>
             {PROJECT_STATUS_LABEL[s]}
@@ -60,7 +68,7 @@ export function ProjectsFilterBar({
         onChange={(e) => updateParam("type", e.target.value)}
         className="flex h-9 rounded-md border border-input bg-transparent px-3 text-sm"
       >
-        <option value="all">{t("allTypes")}</option>
+        <option value="all">{allTypesLabel}</option>
         {PROJECT_TYPES.map((pt) => (
           <option key={pt} value={pt}>
             {PROJECT_TYPE_LABEL[pt as ProjectTypeKey]}
@@ -74,7 +82,7 @@ export function ProjectsFilterBar({
         onChange={(e) => updateParam("customer", e.target.value)}
         className="flex h-9 rounded-md border border-input bg-transparent px-3 text-sm"
       >
-        <option value="all">{t("allCustomers")}</option>
+        <option value="all">{allCustomersLabel}</option>
         {customers.map((c) => (
           <option key={c["id"]} value={c["id"]}>
             {c["name"]}
@@ -88,12 +96,12 @@ export function ProjectsFilterBar({
         size="sm"
       >
         {attentionOnly ? (
-          <Link href="/dashboard/projects">{t("allProjects")}</Link>
+          <Link href="/dashboard/projects">{allProjectsLabel}</Link>
         ) : (
           <Link
             href={`/dashboard/projects?attention=1${query ? `&q=${encodeURIComponent(query)}` : ""}${statusFilter !== "all" ? `&status=${statusFilter}` : ""}${customerFilter !== "all" ? `&customer=${customerFilter}` : ""}${typeFilter !== "all" ? `&type=${typeFilter}` : ""}`}
           >
-            <AlertCircle className="mr-1 h-3 w-3" /> {t("attentionOnly")}
+            <AlertCircle className="mr-1 h-3 w-3" /> {attentionOnlyLabel}
           </Link>
         )}
       </Button>

@@ -333,7 +333,11 @@ export default async function ProjectsPage({
           attentionOnly={attentionOnly}
           query={query}
           customers={customers}
-          t={t}
+          allStatusesLabel={t("allStatuses")}
+          allTypesLabel={t("allTypes")}
+          allCustomersLabel={t("allCustomers")}
+          allProjectsLabel={t("allProjects")}
+          attentionOnlyLabel={t("attentionOnly")}
         />
       </div>
 
