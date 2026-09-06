@@ -207,6 +207,8 @@
       "photosDesc": "Adjunta fotos de la obra a las facturas y gastos directamente desde tu teléfono.",
       "customers": "Clientes y subcontratistas",
       "customersDesc": "Gestiona tu base de datos de clientes y las tarifas de subcontratistas en un solo lugar.",
+      "projects": "Suite de gestión de proyectos",
+      "projectsDesc": "Organiza cada obra con un centro de proyecto dedicado: controla la rentabilidad, planifica tareas, gestiona órdenes de cambio y retenciones.",
       "reports": "Órdenes de cambio e informes",
       "reportsDesc": "Rastrea órdenes de cambio, ingresos, saldos pendientes y análisis de clientes."
     }

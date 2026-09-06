@@ -207,6 +207,8 @@
       "photosDesc": "Joignez des photos de chantier aux factures et dépenses directement depuis votre téléphone.",
       "customers": "Clients et sous-traitants",
       "customersDesc": "Gérez votre base de données clients et les tarifs des sous-traitants en un seul endroit.",
+      "projects": "Suite de gestion de projets",
+      "projectsDesc": "Organisez chaque chantier via un centre de projet dédié : suivez la rentabilité, planifiez les tâches, gérez les ordres de modification et les retenues de garantie.",
       "reports": "Ordres de modification et rapports",
       "reportsDesc": "Suivez les ordres de modification, les revenus, les soldes et les analyses clients."
     }

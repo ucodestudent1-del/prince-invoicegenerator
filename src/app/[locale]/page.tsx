@@ -1,6 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import type { Metadata } from "next";
-import { FileText, Calculator, Camera, Users, Repeat, ShieldCheck } from "lucide-react";
+import { FileText, Calculator, Camera, Users, Repeat, ShieldCheck, FolderKanban } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,6 +43,11 @@ export default async function HomePage() {
       icon: Users,
       title: t("features.customers"),
       body: t("features.customersDesc"),
+    },
+    {
+      icon: FolderKanban,
+      title: t("features.projects"),
+      body: t("features.projectsDesc"),
     },
     {
       icon: ShieldCheck,

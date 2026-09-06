@@ -210,6 +210,8 @@
       "photosDesc": "Attach job site photos to invoices and expenses directly from your phone.",
       "customers": "Customers & subcontractors",
       "customersDesc": "Manage your client database and subcontractor rates in one place.",
+      "projects": "Project management suite",
+      "projectsDesc": "Organize every job with a dedicated project hub — track profitability, schedule tasks, manage change orders, and control retainage.",
       "reports": "Change orders & reports",
       "reportsDesc": "Track change orders, revenue, outstanding balances, and customer analytics."
     }
