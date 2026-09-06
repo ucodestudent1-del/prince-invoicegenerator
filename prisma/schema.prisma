@@ -158,6 +158,26 @@ enum ProjectType {
   OTHER
 }
 
+enum ProjectDocumentCategory {
+  CONTRACT
+  ESTIMATE
+  CHANGE_ORDER
+  INVOICE
+  RECEIPT
+  PERMIT
+  PHOTO
+  INSURANCE
+  PLAN
+  OTHER
+}
+
+enum ProjectTaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
 enum TemplateStyle {
   STANDARD
   MODERN
@@ -292,6 +312,12 @@ model Organization {
   customers            Customer[]
   addresses            CustomerAddress[]
   projects             Project[]
+  documents            ProjectDocument[]
+  tasks                ProjectTask[]
+  notes                ProjectNote[]
+  members              ProjectMember[]
+  purchaseOrders       ProjectPurchaseOrder[]
+  costCodes            ProjectCostCode[]
   invoices             Invoice[]
   estimates            Estimate[]
   catalogItems         CatalogItem[]
@@ -507,10 +533,16 @@ model Project {
    subcontractorAssignments SubcontractorProject[]
    recurringConfigs         RecurringInvoiceConfig[]
    timeEntries              TimeEntry[]
-   milestones               ProjectMilestone[]
+    milestones               ProjectMilestone[]
+    documents                ProjectDocument[]
+    tasks                    ProjectTask[]
+    notes                    ProjectNote[]
+    members                  ProjectMember[]
+    purchaseOrders           ProjectPurchaseOrder[]
+    costCodes                ProjectCostCode[]
 
-   @@index([orgId])
-   @@index([projectType])
+    @@index([orgId])
+    @@index([projectType])
 }
 
 // ---------------------------------------------------------------------------
@@ -541,9 +573,157 @@ model ProjectMilestone {
    createdAt   DateTime          @default(now())
    updatedAt   DateTime          @updatedAt
 
-   @@index([orgId])
-   @@index([orgId, projectId])
-   @@index([orgId, status])
+    @@index([orgId])
+    @@index([orgId, projectId])
+    @@index([orgId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Project Documents
+// ---------------------------------------------------------------------------
+
+model ProjectDocument {
+  id            String                    @id @default(cuid())
+  orgId         String
+  org           Organization               @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId     String
+  project       Project                     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  category      ProjectDocumentCategory     @default(OTHER)
+  r2Key         String
+  url           String
+  contentType   String?
+  size          Int?
+  uploadedById  String?
+  uploadedByName String?
+  version       Int                          @default(1)
+  previousId    String?                       @unique
+  previous      ProjectDocument?             @relation("DocumentVersions", fields: [previousId], references: [id])
+  next          ProjectDocument?             @relation("DocumentVersions")
+  createdAt     DateTime                     @default(now())
+  updatedAt     DateTime                     @updatedAt
+
+  @@index([orgId])
+  @@index([orgId, projectId])
+  @@index([orgId, category])
+}
+
+// ---------------------------------------------------------------------------
+// Project Notes
+// ---------------------------------------------------------------------------
+
+model ProjectNote {
+  id          String    @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId    String?
+  authorName  String?
+  content     String    @db.Text
+  isInternal  Boolean   @default(true)
+  isPinned    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([orgId])
+  @@index([orgId, projectId])
+  @@index([orgId, isPinned])
+}
+
+// ---------------------------------------------------------------------------
+// Project Members (project team roster)
+// ---------------------------------------------------------------------------
+
+model ProjectMember {
+  id          String    @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId      String?
+  name        String?
+  role        String    @default("SUB")
+  company     String?
+  email       String?
+  phone       String?
+  trade       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([orgId])
+  @@index([orgId, projectId])
+  @@index([orgId, role])
+}
+
+// ---------------------------------------------------------------------------
+// Project Tasks / To-dos
+// ---------------------------------------------------------------------------
+
+model ProjectTask {
+  id          String          @id @default(cuid())
+  orgId       String
+  org         Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project         @relation(fields: [projectId], references: [id], onDelete:Cascade)
+  assigneeId  String?
+  title       String
+  description String?         @db.Text
+  status      ProjectTaskStatus @default(TODO)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([orgId])
+  @@index([orgId, projectId])
+  @@index([orgId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Project Purchase Orders
+// ---------------------------------------------------------------------------
+
+model ProjectPurchaseOrder {
+  id           String    @id @default(cuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  number       String
+  vendor       String?
+  amount       Float     @default(0)
+  status       String    @default("DRAFT")
+  issueDate    DateTime?
+  notes        String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([orgId])
+  @@index([orgId, projectId])
+}
+
+// ---------------------------------------------------------------------------
+// Project Cost Codes
+// ---------------------------------------------------------------------------
+
+model ProjectCostCode {
+  id          String    @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  code        String
+  name        String
+  budget      Float     @default(0)
+  actual      Float     @default(0)
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([orgId])
+  @@index([orgId, projectId])
 }
 
 // ---------------------------------------------------------------------------
