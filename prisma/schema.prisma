@@ -75,6 +75,8 @@ enum PaymentStatus {
 
 enum InvoiceStatus {
   DRAFT
+  PENDING_REVIEW
+  APPROVED
   SENT
   VIEWED
   PARTIALLY_PAID
@@ -83,7 +85,7 @@ enum InvoiceStatus {
   OVERDUE
   VOID
   CANCELLED
-  WRITTEN_OFF
+  WRITTENOFF
 }
 
 enum EstimateStatus {
@@ -201,14 +203,15 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  role           OrgRole       @default(OWNER)
+   organizationId String?
+   organization   Organization? @relation(fields: [organizationId], references: [id])
+   role           OrgRole       @default(OWNER)
 
-  accounts        Account[]
-  sessions        Session[]
-  timeEntries     TimeEntry[]
-  onboardingState OnboardingState?
+   accounts        Account[]
+   sessions        Session[]
+   timeEntries     TimeEntry[]
+   onboardingState OnboardingState?
+   memberships     OrganizationMembership[]
 }
 
 model Account {
@@ -315,10 +318,11 @@ model Organization {
   documents            ProjectDocument[]
   tasks                ProjectTask[]
   notes                ProjectNote[]
-  members              ProjectMember[]
-  purchaseOrders       ProjectPurchaseOrder[]
-  costCodes            ProjectCostCode[]
-  retainageReleases    RetainageRelease[]
+   members              ProjectMember[]
+   purchaseOrders       ProjectPurchaseOrder[]
+   costCodes            ProjectCostCode[]
+   memberships          OrganizationMembership[]
+   retainageReleases    RetainageRelease[]
   drawSchedules        DrawSchedule[]
   lienWaivers          LienWaiver[]
   subcontractors       Subcontractor[]
@@ -339,10 +343,71 @@ model Organization {
   reminders            Reminder[]
   reminderSuppressions InvoiceReminderSuppression[]
   lateFeeConfig        LateFeeConfig?
-  settings             OrganizationSettings?
-  paymentInfo          PaymentInfo?
-  milestones           ProjectMilestone[]
-  PhotoAttachment      PhotoAttachment[]
+   settings             OrganizationSettings?
+   paymentInfo          PaymentInfo?
+   roles                OrganizationRole[]
+   milestones           ProjectMilestone[]
+   PhotoAttachment      PhotoAttachment[]
+}
+
+// ---------------------------------------------------------------------------
+// Organisation roles & permissions (Plan: Roles & Permissions)
+// ---------------------------------------------------------------------------
+//
+// Users are connected to organisations through OrganizationMembership rather
+// than by a hard-coded role column on the User row. Each membership carries a
+// role; a role carries a set of resource.action permissions. System roles are
+// immutable and shared across all organisations; custom roles are per-org and
+// editable, so companies can tailor permissions without code changes.
+//
+// Hierarchy: Organization → Membership → Role → RolePermission
+// Project members optionally reference a roleId so the same permission model
+// can be applied at the project level.
+
+model OrganizationRole {
+  id          String                    @id @default(cuid())
+  orgId       String?                   // null for system-wide (immutable) roles
+  org         Organization?             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isSystem    Boolean                   @default(false)
+  isEditable  Boolean                   @default(true)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+   permissions OrganizationRolePermission[]
+   memberships OrganizationMembership[]
+   projectMembers ProjectMember[] @relation("ProjectMemberRole")
+
+  @@unique([orgId, name])
+  @@index([orgId])
+  @@index([isSystem])
+}
+
+model OrganizationRolePermission {
+  id         String   @id @default(cuid())
+  roleId     String
+  role       OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission String   // e.g. "invoices.create"
+  @@unique([roleId, permission])
+  @@index([permission])
+}
+
+model OrganizationMembership {
+  id        String          @id @default(cuid())
+  orgId     String
+  org       Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String?
+  role      OrganizationRole? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([orgId, userId])
+  @@index([orgId])
+  @@index([userId])
+  @@index([orgId, roleId])
 }
 
 // ---------------------------------------------------------------------------
@@ -643,29 +708,27 @@ model ProjectNote {
 // ---------------------------------------------------------------------------
 
 model ProjectMember {
-  id        String       @id @default(cuid())
+  id        String            @id @default(cuid())
   orgId     String
-  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  org       Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   projectId String
-  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   userId    String?
   name      String?
-  role      String       @default("SUB")
+  role      String            @default("SUB")
+  roleId    String?           // references OrganizationRole for project-level permission scoping
+  roleRef   OrganizationRole? @relation("ProjectMemberRole", fields: [roleId], references: [id], onDelete: SetNull)
   company   String?
   email     String?
   phone     String?
   trade     String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   @@index([orgId])
   @@index([orgId, projectId])
   @@index([orgId, role])
 }
-
-// ---------------------------------------------------------------------------
-// Project Tasks / To-dos
-// ---------------------------------------------------------------------------
 
 model ProjectTask {
   id          String            @id @default(cuid())

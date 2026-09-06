@@ -10,6 +10,16 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { checkRateLimit } from "@/lib/action-rate-limit";
 import { recordAudit } from "@/lib/audit";
+import { authorize } from "@/lib/authorization";
+import { SYSTEM_ROLES } from "@/lib/permissions";
+import type { SystemRoleId } from "@/lib/permissions";
+
+const LEGACY_TO_SYSTEM: Record<string, SystemRoleId> = {
+	OWNER: "owner",
+	ADMIN: "administrator",
+	MEMBER: "project_manager",
+	VIEWER: "field_worker",
+};
 
 export interface InviteTeamMemberInput {
   email: string;
@@ -24,6 +34,16 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
       return { success: false, error: "No organization" };
     }
     const orgId = user.organizationId;
+
+    // Permission gate: only members with team.invite may invite others.
+    const decision = await authorize({
+      userId: user["id"],
+      orgId,
+      permission: "team.invite",
+    });
+    if (!decision["allowed"]) {
+      return { success: false, error: decision["reason"] };
+    }
 
     if (!(await checkRateLimit(`team-invite:${user.email}`, 10, 60 * 60 * 1000))) {
       return { success: false, error: "Too many team invitations. Please try again later." };
@@ -63,7 +83,22 @@ export async function inviteTeamMember(input: InviteTeamMemberInput) {
         select: { id: true },
       });
       invitedUserId = created["id"];
-    } catch (err) {
+
+       // Also create an OrganizationMembership so the new system is in sync with
+       // the legacy role column. Best-effort: skip if the table is absent.
+       const systemRoleId = LEGACY_TO_SYSTEM[input.role];
+       if (systemRoleId) {
+         try {
+           await db["organizationMembership"]["create"]({
+             data: { orgId, userId: created["id"], roleId: systemRoleId },
+           }).catch((membershipErr: any) => {
+             if (!isMissingColumnError(membershipErr)) throw membershipErr;
+           });
+         } catch (membershipErr: any) {
+           if (!isMissingColumnError(membershipErr)) throw membershipErr;
+         }
+       }
+     } catch (err) {
       if (isMissingColumnError(err)) {
         return {
           success: false,

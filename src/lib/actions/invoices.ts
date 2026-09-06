@@ -14,6 +14,9 @@ import { CreateInvoiceSchema, RecordPaymentSchema, formatZodError } from "@/lib/
 import { computeInvoiceTotals } from "@/lib/invoice-totals";
 import { logServerError } from "@/lib/errors";
 import { invalidateDashboard } from "@/lib/actions/dashboard";
+import { resolveOrgPermissions } from "@/lib/authorization";
+import { hasPermission, normaliseInvoiceState, canPerformInvoiceAction } from "@/lib/authorization-policy";
+import type { InvoiceAction } from "@/lib/permissions";
 
 export interface InvoiceItemInput {
   description: string;
@@ -50,6 +53,11 @@ export async function createInvoice(input: CreateInvoiceInput) {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
+
+    const perms = await resolveOrgPermissions(user["id"], orgId);
+    if (!hasPermission(perms, "invoices.create")["allowed"]) {
+      actionError("You do not have permission to create invoices.");
+    }
 
     if (!input["customerId"]) {
       actionError("Customer is required.");
@@ -243,6 +251,21 @@ export async function markInvoiceStatus(id: string, status: InvoiceStatus) {
 
     const previousStatus = invoice["status"];
 
+    // State-aware authorisation: financial status transitions require both the
+    // underlying permission AND a structurally valid state transition.
+    const currentState = normaliseInvoiceState(previousStatus) ?? "DRAFT";
+    const statusToAction: Record<string, InvoiceAction> = {
+      APPROVED: "approve",
+      SENT: "send",
+      VOID: "void",
+    };
+    const action = statusToAction[status as string];
+    if (action) {
+      const perms = await resolveOrgPermissions(user["id"], orgId);
+      const decision = canPerformInvoiceAction(perms, action, currentState);
+      if (!decision["allowed"]) actionError(decision["reason"]);
+    }
+
     let amountPaid = invoice["amountPaid"];
     if (status === "PAID") {
       amountPaid = invoice["total"];
@@ -311,6 +334,11 @@ export async function recordPayment(input: {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
+
+    const perms = await resolveOrgPermissions(user["id"], orgId);
+    if (!hasPermission(perms, "payments.create")["allowed"]) {
+      actionError("You do not have permission to record payments.");
+    }
 
     if (!input["invoiceId"]) actionError("Invoice is required.");
     if (!Number["isFinite"](input["amount"])) {
@@ -846,6 +874,18 @@ export async function deleteInvoice(id: string) {
     const user = await requireUser();
     if (!user["organizationId"]) actionError("No organization");
     const orgId = user["organizationId"];
+
+    const invoice = await db["invoice"]["findFirst"]({
+      where: { id, orgId },
+      select: { id: true, status: true, total: true, amountPaid: true },
+    });
+    if (!invoice) actionError("Not found");
+
+    // State-aware authorisation: deleting is only allowed from DRAFT.
+    const currentState = normaliseInvoiceState(invoice["status"]) ?? "DRAFT";
+    const perms = await resolveOrgPermissions(user["id"], orgId);
+    const decision = canPerformInvoiceAction(perms, "delete", currentState);
+    if (!decision["allowed"]) actionError(decision["reason"]);
 
     // Run the cleanup + delete inside a single transaction so a partial
     // failure cannot leave orphan references pointing at a now-missing
