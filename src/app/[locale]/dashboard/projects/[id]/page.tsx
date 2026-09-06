@@ -11,6 +11,9 @@ import {
   getProjectDocuments,
   getProjectNotes,
   getProjectMembers,
+  getProjectTasks,
+  getProjectPurchaseOrders,
+  getProjectCostCodes,
   createProjectNote,
   addProjectMember,
 } from "@/lib/actions/projects";
@@ -42,7 +45,7 @@ import {
   Upload,
 } from "lucide-react";
 
-const TAB_VALUES = ["overview", "financials", "invoices", "payments", "costs", "changeOrders", "documents", "activity", "settings"] as const;
+const TAB_VALUES = ["overview", "financials", "invoices", "payments", "costs", "changeOrders", "tasks", "documents", "activity", "settings"] as const;
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +65,7 @@ export default async function ProjectWorkspacePage({
   const tInvoices = await getTranslations("invoices");
   const tPayments = await getTranslations("payments");
   const tExpenses = await getTranslations("expenses");
+  const tTasks = await getTranslations("tasks");
 
   const activeTab = (searchParams["tab"] ?? "overview") as string;
   const validTab = TAB_VALUES["includes"](activeTab as any)
@@ -77,9 +81,12 @@ export default async function ProjectWorkspacePage({
   let projectDocuments;
   let notes;
   let members;
+  let tasks;
+  let purchaseOrders;
+  let costCodes;
 
   try {
-    [project, financials, invoices, payments, expenses, changeOrders, projectDocuments, notes, members] = await Promise["all"]([
+    [project, financials, invoices, payments, expenses, changeOrders, projectDocuments, notes, members, tasks, purchaseOrders, costCodes] = await Promise["all"]([
       getProjectDetail(params["id"]),
       getProjectFinancials(params["id"]),
       getProjectInvoices(params["id"]),
@@ -89,6 +96,9 @@ export default async function ProjectWorkspacePage({
       getProjectDocuments(params["id"]),
       getProjectNotes(params["id"]),
       getProjectMembers(params["id"]),
+      getProjectTasks(params["id"]),
+      getProjectPurchaseOrders(params["id"]),
+      getProjectCostCodes(params["id"]),
     ]);
   } catch (err) {
     logServerError("ProjectWorkspacePage", err);
@@ -372,8 +382,9 @@ export default async function ProjectWorkspacePage({
             else if (tab === "invoices") label = tInvoices("title");
             else if (tab === "payments") label = tPayments("title");
             else if (tab === "costs") label = tExpenses("title");
-            else if (tab === "changeOrders") label = "Change Orders";
-            else if (tab === "documents") label = t("documents");
+             else if (tab === "changeOrders") label = "Change Orders";
+             else if (tab === "tasks") label = tTasks("title") ?? "Tasks";
+             else if (tab === "documents") label = t("documents");
             else if (tab === "activity") label = t("activity");
             else label = t("settings");
 
@@ -406,6 +417,9 @@ export default async function ProjectWorkspacePage({
          projectDocuments={projectDocuments}
          notes={notes}
          members={members}
+         tasks={tasks}
+         purchaseOrders={purchaseOrders}
+         costCodes={costCodes}
          currency={currency}
         customers={customers}
         invoicesTotal={invoicesTotal}
@@ -422,8 +436,9 @@ export default async function ProjectWorkspacePage({
         t={t}
         tInvoices={tInvoices}
         tPayments={tPayments}
-        tExpenses={tExpenses}
-        tCommon={tCommon}
+         tExpenses={tExpenses}
+         tTasks={tTasks}
+         tCommon={tCommon}
       />
     </div>
   );
@@ -439,8 +454,11 @@ function TabContent({
   changeOrders,
   projectDocuments,
   notes,
-  members,
-  currency,
+   members,
+   tasks,
+   purchaseOrders,
+   costCodes,
+   currency,
   customers,
   invoicesTotal,
   invoicesPaid,
@@ -457,6 +475,7 @@ function TabContent({
   tInvoices,
   tPayments,
   tExpenses,
+  tTasks,
   tCommon,
 }: {
   activeTab: string;
@@ -469,6 +488,9 @@ function TabContent({
   projectDocuments: any[];
   notes: any[];
   members: any[];
+  tasks: any[];
+  purchaseOrders: any[];
+  costCodes: any[];
   currency: string;
   customers: { id: string; name: string }[];
   invoicesTotal: number;
@@ -486,6 +508,7 @@ function TabContent({
   tInvoices: any;
   tPayments: any;
   tExpenses: any;
+  tTasks: any;
   tCommon: any;
 }) {
   return (
@@ -762,6 +785,66 @@ function TabContent({
             </TableBody>
           </Table>
         )}
+
+        {purchaseOrders && purchaseOrders.length > 0 && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">Purchase Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>Vendor</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {purchaseOrders["map"]((po: any) => (
+                    <TableRow key={po["id"]}>
+                      <TableCell>{po["number"]}</TableCell>
+                      <TableCell>{po["vendor"] ?? "—"}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(Number(po["amount"]) || 0, currency)}</TableCell>
+                      <TableCell>{po["status"]}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {costCodes && costCodes.length > 0 && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">Cost Codes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="text-right">Budget</TableHead>
+                    <TableHead className="text-right">Actual</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {costCodes["map"]((cc: any) => (
+                    <TableRow key={cc["id"]}>
+                      <TableCell>{cc["code"]}</TableCell>
+                      <TableCell>{cc["name"]}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(Number(cc["budget"]) || 0, currency)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(Number(cc["actual"]) || 0, currency)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Change Orders Tab */}
@@ -791,6 +874,33 @@ function TabContent({
               ))}
             </TableBody>
           </Table>
+        )}
+      </div>
+
+      {/* Tasks Tab */}
+      <div className={activeTab === "tasks" ? "block" : "hidden"}>
+        <h2 className="text-lg font-semibold mb-4">{tTasks("title") ?? "Tasks"}</h2>
+        {tasks && tasks.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Task</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Due Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tasks["map"]((task: any) => (
+                <TableRow key={task["id"]}>
+                  <TableCell>{task["title"]}</TableCell>
+                  <TableCell>{task["status"]}</TableCell>
+                  <TableCell>{task["dueDate"] ? formatDate(task["dueDate"]) : "—"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <p className="text-muted-foreground">No tasks yet.</p>
         )}
       </div>
 

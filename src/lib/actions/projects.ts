@@ -660,7 +660,110 @@ export async function addProjectMember(input: AddProjectMemberInput) {
        },
      });
 
-     await revalidateWithLocale(`/dashboard/projects/${input["projectId"]}/activity`);
-     return member;
+      await revalidateWithLocale(`/dashboard/projects/${input["projectId"]}/activity`);
+      return member;
+    });
+}
+
+export async function getProjectTasks(projectId: string) {
+  return withActionError("getProjectTasks", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const tasks = await db["projectTask"]["findMany"]({
+       where: { orgId, projectId },
+       orderBy: { createdAt: "desc" },
+     });
+     return tasks;
+   });
+}
+
+export interface UpdateProjectTaskInput {
+  title?: string;
+  description?: string | null;
+  status?: string;
+  dueDate?: string | null;
+}
+
+export async function updateProjectTask(taskId: string, input: UpdateProjectTaskInput) {
+  return withActionError("updateProjectTask", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const task = await db["projectTask"]["updateMany"]({
+       where: { id: taskId, orgId },
+       data: {
+         ...(input["title"] !== undefined && { title: input["title"] }),
+         ...(input["description"] !== undefined && { description: input["description"] }),
+         ...(input["status"] !== undefined && { status: input["status"] as any }),
+         ...(input["dueDate"] !== undefined && {
+           dueDate: input["dueDate"] ? new Date(input["dueDate"]) : null,
+         }),
+         ...(input["status"] === "COMPLETED" && { completedAt: new Date() }),
+       },
+     });
+
+     await revalidateWithLocale(`/dashboard/projects`);
+     return task;
+   });
+}
+
+export async function getProjectPurchaseOrders(projectId: string) {
+  return withActionError("getProjectPurchaseOrders", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const pos = await db["projectPurchaseOrder"]["findMany"]({
+       where: { orgId, projectId },
+       orderBy: { createdAt: "desc" },
+     });
+     return pos;
+   });
+}
+
+export interface CreatePurchaseOrderInput {
+  projectId: string;
+  number: string;
+  vendor?: string | null;
+  amount?: number;
+  notes?: string | null;
+}
+
+export async function createPurchaseOrder(input: CreatePurchaseOrderInput) {
+  return withActionError("createPurchaseOrder", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const po = await db["projectPurchaseOrder"]["create"]({
+       data: {
+         org: { connect: { id: orgId } },
+         project: { connect: { id: input["projectId"] } },
+         number: input["number"],
+         vendor: input["vendor"] ?? undefined,
+         amount: roundMoney(input["amount"] ?? 0),
+         notes: input["notes"] ?? undefined,
+       },
+     });
+
+     await revalidateWithLocale(`/dashboard/projects/${input["projectId"]}/costs`);
+     return po;
+   });
+}
+
+export async function getProjectCostCodes(projectId: string) {
+  return withActionError("getProjectCostCodes", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const costCodes = await db["projectCostCode"]["findMany"]({
+       where: { orgId, projectId },
+       orderBy: { code: "asc" },
+     });
+     return costCodes;
    });
 }
