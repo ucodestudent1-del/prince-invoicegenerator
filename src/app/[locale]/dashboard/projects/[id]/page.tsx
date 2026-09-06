@@ -9,6 +9,10 @@ import {
   getProjectExpenses,
   getProjectChangeOrders,
   getProjectDocuments,
+  getProjectNotes,
+  getProjectMembers,
+  createProjectNote,
+  addProjectMember,
 } from "@/lib/actions/projects";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,9 +75,11 @@ export default async function ProjectWorkspacePage({
   let expenses;
   let changeOrders;
   let projectDocuments;
+  let notes;
+  let members;
 
   try {
-    [project, financials, invoices, payments, expenses, changeOrders, projectDocuments] = await Promise["all"]([
+    [project, financials, invoices, payments, expenses, changeOrders, projectDocuments, notes, members] = await Promise["all"]([
       getProjectDetail(params["id"]),
       getProjectFinancials(params["id"]),
       getProjectInvoices(params["id"]),
@@ -81,6 +87,8 @@ export default async function ProjectWorkspacePage({
       getProjectExpenses(params["id"]),
       getProjectChangeOrders(params["id"]),
       getProjectDocuments(params["id"]),
+      getProjectNotes(params["id"]),
+      getProjectMembers(params["id"]),
     ]);
   } catch (err) {
     logServerError("ProjectWorkspacePage", err);
@@ -396,6 +404,8 @@ export default async function ProjectWorkspacePage({
         expenses={expenses}
          changeOrders={changeOrders}
          projectDocuments={projectDocuments}
+         notes={notes}
+         members={members}
          currency={currency}
         customers={customers}
         invoicesTotal={invoicesTotal}
@@ -428,6 +438,8 @@ function TabContent({
   expenses,
   changeOrders,
   projectDocuments,
+  notes,
+  members,
   currency,
   customers,
   invoicesTotal,
@@ -455,6 +467,8 @@ function TabContent({
   expenses: any[];
   changeOrders: any[];
   projectDocuments: any[];
+  notes: any[];
+  members: any[];
   currency: string;
   customers: { id: string; name: string }[];
   invoicesTotal: number;
@@ -820,6 +834,53 @@ function TabContent({
             <p className="text-muted-foreground">{tCommon("noDocumentsYet") ?? "No documents yet."}</p>
           </div>
         )}
+      </div>
+
+      {/* Activity Tab */}
+      <div className={activeTab === "activity" ? "block" : "hidden"}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t("teamMembers")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {members && members.length > 0 ? (
+                <div className="space-y-2 text-sm">
+                  {members["map"]((m: any) => (
+                    <div key={m["id"]} className="flex justify-between">
+                      <span>{m["name"] ?? "—"}</span>
+                      <span className="text-muted-foreground">{m["role"]}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No team members</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t("notes")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {notes && notes.length > 0 ? (
+                <div className="space-y-2 text-sm">
+                  {notes["map"]((n: any) => (
+                    <div key={n["id"]}>
+                      <p>{n["content"]}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {n["authorName"] ?? "—"} · {formatDate(n["createdAt"])}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No notes yet</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Settings Tab */}

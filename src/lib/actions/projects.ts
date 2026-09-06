@@ -552,11 +552,115 @@ export async function deleteProjectDocument(documentId: string) {
      if (!user["organizationId"]) actionError("No organization");
      const orgId = user["organizationId"];
 
-     await db["projectDocument"]["deleteMany"]({
-       where: { id: documentId, orgId },
+      await db["projectDocument"]["deleteMany"]({
+        where: { id: documentId, orgId },
+      });
+
+      await revalidateWithLocale("/dashboard/projects");
+      return { success: true };
+    });
+}
+
+export interface CreateProjectNoteInput {
+  projectId: string;
+  content: string;
+  isInternal?: boolean;
+}
+
+export async function createProjectNote(input: CreateProjectNoteInput) {
+  return withActionError("createProjectNote", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const note = await db["projectNote"]["create"]({
+       data: {
+         org: { connect: { id: orgId } },
+         project: { connect: { id: input["projectId"] } },
+         authorName: user["name"] ?? user["email"] ?? "—",
+         content: input["content"],
+         isInternal: input["isInternal"] ?? true,
+       },
      });
 
-     await revalidateWithLocale("/dashboard/projects");
+     await revalidateWithLocale(`/dashboard/projects/${input["projectId"]}/activity`);
+     return note;
+   });
+}
+
+export async function getProjectNotes(projectId: string) {
+  return withActionError("getProjectNotes", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const notes = await db["projectNote"]["findMany"]({
+       where: { orgId, projectId },
+       orderBy: { createdAt: "desc" },
+     });
+     return notes;
+   });
+}
+
+export async function pinProjectNote(noteId: string, pinned: boolean) {
+  return withActionError("pinProjectNote", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     await db["projectNote"]["updateMany"]({
+       where: { id: noteId, orgId },
+       data: { isPinned: pinned },
+     });
+
      return { success: true };
+   });
+}
+
+export async function getProjectMembers(projectId: string) {
+  return withActionError("getProjectMembers", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const members = await db["projectMember"]["findMany"]({
+       where: { orgId, projectId },
+       orderBy: { createdAt: "desc" },
+     });
+     return members;
+   });
+}
+
+export interface AddProjectMemberInput {
+  projectId: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  role?: string | null;
+  company?: string | null;
+  trade?: string | null;
+}
+
+export async function addProjectMember(input: AddProjectMemberInput) {
+  return withActionError("addProjectMember", async () => {
+     const user = await requireUser();
+     if (!user["organizationId"]) actionError("No organization");
+     const orgId = user["organizationId"];
+
+     const member = await db["projectMember"]["create"]({
+       data: {
+         org: { connect: { id: orgId } },
+         project: { connect: { id: input["projectId"] } },
+         name: input["name"],
+         email: input["email"] ?? undefined,
+         phone: input["phone"] ?? undefined,
+         role: input["role"] ?? "SUB",
+         company: input["company"] ?? undefined,
+         trade: input["trade"] ?? undefined,
+       },
+     });
+
+     await revalidateWithLocale(`/dashboard/projects/${input["projectId"]}/activity`);
+     return member;
    });
 }
