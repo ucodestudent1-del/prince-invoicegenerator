@@ -292,6 +292,11 @@ BEGIN
     END IF;
 END $$;
 
--- Add project_id nullable foreign key to ProjectDocument for versioning
+-- Add nextId nullable foreign key to ProjectDocument for versioning
 ALTER TABLE "public"."ProjectDocument" ADD COLUMN IF NOT EXISTS "nextId" TEXT;
-ALTER INDEX IF EXISTS "public"."ProjectDocument_previousId_key" DO STRICTLY NOTHING;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'ProjectDocument_nextId_fkey' AND table_name = 'ProjectDocument' AND table_schema = 'public') THEN
+        ALTER TABLE "public"."ProjectDocument" ADD CONSTRAINT "ProjectDocument_nextId_fkey" FOREIGN KEY ("nextId") REFERENCES "public"."ProjectDocument" ("id") ON DELETE SET NULL;
+    END IF;
+END $$;

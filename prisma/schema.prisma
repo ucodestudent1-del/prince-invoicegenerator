@@ -175,7 +175,7 @@ enum ProjectTaskStatus {
   TODO
   IN_PROGRESS
   BLOCKED
-  DONE
+  COMPLETED
 }
 
 enum TemplateStyle {
