@@ -190,6 +190,18 @@ else
     echo "Resolving failed migration 20260905030000_add_project_sections..."
     npx prisma migrate resolve --rolled-back 20260905030000_add_project_sections || true
 
+    # -------------------------------------------------------------------------
+    # Resolve the failed 20260906000000_add_roles_permissions migration.
+    # This migration was attempted but failed (error P3009) because a prior
+    # deployment with build errors left it in a "failed" state in
+    # _prisma_migrations. The migration SQL is idempotent (uses IF NOT EXISTS,
+    # DO $$ guards, CREATE TABLE IF NOT EXISTS), so marking it as rolled-back
+    # allows prisma migrate deploy to re-run it safely — any already-applied
+    # DDL is a no-op under the guards.
+    # -------------------------------------------------------------------------
+    echo "Resolving failed migration 20260906000000_add_roles_permissions..."
+    npx prisma migrate resolve --rolled-back 20260906000000_add_roles_permissions || true
+
     # Retry migrations up to 5 times in case database is not ready yet
    max_retries=5
    retry=1
