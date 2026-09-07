@@ -71,7 +71,7 @@ export function TemplateManager({ templates, org, locale = "en" }: TemplateManag
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Your Templates</h2>
-        <Button onClick={() => setEditingTemplate(getDefaultTemplate("STANDARD")) && setShowCustomizer(true)}>
+        <Button onClick={() => { setEditingTemplate(getDefaultTemplate("STANDARD")); setShowCustomizer(true); }}>
           <Plus className="h-4 w-4 mr-2" />
           New Template
         </Button>
