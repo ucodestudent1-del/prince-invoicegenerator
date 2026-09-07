@@ -12,7 +12,7 @@ const finiteNonNegative = z["number"]()["finite"]()["nonnegative"]();
 export const CreateInvoiceSchema = z["object"]({
   customerId: z["string"]()["min"](1, "Customer is required"),
   projectId: z["string"]()["optional"]()["nullable"](),
-  type: z["enum"](["STANDARD", "PROGRESS", "RECURRING"]),
+  type: z["enum"](["STANDARD", "PROGRESS", "RECURRING", "EXPENSE", "FIXED_PRICE", "TIME_AND_MATERIALS", "MILESTONE", "CHANGE_ORDER", "DEPOSIT", "RETAINAGE", "FINAL", "CUSTOM"]),
   issueDate: z["string"]()["min"](1, "Issue date is required"),
   dueDate: z["string"]()["optional"]()["nullable"](),
   currency: z["string"]()["default"]("USD"),

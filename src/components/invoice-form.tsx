@@ -13,7 +13,13 @@ import { formatCurrency } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { CatalogItemSelector } from "@/components/catalog-item-selector";
 import { UnbilledTimeSelector } from "@/components/unbilled-time-selector";
-import { Clock } from "lucide-react";
+import {
+  getInvoiceTemplate,
+  getAvailableInvoiceTypes,
+  type InvoiceTemplateConfig,
+} from "@/lib/invoice-templates";
+import type { InvoiceType } from "@prisma/client";
+import { Clock, ChevronDown } from "lucide-react";
 
 export function InvoiceForm({
   customers,
@@ -59,35 +65,44 @@ export function InvoiceForm({
   const t = useTranslations("invoices");
   const tProjects = useTranslations("projects");
   const router = useRouter();
-  const [error, setError] = React["useState"]<string | null>(null);
-  const [saving, setSaving] = React["useState"](false);
-  const [customerId, setCustomerId] = React["useState"](preselectedProject?.["customerId"] ?? "");
-  const [projectId, setProjectId] = React["useState"](preselectedProject?.["id"] ?? "");
-  const [billingIntent, setBillingIntent] = React["useState"]<"DEPOSIT" | "PROGRESS" | "FINAL" | "CUSTOM">(
+  const [error, setError] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
+  const [customerId, setCustomerId] = React.useState(preselectedProject?.["customerId"] ?? "");
+  const [projectId, setProjectId] = React.useState(preselectedProject?.["id"] ?? "");
+  const [billingIntent, setBillingIntent] = React.useState<"DEPOSIT" | "PROGRESS" | "FINAL" | "CUSTOM">(
     preselectedProject ? "PROGRESS" : "CUSTOM",
   );
-  const [type, setType] = React["useState"]<"STANDARD" | "PROGRESS" | "RECURRING">("STANDARD");
-  const [issueDate, setIssueDate] = React["useState"](
-    new Date()["toISOString"]()["slice"](0, 10)
-  );
-  const [dueDate, setDueDate] = React["useState"]("");
-  const [taxRate, setTaxRate] = React["useState"]<string | number>(preselectedProject?.["taxRate"] ?? 0);
-  const [discount, setDiscount] = React["useState"]<string | number>(0);
-  const [retainageRate, setRetainageRate] = React["useState"]<string | number>(0);
-  const [invoiceNumber, setInvoiceNumber] = React["useState"]("");
-  const [notes, setNotes] = React["useState"]("");
-  const [logoUrl, setLogoUrl] = React["useState"]<string | null>(null);
-  const [logoFile, setLogoFile] = React["useState"]<File | null>(null);
-  const [logoPreview, setLogoPreview] = React["useState"]<string | null>(null);
-  const [billToAddress, setBillToAddress] = React["useState"]("");
-  const [shipToAddress, setShipToAddress] = React["useState"]("");
-  const [items, setItems] = React["useState"]([
+  const [type, setType] = React.useState<InvoiceType>("STANDARD");
+  const [issueDate, setIssueDate] = React.useState(new Date()["toISOString"]()["slice"](0, 10));
+  const [dueDate, setDueDate] = React.useState("");
+  const [taxRate, setTaxRate] = React.useState<string | number>(preselectedProject?.["taxRate"] ?? 0);
+  const [discount, setDiscount] = React.useState<string | number>(0);
+  const [retainageRate, setRetainageRate] = React.useState<string | number>(0);
+  const [invoiceNumber, setInvoiceNumber] = React.useState("");
+  const [notes, setNotes] = React.useState("");
+  const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
+  const [logoFile, setLogoFile] = React.useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
+  const [billToAddress, setBillToAddress] = React.useState("");
+  const [shipToAddress, setShipToAddress] = React.useState("");
+  const [items, setItems] = React.useState([
     { description: "", quantity: 1, unitPrice: 0, sku: "" },
   ]);
-  const [trackedTime, setTrackedTime] = React["useState"]<any[] | null>(null);
+  const [trackedTime, setTrackedTime] = React.useState<any[] | null>(null);
 
-  // When the user picks a different project in the dropdown, refresh the
-  // customer if the project knows its customer.
+  const availableTypes = getAvailableInvoiceTypes(canProgress, canRecurring, canRetainage);
+  const template: InvoiceTemplateConfig = getInvoiceTemplate(type);
+
+  React.useEffect(() => {
+    const defaults = getInvoiceTemplate(type).defaults;
+    setTaxRate(defaults.taxRate);
+    setDiscount(defaults.discount);
+    setRetainageRate(defaults.retainageRate);
+    if (defaults.billingIntent) {
+      setBillingIntent(defaults.billingIntent);
+    }
+  }, [type]);
+
   function onProjectChange(newProjectId: string) {
     setProjectId(newProjectId);
     const proj = projects.find((p) => p.id === newProjectId);
@@ -135,7 +150,7 @@ export function InvoiceForm({
   const subtotal = items["reduce"]((a, i) => a + i["quantity"] * (Number(i["unitPrice"]) || 0), 0);
   const taxAmount = ((subtotal * (Number(taxRate) || 0)) / 100);
   const totalBeforeRetainage = subtotal + taxAmount - (Number(discount) || 0);
-  const retainageAmount = canRetainage ? ((totalBeforeRetainage * (Number(retainageRate) || 0)) / 100) : 0;
+  const retainageAmount = canRetainage && template.features.supportsRetainage ? ((totalBeforeRetainage * (Number(retainageRate) || 0)) / 100) : 0;
   const total = totalBeforeRetainage - retainageAmount;
 
   function updateItem(idx: number, field: string, value: any) {
@@ -207,34 +222,34 @@ export function InvoiceForm({
         projectId && billingIntent !== "CUSTOM"
           ? `[${billingIntent}] `
           : "";
-        const invoice = await createInvoice({
-          customerId,
-          projectId: projectId || null,
-          type,
-          issueDate,
-          dueDate: dueDate || null,
-          taxRate: Number(taxRate) || 0,
-          discount: Number(discount) || 0,
-          retainageRate: canRetainage ? Number(retainageRate) || 0 : 0,
-          notes: intentPrefix + (notes ?? ""),
-          invoiceNumber: canCustomizeInvoiceNumber ? invoiceNumber || null : null,
-          logoUrl: uploadedLogoUrl ?? logoUrl ?? null,
-          billToAddress: billToAddress || null,
-          shipToAddress: shipToAddress || null,
-          items: items
-            ["filter"]((i) => i["description"])
-            ["map"]((i) => ({
-              description: i["description"],
-              quantity: Number(i["quantity"]) || 0,
-              unitPrice: Number(i["unitPrice"]) || 0,
-              sku: i["sku"] || null,
-            })),
-        });
-        if (!invoice?.["id"]) {
-          throw new Error("Failed to create invoice. Please try again.");
-        }
-        window["open"](`/dashboard/invoices/${invoice["id"]}/print?auto`, "_blank");
-        router["push"](`/dashboard/invoices/${invoice["id"]}`);
+      const invoice = await createInvoice({
+        customerId,
+        projectId: projectId || null,
+        type,
+        issueDate,
+        dueDate: dueDate || null,
+        taxRate: Number(taxRate) || 0,
+        discount: Number(discount) || 0,
+        retainageRate: canRetainage && template.features.supportsRetainage ? Number(retainageRate) || 0 : 0,
+        notes: intentPrefix + (notes ?? ""),
+        invoiceNumber: canCustomizeInvoiceNumber ? invoiceNumber || null : null,
+        logoUrl: uploadedLogoUrl ?? logoUrl ?? null,
+        billToAddress: billToAddress || null,
+        shipToAddress: shipToAddress || null,
+        items: items
+          ["filter"]((i) => i["description"])
+          ["map"]((i) => ({
+            description: i["description"],
+            quantity: Number(i["quantity"]) || 0,
+            unitPrice: Number(i["unitPrice"]) || 0,
+            sku: i["sku"] || null,
+          })),
+      });
+      if (!invoice?.["id"]) {
+        throw new Error("Failed to create invoice. Please try again.");
+      }
+      window["open"](`/dashboard/invoices/${invoice["id"]}/print?auto`, "_blank");
+      router["push"](`/dashboard/invoices/${invoice["id"]}`);
     } catch (err: any) {
       setError(err?.["message"] ?? "Failed to create invoice.");
       setSaving(false);
@@ -251,11 +266,12 @@ export function InvoiceForm({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Details</CardTitle>
+          <CardTitle className="text-lg">{t("details")}</CardTitle>
+          <p className="text-sm text-muted-foreground">{template.description}</p>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
-            <Label htmlFor="customer">Customer</Label>
+            <Label htmlFor="customer">{t("selectCustomer")}</Label>
             {customers["length"] === 0 ? (
               <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                 No customers found.{" "}
@@ -285,7 +301,7 @@ export function InvoiceForm({
             )}
           </div>
           <div className="space-y-1" hidden={!canProjectManagement}>
-            <Label htmlFor="project">Project</Label>
+            <Label htmlFor="project">{t("selectProject")}</Label>
             {projects["length"] === 0 ? (
               <div className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                 No projects found.{" "}
@@ -330,7 +346,7 @@ export function InvoiceForm({
                 )}
               </div>
             )}
-            {projectId && (
+            {projectId && template.features.requiresProject && (
               <div className="mt-2 space-y-1">
                 <Label htmlFor="billingIntent">{tProjects("billingIntent")}</Label>
                 <select
@@ -344,7 +360,7 @@ export function InvoiceForm({
                   <option value="FINAL">{tProjects("billingIntentFinal")}</option>
                   <option value="CUSTOM">{tProjects("billingIntentCustom")}</option>
                 </select>
-                {billingIntent === "FINAL" && items.length === 1 && items[0]["description"] === "" && projectFinancials && (
+                {billingIntent === "FINAL" && template.suggestions.fillRemaining && items.length === 1 && items[0]["description"] === "" && projectFinancials && (
                   <Button
                     type="button"
                     variant="outline"
@@ -358,15 +374,15 @@ export function InvoiceForm({
                     {tProjects("fillRemaining")}
                   </Button>
                 )}
-                {billingIntent === "DEPOSIT" && items.length === 1 && items[0]["description"] === "" && projectFinancials && (
+                {billingIntent === "DEPOSIT" && template.suggestions.depositPercent && items.length === 1 && items[0]["description"] === "" && projectFinancials && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     className="mt-1"
                     onClick={() => {
-                      const depositAmt = Math.round(projectFinancials.currentContractValue * 0.1 * 100) / 100;
-                      setItems([{ description: "Project deposit (10%)", quantity: 1, unitPrice: depositAmt, sku: "" }]);
+                      const depositAmt = Math.round(projectFinancials.currentContractValue * (template.suggestions.depositPercent ?? 10) / 100 * 100) / 100;
+                      setItems([{ description: `Project deposit (${template.suggestions.depositPercent ?? 10}%)`, quantity: 1, unitPrice: depositAmt, sku: "" }]);
                     }}
                   >
                     {tProjects("suggestDeposit")}
@@ -376,31 +392,36 @@ export function InvoiceForm({
             )}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="type">Type</Label>
-            <select
-              id="type"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-              value={type}
-              onChange={(e) => setType(e["target"]["value"] as "STANDARD" | "PROGRESS" | "RECURRING")}
-            >
-              <option value="STANDARD">{t("standard")}</option>
-              {canProgress && <option value="PROGRESS">{t("progress")}</option>}
-              {canRecurring && <option value="RECURRING">{t("recurring")}</option>}
-            </select>
+            <Label htmlFor="type">{t("type")}</Label>
+            <div className="relative">
+              <select
+                id="type"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm appearance-none"
+                value={type}
+                onChange={(e) => setType(e["target"]["value"] as InvoiceType)}
+              >
+                {availableTypes.map((tp) => (
+                  <option key={tp} value={tp}>
+                    {getInvoiceTemplate(tp).label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
           </div>
           {canCustomizeInvoiceNumber && (
             <div className="space-y-1">
-              <Label htmlFor="invoiceNumber">Invoice name / number</Label>
+              <Label htmlFor="invoiceNumber">{t("invoiceName")}</Label>
               <Input
                 id="invoiceNumber"
-                placeholder="e.g. INV-001 or custom name"
+                placeholder={t("invoiceNamePlaceholder")}
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e["target"]["value"])}
               />
             </div>
           )}
           <div className="space-y-1">
-            <Label htmlFor="issue">Issue date</Label>
+            <Label htmlFor="issue">{t("issueDate")}</Label>
             <Input
               id="issue"
               type="date"
@@ -409,16 +430,16 @@ export function InvoiceForm({
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="due">Due date</Label>
+            <Label htmlFor="due">{t("dueDateLabel")}</Label>
             <Input
               id="due"
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e["target"]["value"])}
             />
-        </div>
-        <div className="space-y-1">
-            <Label htmlFor="logo">Logo</Label>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="logo">{t("logo")}</Label>
             <Input
               id="logo"
               type="file"
@@ -432,181 +453,194 @@ export function InvoiceForm({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Bill &amp; Ship To</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor="billTo">Bill To (optional)</Label>
-            <Textarea
-              id="billTo"
-              placeholder="Address line 1&#10;City, State ZIP"
-              value={billToAddress}
-              onChange={(e) => setBillToAddress(e["target"]["value"])}
-              rows={3}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="shipTo">Ship To (optional)</Label>
-            <Textarea
-              id="shipTo"
-              placeholder="Address line 1&#10;City, State ZIP"
-              value={shipToAddress}
-              onChange={(e) => setShipToAddress(e["target"]["value"])}
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Line items</CardTitle>
-          <div className="flex gap-2">
-            {canUseTimeTracking && (
-              <UnbilledTimeSelector
-                entries={trackedTime || []}
-                onSelect={handleAddTrackedTime}
-                trigger={
-                  <Button type="button" variant="outline" size="sm" onClick={loadTrackedTime}>
-                    <Clock className="h-4 w-4 mr-1" />
-                    Add Tracked Time
-                  </Button>
-                }
+      {template.sections.billTo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{t("billToLabel")}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="billTo">{t("billToLabel")}</Label>
+              <Textarea
+                id="billTo"
+                placeholder={t("addressPlaceholder")}
+                value={billToAddress}
+                onChange={(e) => setBillToAddress(e["target"]["value"])}
+                rows={3}
               />
+            </div>
+            {template.sections.shipTo && (
+              <div className="space-y-1">
+                <Label htmlFor="shipTo">{t("shipToLabel")}</Label>
+                <Textarea
+                  id="shipTo"
+                  placeholder={t("addressPlaceholder")}
+                  value={shipToAddress}
+                  onChange={(e) => setShipToAddress(e["target"]["value"])}
+                  rows={3}
+                />
+              </div>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setItems((p) => [...p, { description: "", quantity: 1, unitPrice: 0, sku: "" }])
-              }
-            >
-              Add item
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {items["map"]((it, idx) => (
-            <div key={idx} className="flex gap-2 items-end">
-              {canUseCatalog && (
-                <CatalogItemSelector
-                  onSelect={(item) => {
-                    updateItem(idx, "description", item["name"]);
-                    updateItem(idx, "unitPrice", item["price"]);
-                    updateItem(idx, "sku", item["sku"] || "");
-                    if (item["taxRate"] > 0) {
-                      setTaxRate(item["taxRate"]);
-                    }
-                  }}
-                  trigger={<Button type="button" variant="outline" size="sm">Browse</Button>}
+          </CardContent>
+        </Card>
+      )}
+
+      {template.sections.lineItems && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">{t("lineItems")}</CardTitle>
+            <div className="flex gap-2">
+              {canUseTimeTracking && template.features.supportsTimeTracking && (
+                <UnbilledTimeSelector
+                  entries={trackedTime || []}
+                  onSelect={handleAddTrackedTime}
+                  trigger={
+                    <Button type="button" variant="outline" size="sm" onClick={loadTrackedTime}>
+                      <Clock className="h-4 w-4 mr-1" />
+                      Add Tracked Time
+                    </Button>
+                  }
                 />
               )}
-              <Input
-                placeholder="Description"
-                value={it["description"]}
-                onChange={(e) => updateItem(idx, "description", e["target"]["value"])}
-                className="flex-1"
-              />
-              <Input
-                type="number"
-                className="w-20"
-                value={it["quantity"]}
-                min={0}
-                onChange={(e) => updateItem(idx, "quantity", e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
-              />
-              <Input
-                type="number"
-                className="w-28"
-                value={it["unitPrice"]}
-                min={0}
-                step="0.01"
-                onChange={(e) => updateItem(idx, "unitPrice", e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
-              />
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                onClick={() => setItems((p) => p["filter"]((_, i) => i !== idx))}
+                onClick={() =>
+                  setItems((p) => [...p, { description: "", quantity: 1, unitPrice: 0, sku: "" }])
+                }
               >
-                &#x2715;
+                Add item
               </Button>
             </div>
-          ))}
-
-          <div className="grid gap-4 pt-2 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label htmlFor="tax">Tax rate %</Label>
-              <Input
-                id="tax"
-                type="number"
-                step="0.01"
-                value={taxRate}
-                min={0}
-                onChange={(e) => setTaxRate(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="discount">Discount</Label>
-              <Input
-                id="discount"
-                type="number"
-                value={discount}
-                min={0}
-                step="0.01"
-                onChange={(e) => setDiscount(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
-              />
-            </div>
-            {canRetainage && (
-              <div className="space-y-1">
-                <Label htmlFor="retainage">Retainage %</Label>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {items["map"]((it, idx) => (
+              <div key={idx} className="flex gap-2 items-end">
+                {canUseCatalog && template.features.supportsCatalog && (
+                  <CatalogItemSelector
+                    onSelect={(item) => {
+                      updateItem(idx, "description", item["name"]);
+                      updateItem(idx, "unitPrice", item["price"]);
+                      updateItem(idx, "sku", item["sku"] || "");
+                      if (item["taxRate"] > 0) {
+                        setTaxRate(item["taxRate"]);
+                      }
+                    }}
+                    trigger={<Button type="button" variant="outline" size="sm">Browse</Button>}
+                  />
+                )}
                 <Input
-                  id="retainage"
-                  type="number"
-                  value={retainageRate}
-                  min={0}
-                  onChange={(e) => setRetainageRate(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
+                  placeholder={t("description")}
+                  value={it["description"]}
+                  onChange={(e) => updateItem(idx, "description", e["target"]["value"])}
+                  className="flex-1"
                 />
+                <Input
+                  type="number"
+                  className="w-20"
+                  value={it["quantity"]}
+                  min={0}
+                  onChange={(e) => updateItem(idx, "quantity", e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
+                />
+                <Input
+                  type="number"
+                  className="w-28"
+                  value={it["unitPrice"]}
+                  min={0}
+                  step="0.01"
+                  onChange={(e) => updateItem(idx, "unitPrice", e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setItems((p) => p["filter"]((_, i) => i !== idx))}
+                >
+                  &#x2715;
+                </Button>
               </div>
+            ))}
+
+            <div className="grid gap-4 pt-2 sm:grid-cols-3">
+              {template.sections.tax && (
+                <div className="space-y-1">
+                  <Label htmlFor="tax">{t("taxRate")}</Label>
+                  <Input
+                    id="tax"
+                    type="number"
+                    step="0.01"
+                    value={taxRate}
+                    min={0}
+                    onChange={(e) => setTaxRate(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
+                  />
+                </div>
+              )}
+              {template.sections.discount && (
+                <div className="space-y-1">
+                  <Label htmlFor="discount">{t("discount")}</Label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    value={discount}
+                    min={0}
+                    step="0.01"
+                    onChange={(e) => setDiscount(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
+                  />
+                </div>
+              )}
+              {template.sections.retainage && canRetainage && template.features.supportsRetainage && (
+                <div className="space-y-1">
+                  <Label htmlFor="retainage">{t("retainagePercent")}</Label>
+                  <Input
+                    id="retainage"
+                    type="number"
+                    value={retainageRate}
+                    min={0}
+                    onChange={(e) => setRetainageRate(e["target"]["value"] === "" ? "" : Number(e["target"]["value"]))}
+                  />
+                </div>
+              )}
+            </div>
+
+            {template.sections.notes && (
+              <Textarea
+                placeholder="Notes (payment terms, job reference, etc.)"
+                value={notes}
+                onChange={(e) => setNotes(e["target"]["value"])}
+              />
             )}
-          </div>
 
-          <Textarea
-            placeholder="Notes (payment terms, job reference, etc.)"
-            value={notes}
-            onChange={(e) => setNotes(e["target"]["value"])}
-          />
-
-          <div className="flex justify-end gap-6 text-sm">
-            <div>
-              Subtotal: <strong>{formatCurrency(subtotal)}</strong>
-            </div>
-            <div>
-              Tax: <strong>{formatCurrency(taxAmount)}</strong>
-            </div>
-            {canRetainage && (
+            <div className="flex justify-end gap-6 text-sm">
               <div>
-                Retainage: <strong>{formatCurrency(retainageAmount)}</strong>
+                {t("subtotal")}: <strong>{formatCurrency(subtotal)}</strong>
               </div>
-            )}
-            <div>
-              Total: <strong className="text-base">{formatCurrency(total)}</strong>
+              {template.sections.tax && (
+                <div>
+                  {t("tax")}: <strong>{formatCurrency(taxAmount)}</strong>
+                </div>
+              )}
+              {template.sections.retainage && canRetainage && template.features.supportsRetainage && (
+                <div>
+                  {t("retainage")}: <strong>{formatCurrency(retainageAmount)}</strong>
+                </div>
+              )}
+              <div>
+                {t("total")}: <strong className="text-base">{formatCurrency(total)}</strong>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : "Create Invoice"}
-          </Button>
-        </div>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={() => router.back()}>
+          {t("cancel")}
+        </Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? t("saving") : t("createInvoice")}
+        </Button>
+      </div>
     </form>
   );
 }
-

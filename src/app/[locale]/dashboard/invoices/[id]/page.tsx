@@ -34,6 +34,8 @@ import { AuditLog } from "@/components/audit-log";
 import { logServerError } from "@/lib/errors";
 import { getTranslations } from "next-intl/server";
 import { getTypeLabel, getTypeBadgeClass } from "@/lib/invoice-types";
+import { getInvoiceTemplate } from "@/lib/invoice-templates";
+import type { InvoiceType } from "@prisma/client";
 
 export default async function InvoiceDetailPage({
   params,
@@ -55,6 +57,8 @@ export default async function InvoiceDetailPage({
         project: true,
         items: { orderBy: { sortOrder: "asc" } },
         payments: { orderBy: { createdAt: "desc" } },
+        milestones: true,
+        changeOrders: true,
       },
     });
   } catch (err) {
@@ -88,6 +92,8 @@ export default async function InvoiceDetailPage({
           customer: true,
           project: true,
           items: { orderBy: { sortOrder: "asc" } },
+          milestones: true,
+          changeOrders: true,
         },
       }) as any;
     } else {
@@ -223,6 +229,57 @@ export default async function InvoiceDetailPage({
                   </div>
                 </div>
               </div>
+
+              {(() => {
+                const type = invoice["type"] as InvoiceType;
+                const tmpl = getInvoiceTemplate(type);
+                if (!tmpl.sections.milestones && !tmpl.sections.changeOrders && !tmpl.sections.progressSummary) return null;
+                return (
+                  <div className="grid gap-4 sm:grid-cols-2 text-sm mb-6">
+                    {tmpl.sections.milestones && invoice["milestones"] && invoice["milestones"]["length"] > 0 && (
+                      <div className="rounded-md border p-3">
+                        <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-2">Milestones</p>
+                        {invoice["milestones"]["map"]((m: any) => (
+                          <div key={m["id"]} className="flex justify-between">
+                            <span>{m["name"] || "Milestone"}</span>
+                            <span className="text-muted-foreground">{formatCurrency(m["amount"] || 0, invoice["currency"])}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {tmpl.sections.changeOrders && invoice["changeOrders"] && invoice["changeOrders"]["length"] > 0 && (
+                      <div className="rounded-md border p-3">
+                        <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-2">Change Orders</p>
+                        {invoice["changeOrders"]["map"]((co: any) => (
+                          <div key={co["id"]} className="flex justify-between">
+                            <span>{co["title"] || co["id"]}</span>
+                            <span className="text-muted-foreground">{formatCurrency(co["amount"] || co["changeAmount"], invoice["currency"])}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {tmpl.sections.progressSummary && invoice["project"] && (
+                      <div className="rounded-md border p-3 sm:col-span-2">
+                        <p className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-2">Project Progress</p>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Contract Value</p>
+                            <p className="font-semibold">{formatCurrency(invoice["project"]["contractValue"] || 0, invoice["currency"])}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Total Invoiced</p>
+                            <p className="font-semibold">{formatCurrency(invoice["total"], invoice["currency"])}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Remaining</p>
+                            <p className="font-semibold">{formatCurrency((invoice["project"]["contractValue"] || 0) - invoice["total"], invoice["currency"])}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
