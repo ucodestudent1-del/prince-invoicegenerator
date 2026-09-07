@@ -1438,6 +1438,12 @@
     "fullWidthOff": "Full Width: Off",
     "save": "Save",
     "cancel": "Cancel",
-    "locale": "en"
+    "locale": "en",
+    "yourTemplates": "Your Templates",
+    "newTemplate": "New Template",
+    "customNewTemplate": "Custom New Template",
+    "customInvoiceTemplate": "Custom invoice template",
+    "backToList": "Back to List",
+    "deleteConfirm": "Delete this template? This cannot be undone."
   }
 }

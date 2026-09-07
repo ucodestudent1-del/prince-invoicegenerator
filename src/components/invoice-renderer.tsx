@@ -25,10 +25,12 @@ export function InvoiceRenderer({
   className = "",
 }: InvoiceRendererProps) {
   const evaluatedData = React.useMemo(() => {
+    if (!template) return {} as Record<string, any>;
     return applyTemplateDefaults(template, data);
   }, [template, data]);
 
   const { visibleSections } = React.useMemo(() => {
+    if (!template) return { visibleSections: [], visibleFieldsBySection: {} };
     return evaluateTemplate(template, evaluatedData);
   }, [template, evaluatedData]);
 

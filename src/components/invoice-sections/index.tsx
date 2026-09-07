@@ -39,10 +39,12 @@ export const SectionComponents: Record<string, React.ComponentType<SectionProps>
   attachments: AttachmentsSection,
   qr_code: QRCodeSection,
   payment_button: PaymentButtonSection,
+  milestone_info: MilestoneInfoSection,
+  custom_field: CustomFieldSection,
 };
 
 function getVisibleFields(section: InvoiceSectionConfig, invoice: any): InvoiceSectionConfig["fields"] {
-  return section["fields"].filter((f) => {
+  return (section["fields"] ?? []).filter((f) => {
     if (!f["visible"]) return false;
     if (f["conditional"]) {
       const val = invoice[f["conditional"]["fieldId"]];
@@ -652,6 +654,25 @@ function MilestoneInfoSection({ section, invoice }: SectionProps) {
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+function CustomFieldSection({ section, invoice }: SectionProps) {
+  const fields = section["fields"] ?? [];
+  if (fields.length === 0) return null;
+  return (
+    <div className="text-sm space-y-1">
+      {fields.map((f) => {
+        const value = invoice[f["name"]] ?? invoice[f["id"]] ?? "";
+        if (value === "" || value == null) return null;
+        return (
+          <div key={f["id"]} className="flex justify-between gap-4">
+            <span className="text-gray-500">{f["label"]}</span>
+            <span className="font-medium text-right">{String(value)}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

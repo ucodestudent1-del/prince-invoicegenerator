@@ -19,6 +19,7 @@ export async function getTemplates(orgId: string) {
         isSystem: true,
         createdAt: true,
         updatedAt: true,
+        configuration: true,
       },
     });
     return templates;

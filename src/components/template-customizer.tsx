@@ -3,11 +3,9 @@
 import * as React from "react";
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { InvoiceRenderer } from "@/components/invoice-renderer";
 import type {
   InvoiceTemplateConfig,
   InvoiceSectionConfig,
-  InvoiceFieldConfig,
 } from "@/lib/invoice-template-config";
 import { getDefaultTemplate } from "@/lib/invoice-template-config";
 import { evaluateTemplate } from "@/lib/conditional-logic";
@@ -118,16 +116,14 @@ export function TemplateCustomizer({ templateId, initialTemplate, onSave, onCanc
 
   const selectedSection = template.sections.find((s) => s.id === selectedSectionId);
 
-  const availableSectionTypes = template.sections
-    ? [
-        "business_info", "customer_info", "project_info", "invoice_details",
-        "line_items", "labor_table", "materials_table", "equipment_table",
-        "change_orders", "schedule_of_values", "retainage", "previous_payments",
-        "discounts", "taxes", "payment_summary", "payment_terms",
-        "notes", "terms", "signature", "photos", "attachments",
-        "qr_code", "payment_button"
-      ].filter((type) => !template.sections.some((s) => s.type === type))
-    : [];
+  const availableSectionTypes = [
+      "business_info", "customer_info", "project_info", "invoice_details",
+      "line_items", "labor_table", "materials_table", "equipment_table",
+      "change_orders", "schedule_of_values", "retainage", "previous_payments",
+      "discounts", "taxes", "payment_summary", "payment_terms",
+      "notes", "terms", "signature", "photos", "attachments",
+      "qr_code", "payment_button"
+    ].filter((type) => !template.sections.some((s) => s.type === type));
 
   const { visibleSections } = React.useMemo(() => {
     return evaluateTemplate(template, {});
