@@ -15,6 +15,9 @@
         "db:studio": "prisma studio",
         "test": "vitest run",
         "test:smoke": "node tests/auth-smoke.js",
+        "i18n:merge": "node scripts/i18n-merge.cjs --write",
+        "i18n:check": "node scripts/i18n-merge.cjs --check",
+        "i18n:verify": "node scripts/i18n-verify.cjs",
         "postinstall": "prisma generate"
     },
     "prisma": {

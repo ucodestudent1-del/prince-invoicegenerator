@@ -872,7 +872,6 @@
     "permissionMatrix": "Permission Matrix",
     "roles": "Roles",
     "rolesDescription": "Manage system and custom roles for your organisation.",
-    "systemRole": "System Role",
     "customRole": "Custom Role",
     "editRole": "Edit Role",
     "deleteRole": "Delete Role",
