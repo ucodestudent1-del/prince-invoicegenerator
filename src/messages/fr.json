@@ -1443,6 +1443,11 @@
     "customNewTemplate": "Nouveau Modèle Personnalisé",
     "customInvoiceTemplate": "Modèle de facture personnalisé",
     "backToList": "Retour à la liste",
-    "deleteConfirm": "Supprimer ce modèle ? Cette action est irréversible."
+    "deleteConfirm": "Supprimer ce modèle ? Cette action est irréversible.",
+    "typesAvailable": "component types available",
+    "allSectionsAdded": "All components have been added to the invoice.",
+    "hideSection": "Hide section",
+    "showSection": "Show section",
+    "removeSection": "Remove section"
   }
 }

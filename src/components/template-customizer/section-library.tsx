@@ -1,36 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { Plus, GripVertical } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { getSectionLabel, type SectionType } from "@/lib/invoice-template-config";
 
-const SECTION_LABELS: Record<string, string> = {
-  business_info: "Business Information",
-  customer_info: "Customer Information",
-  project_info: "Project Information",
-  invoice_details: "Invoice Details",
-  line_items: "Line Items",
-  labor_table: "Labor Table",
-  materials_table: "Materials Table",
-  equipment_table: "Equipment Table",
-  change_orders: "Change Orders",
-  schedule_of_values: "Schedule of Values",
-  retainage: "Retainage",
-  previous_payments: "Previous Payments",
-  discounts: "Discounts",
-  taxes: "Taxes",
-  payment_summary: "Payment Summary",
-  payment_terms: "Payment Terms",
-  notes: "Notes",
-  terms: "Terms & Conditions",
-  signature: "Signature",
-  photos: "Photos",
-  attachments: "Attachments",
-  qr_code: "QR Code",
-  payment_button: "Payment Button",
-};
-
-const SECTION_DESCRIPTIONS: Record<string, string> = {
+const SECTION_DESCRIPTIONS: Partial<Record<SectionType, string>> = {
   business_info: "Company logo, name, and contact details",
   customer_info: "Customer billing and shipping information",
   project_info: "Project name, number, and location",
@@ -54,11 +29,14 @@ const SECTION_DESCRIPTIONS: Record<string, string> = {
   attachments: "Document attachments",
   qr_code: "QR code for payment or verification",
   payment_button: "Online payment button",
+  milestone_info: "Milestone title, description, and amount",
+  custom_field: "A free-form custom field",
 };
 
 interface SectionLibraryProps {
-  availableSectionTypes: string[];
-  onAddSection: (sectionType: string) => void;
+  availableSectionTypes: SectionType[];
+  onAddSection: (sectionType: SectionType) => void;
+  onDragStart: (sectionType: SectionType) => void;
 }
 
 export function SectionLibrary({ availableSectionTypes, onAddSection }: SectionLibraryProps) {
@@ -72,31 +50,45 @@ export function SectionLibrary({ availableSectionTypes, onAddSection }: SectionL
     );
   }
 
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, sectionType: SectionType) => {
+    e.dataTransfer.setData("application/x-section-type", sectionType);
+    e.dataTransfer.setData("text/plain", getSectionLabel(sectionType));
+    e.dataTransfer.effectAllowed = "copy";
+  };
+
   return (
     <div className="space-y-2">
-      {availableSectionTypes.map((sectionType) => (
-        <div
-          key={sectionType}
-          className="p-3 border rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-sm">
-                {SECTION_LABELS[sectionType] || sectionType.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
-              </p>
-              <p className="text-xs text-gray-500">
-                {SECTION_DESCRIPTIONS[sectionType] || ""}
-              </p>
+      {availableSectionTypes.map((sectionType) => {
+        const label = getSectionLabel(sectionType);
+        return (
+          <div
+            key={sectionType}
+            draggable
+            onDragStart={(e) => handleDragStart(e, sectionType)}
+            className="p-3 border rounded-lg hover:bg-gray-100 transition-colors cursor-grab active:cursor-grabbing"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-2">
+                <GripVertical className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-medium text-sm">{label}</p>
+                  <p className="text-xs text-gray-500">
+                    {SECTION_DESCRIPTIONS[sectionType] || ""}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onAddSection(sectionType)}
+                className="p-1 hover:bg-gray-200 rounded"
+                aria-label={`Add ${label}`}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={() => onAddSection(sectionType)}
-              className="p-1 hover:bg-gray-200 rounded"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

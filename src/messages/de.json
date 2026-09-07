@@ -1443,6 +1443,11 @@
     "customNewTemplate": "Neue benutzerdefinierte Vorlage",
     "customInvoiceTemplate": "Benutzerdefinierte Rechnungsvorlage",
     "backToList": "Zurück zur Liste",
-    "deleteConfirm": "Diese Vorlage löschen? Dies kann nicht rückgängig gemacht werden."
+    "deleteConfirm": "Diese Vorlage löschen? Dies kann nicht rückgängig gemacht werden.",
+    "typesAvailable": "component types available",
+    "allSectionsAdded": "All components have been added to the invoice.",
+    "hideSection": "Hide section",
+    "showSection": "Show section",
+    "removeSection": "Remove section"
   }
 }

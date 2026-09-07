@@ -406,6 +406,72 @@ export function getDefaultTemplate(invoiceType: InvoiceType): InvoiceTemplateCon
   };
 }
 
+export const ALL_SECTION_TYPES: SectionType[] = [
+  "business_info",
+  "customer_info",
+  "project_info",
+  "invoice_details",
+  "line_items",
+  "labor_table",
+  "materials_table",
+  "equipment_table",
+  "change_orders",
+  "schedule_of_values",
+  "retainage",
+  "previous_payments",
+  "discounts",
+  "taxes",
+  "payment_summary",
+  "payment_terms",
+  "notes",
+  "terms",
+  "signature",
+  "photos",
+  "attachments",
+  "qr_code",
+  "payment_button",
+  "milestone_info",
+  "custom_field",
+];
+
+export function createTemplateSection(type: SectionType, position: number): InvoiceSectionConfig {
+  return {
+    id: `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    type,
+    name: type,
+    label: getSectionLabel(type),
+    visible: true,
+    collapsible: type !== "business_info" && type !== "customer_info",
+    collapsed: false,
+    position,
+    required: false,
+    fields: getDefaultFieldsForSection(type),
+  };
+}
+
+export function reorderTemplateSections(
+  sections: InvoiceSectionConfig[],
+  sourceId: string,
+  targetId: string
+): InvoiceSectionConfig[] {
+  if (sourceId === targetId) return sections;
+  const sourceIdx = sections.findIndex((s) => s.id === sourceId);
+  const targetIdx = sections.findIndex((s) => s.id === targetId);
+  if (sourceIdx < 0 || targetIdx < 0) return sections;
+
+  const reordered = [...sections];
+  const [removed] = reordered.splice(sourceIdx, 1);
+  reordered.splice(targetIdx, 0, removed);
+  return reordered.map((s, idx) => ({ ...s, position: idx }));
+}
+
+export function removeTemplateSection(
+  sections: InvoiceSectionConfig[],
+  id: string
+): InvoiceSectionConfig[] {
+  return sections.filter((s) => s.id !== id);
+}
+
 export function convertToLegacyTemplate(config: InvoiceTemplateConfig) {
   const sectionTypes = config.sections.map((s) => s.type);
   const sectionMap = {
@@ -455,7 +521,7 @@ export function convertToLegacyTemplate(config: InvoiceTemplateConfig) {
 }
 
 
-function getSectionLabel(type: SectionType | string): string {
+export function getSectionLabel(type: SectionType | string): string {
   const labels: Record<string, string> = {
     business_info: "Business Information",
     customer_info: "Customer Information",
@@ -486,7 +552,7 @@ function getSectionLabel(type: SectionType | string): string {
   return labels[type] ?? type;
 }
 
-function getDefaultFieldsForSection(type: SectionType | string): InvoiceFieldConfig[] {
+export function getDefaultFieldsForSection(type: SectionType | string): InvoiceFieldConfig[] {
   const baseField = (id: string, name: string, label: string, ft: FieldType, pos: number): InvoiceFieldConfig => ({
     id,
     name,

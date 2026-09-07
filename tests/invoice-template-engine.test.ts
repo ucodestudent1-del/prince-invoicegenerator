@@ -4,6 +4,10 @@ import {
   buildDefaultTemplate,
   getDefaultSections,
   DEFAULT_TEMPLATE_STYLING,
+  ALL_SECTION_TYPES,
+  createTemplateSection,
+  reorderTemplateSections,
+  removeTemplateSection,
 } from "@/lib/invoice-template-config";
 import { evaluateTemplate, evaluateRule, evaluateCondition, applyTemplateDefaults } from "@/lib/conditional-logic";
 import type { InvoiceType } from "@prisma/client";
@@ -179,5 +183,99 @@ describe("conditional-logic", () => {
     const result = evaluateTemplate(template, {});
     expect(result.visibleSections.length).toBe(template.sections.length);
     expect(result.visibleFieldsBySection).toBeDefined();
+  });
+});
+
+describe("template drag-and-drop helpers", () => {
+  it("ALL_SECTION_TYPES lists every modular component type", () => {
+    expect(ALL_SECTION_TYPES.length).toBe(25);
+    expect(ALL_SECTION_TYPES).toContain("business_info");
+    expect(ALL_SECTION_TYPES).toContain("milestone_info");
+    expect(ALL_SECTION_TYPES).toContain("custom_field");
+    expect(ALL_SECTION_TYPES).toContain("payment_button");
+  });
+
+  it("createTemplateSection builds a functional section with default fields", () => {
+    const section = createTemplateSection("line_items", 3);
+    expect(section.type).toBe("line_items");
+    expect(section.position).toBe(3);
+    expect(section.visible).toBe(true);
+    expect(section.label).toBe("Line Items");
+    expect(section.fields.length).toBeGreaterThan(0);
+    expect(section.fields.every((f) => f.visible)).toBe(true);
+    expect(section.id).toBeTruthy();
+  });
+
+  it("createTemplateSection marks structural sections as non-collapsible", () => {
+    expect(createTemplateSection("business_info", 0).collapsible).toBe(false);
+    expect(createTemplateSection("customer_info", 0).collapsible).toBe(false);
+    expect(createTemplateSection("notes", 0).collapsible).toBe(true);
+  });
+
+  it("createTemplateSection assigns unique ids", () => {
+    const a = createTemplateSection("notes", 0);
+    const b = createTemplateSection("notes", 1);
+    expect(a.id).not.toBe(b.id);
+  });
+
+  it("reorderTemplateSections moves an item and reassigns positions", () => {
+    const template = getDefaultTemplate("STANDARD");
+    const firstId = template.sections[0].id;
+    const lastId = template.sections[template.sections.length - 1].id;
+
+    const reordered = reorderTemplateSections(template.sections, lastId, firstId);
+
+    expect(reordered.length).toBe(template.sections.length);
+    expect(reordered[0].id).toBe(lastId);
+    expect(reordered.map((s) => s.position)).toEqual(
+      reordered.map((_, idx) => idx)
+    );
+  });
+
+  it("reorderTemplateSections swaps two adjacent items", () => {
+    const template = getDefaultTemplate("STANDARD");
+    const [a, b] = template.sections;
+    const reordered = reorderTemplateSections(template.sections, b.id, a.id);
+    expect(reordered[0].id).toBe(b.id);
+    expect(reordered[1].id).toBe(a.id);
+  });
+
+  it("reorderTemplateSections is a no-op when source equals target", () => {
+    const template = getDefaultTemplate("STANDARD");
+    const id = template.sections[2].id;
+    const reordered = reorderTemplateSections(template.sections, id, id);
+    expect(reordered).toBe(template.sections);
+  });
+
+  it("reorderTemplateSections is a no-op for unknown ids", () => {
+    const template = getDefaultTemplate("STANDARD");
+    const reordered = reorderTemplateSections(template.sections, "missing", "also-missing");
+    expect(reordered).toBe(template.sections);
+  });
+
+  it("reorderTemplateSections preserves hidden (removed-from-canvas) sections", () => {
+    const template = getDefaultTemplate("STANDARD");
+    const target = createTemplateSection("notes", template.sections.length);
+    const withTarget = [...template.sections, { ...target, visible: false }];
+    const source = withTarget[0].id;
+    const reordered = reorderTemplateSections(withTarget, source, target.id);
+    expect(reordered.length).toBe(withTarget.length);
+    expect(reordered[reordered.length - 1].id).toBe(source);
+  });
+
+  it("removeTemplateSection removes only the matched section", () => {
+    const template = getDefaultTemplate("STANDARD");
+    const toRemove = template.sections[1].id;
+    const remaining = removeTemplateSection(template.sections, toRemove);
+    expect(remaining.length).toBe(template.sections.length - 1);
+    expect(remaining.find((s) => s.id === toRemove)).toBeUndefined();
+  });
+
+  it("a dragged library component renders when added to a template", () => {
+    const template = getDefaultTemplate("STANDARD");
+    const section = createTemplateSection("taxes", template.sections.length);
+    const extended = { ...template, sections: [...template.sections, section] };
+    const { visibleSections } = evaluateTemplate(extended, {});
+    expect(visibleSections).toContainEqual(expect.objectContaining({ type: "taxes" }));
   });
 });

@@ -1443,6 +1443,11 @@
     "customNewTemplate": "Nueva Plantilla Personalizada",
     "customInvoiceTemplate": "Plantilla de factura personalizada",
     "backToList": "Volver a la lista",
-    "deleteConfirm": "¿Eliminar esta plantilla? No se puede deshacer."
+    "deleteConfirm": "¿Eliminar esta plantilla? No se puede deshacer.",
+    "typesAvailable": "component types available",
+    "allSectionsAdded": "All components have been added to the invoice.",
+    "hideSection": "Hide section",
+    "showSection": "Show section",
+    "removeSection": "Remove section"
   }
 }
