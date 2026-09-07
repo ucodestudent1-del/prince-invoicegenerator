@@ -14,7 +14,7 @@ import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 const OWNER = DEFAULT_ROLE_PERMISSIONS["owner"];
 const ACCOUNTANT = DEFAULT_ROLE_PERMISSIONS["accountant"];
 const PM = DEFAULT_ROLE_PERMISSIONS["project_manager"];
-const FIELD = DEFAULT_ROLE_PERMISSIONS["field_worker"];
+const FIELD = DEFAULT_ROLE_PERMISSIONS["field_user"];
 
 describe("hasPermission (pure permission check)", () => {
 	it("grants when the permission is present", () => {

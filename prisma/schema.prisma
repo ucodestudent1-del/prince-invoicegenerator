@@ -211,16 +211,19 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-   organizationId String?
-   organization   Organization? @relation(fields: [organizationId], references: [id])
-   role           OrgRole       @default(OWNER)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  role           OrgRole       @default(OWNER)
 
-    accounts        Account[]
-    sessions        Session[]
-    timeEntries     TimeEntry[]
-    onboardingState OnboardingState?
-    memberships     OrganizationMembership[]
-    invoiceTemplates InvoiceTemplate[]
+  jobTitle String?
+
+  accounts        Account[]
+  sessions        Session[]
+  timeEntries     TimeEntry[]
+  onboardingState OnboardingState?
+  memberships     OrganizationMembership[]
+  invoiceTemplates InvoiceTemplate[]
+  invitationsSent OrganizationMembership[] @relation("InvitationInviter")
 }
 
 model Account {
@@ -413,6 +416,20 @@ model OrganizationMembership {
   role      OrganizationRole? @relation(fields: [roleId], references: [id], onDelete: SetNull)
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
+
+  // Distinguish job title (what the person does) from system role (what they
+  // can do). A "Senior Project Manager" job title maps to the "Project Manager"
+  // system role, for example.
+  jobTitle String?
+
+  // Invitation tracking for the member directory.
+  invitedById String?
+  invitedBy   User?   @relation("InvitationInviter", fields: [invitedById], references: [id])
+  invitedAt   DateTime?
+  invitationAcceptedAt DateTime?
+
+  // Account status: when false, the member is deactivated.
+  isActive Boolean        @default(true)
 
   @@unique([orgId, userId])
   @@index([orgId])

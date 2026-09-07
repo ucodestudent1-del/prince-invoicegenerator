@@ -7,26 +7,37 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { inviteTeamMember } from "@/lib/actions/team";
+import { SYSTEM_ROLES } from "@/lib/permissions";
+import type { SystemRoleId } from "@/lib/permissions";
 
 export function InviteTeamMemberForm() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"OWNER" | "ADMIN" | "MEMBER" | "VIEWER">("MEMBER");
+  const [roleId, setRoleId] = useState<SystemRoleId>("project_manager");
+  const [jobTitle, setJobTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const selectedRole = SYSTEM_ROLES.find((r) => r.id === roleId);
 
   const handleSubmit = () => {
     setError(null);
     setSuccess(null);
     startTransition(async () => {
       try {
-        const result = await inviteTeamMember({ email, name, role });
+        const result = await inviteTeamMember({
+          email,
+          name,
+          roleId,
+          jobTitle: jobTitle.trim() || null,
+        });
         if (result?.success) {
           setSuccess(`Invitation sent to ${email}`);
           setEmail("");
           setName("");
-          setRole("MEMBER");
+          setRoleId("project_manager");
+          setJobTitle("");
         } else if (result?.error) {
           setError(result.error);
         }
@@ -77,18 +88,35 @@ export function InviteTeamMemberForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="invite-role">Role</Label>
-        <Select value={role} onValueChange={(val) => setRole(val as typeof role)}>
+        <Label htmlFor="invite-jobTitle">Job Title</Label>
+        <Input
+          id="invite-jobTitle"
+          placeholder="e.g. Senior Project Manager"
+          value={jobTitle}
+          onChange={(e) => setJobTitle(e.target.value)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="invite-role">System Role</Label>
+        <Select value={roleId} onValueChange={(val) => setRoleId(val as SystemRoleId)}>
           <SelectTrigger id="invite-role">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="OWNER">Owner</SelectItem>
-            <SelectItem value="ADMIN">Admin</SelectItem>
-            <SelectItem value="MEMBER">Member</SelectItem>
-            <SelectItem value="VIEWER">Viewer</SelectItem>
+            {SYSTEM_ROLES.map((r) => (
+              <SelectItem key={r.id} value={r.id}>
+                <div className="flex flex-col">
+                  <span>{r.name}</span>
+                  <span className="text-xs text-muted-foreground">{r.description}</span>
+                </div>
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
+        {selectedRole && (
+          <p className="text-xs text-muted-foreground">{selectedRole.description}</p>
+        )}
       </div>
 
       <Button

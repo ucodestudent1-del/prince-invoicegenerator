@@ -3,9 +3,11 @@
 import { withActionError, actionError } from "@/lib/action-errors";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/org";
-import { isMissingColumnError } from "@/lib/db-drift";
+import { isMissingColumnError, isMissingTableError } from "@/lib/db-drift";
 import { randomBytes } from "crypto";
 import { Prisma } from "@prisma/client";
+import { ensureSystemRoles } from "@/lib/actions/memberships";
+import { syncMembershipFromLegacyRole } from "@/lib/actions/memberships";
 
 export type OnboardingStep = "identity" | "contact" | "compliance" | "review";
 
@@ -182,6 +184,17 @@ export async function completeOnboarding() {
     });
 
     await createInvoiceProfile(org["id"]);
+
+    // Seed the organisation with the immutable system roles and create the
+    // owner's membership so the RBAC tables are populated from day one.
+    // Best-effort: if the membership/role tables are not yet migrated (schema
+    // drift), the fallback legacy role column keeps the app functional.
+    try {
+      await ensureSystemRoles(org["id"]);
+      await syncMembershipFromLegacyRole(user["id"], org["id"]);
+    } catch (err) {
+      if (!isMissingTableError(err) && !isMissingColumnError(err)) throw err;
+    }
 
     await db["onboardingState"]["update"]({
       where: { userId: user["id"] },

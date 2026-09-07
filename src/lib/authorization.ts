@@ -63,7 +63,7 @@ const LEGACY_ROLE_TO_PERMISSIONS: Record<string, Permission[]> = {
 	OWNER: DEFAULT_ROLE_PERMISSIONS["owner"],
 	ADMIN: DEFAULT_ROLE_PERMISSIONS["administrator"],
 	MEMBER: DEFAULT_ROLE_PERMISSIONS["project_manager"],
-	VIEWER: DEFAULT_ROLE_PERMISSIONS["field_worker"],
+	VIEWER: DEFAULT_ROLE_PERMISSIONS["viewer"],
 };
 
 function legacyPermissions(role: string): Permission[] {

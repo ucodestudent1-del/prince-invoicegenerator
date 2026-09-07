@@ -4,22 +4,32 @@ import { db } from "@/lib/db";
 import { requireUser, isMissingColumnError } from "@/lib/org";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
+import { authorize } from "@/lib/authorization";
+
+async function requireSettingsPermission() {
+  const user = await requireUser();
+  if (!user["organizationId"]) actionError("No organization");
+  const decision = await authorize({
+    userId: user["id"],
+    orgId: user["organizationId"]!,
+    permission: "settings.edit",
+  });
+  if (!decision["allowed"]) actionError("You do not have permission to modify settings.");
+  return user;
+}
 
 export async function saveThemeSettings(theme: string) {
   return withActionError("saveThemeSettings", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
+    const user = await requireSettingsPermission();
+    const orgId = user["organizationId"]!;
 
     try {
       await db["organization"]["update"]({
-        where: { id: user["organizationId"] },
+        where: { id: orgId },
         data: { theme },
       });
     } catch (err: any) {
       if (isMissingColumnError(err)) {
-        // Column doesn't exist — write a cookie so the preference persists.
-        // The client reads it on reload and passes it back as initialTheme.
-        // Once the migration is applied, the DB column takes over.
         const { cookies } = await import("next/headers");
         cookies()["set"]("theme", theme, {
           maxAge: 60 * 60 * 24 * 365,
@@ -66,12 +76,12 @@ export async function saveBrandColors(input: {
   accentColor?: string | null;
 }) {
   return withActionError("saveBrandColors", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
+    const user = await requireSettingsPermission();
+    const orgId = user["organizationId"]!;
 
     try {
       await db["organization"]["update"]({
-        where: { id: user["organizationId"] },
+        where: { id: orgId },
         data: {
           brandColor: input["brandColor"],
           accentColor: input["accentColor"],
@@ -110,12 +120,12 @@ export async function getBrandColors() {
 
 export async function saveFontSettings(fontFamily: string) {
   return withActionError("saveFontSettings", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
+    const user = await requireSettingsPermission();
+    const orgId = user["organizationId"]!;
 
     try {
       await db["organization"]["update"]({
-        where: { id: user["organizationId"] },
+        where: { id: orgId },
         data: { fontFamily: fontFamily || null },
       });
 
@@ -147,12 +157,12 @@ export async function getFontSettings() {
 
 export async function saveLayoutSettings(layout: string) {
   return withActionError("saveLayoutSettings", async () => {
-    const user = await requireUser();
-    if (!user["organizationId"]) actionError("No organization");
+    const user = await requireSettingsPermission();
+    const orgId = user["organizationId"]!;
 
     try {
       await db["organization"]["update"]({
-        where: { id: user["organizationId"] },
+        where: { id: orgId },
         data: { layout },
       });
 

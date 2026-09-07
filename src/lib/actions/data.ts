@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/org";
+import { authorize } from "@/lib/authorization";
 import { isMissingColumnError } from "@/lib/db-drift";
 import { withActionError, actionError } from "@/lib/action-errors";
 import { revalidateWithLocale } from "@/lib/revalidate";
@@ -12,12 +13,17 @@ type ActionResult = { count: number };
 async function requireOrgAdmin() {
   const user = await requireUser();
   if (!user["organizationId"]) actionError("No organization");
-  if (user["role"] !== "OWNER" && user["role"] !== "ADMIN") {
-    actionError("Only owners and admins can manage organization data.");
-  }
+
+  const decision = await authorize({
+    userId: user["id"],
+    orgId: user["organizationId"]!,
+    permission: "settings.edit",
+  });
+  if (!decision["allowed"]) actionError("Only users with settings.edit permission can manage organization data.");
+
   return {
     userId: user["id"],
-    orgId: user["organizationId"],
+    orgId: user["organizationId"]!,
     email: user["email"] ?? null,
     role: user["role"],
   };

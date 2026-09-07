@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import { requireUser } from "@/lib/org";
+import { authorize } from "@/lib/authorization";
 import { db } from "@/lib/db";
 import {
   removeAllProjects,
@@ -39,7 +40,11 @@ export default async function SettingsPage({ params }: { params: { locale: strin
   const user = await requireUser();
   if (!user || !user["organizationId"]) return null;
   const orgId = user["organizationId"];
-  const canManageData = user["role"] === "OWNER" || user["role"] === "ADMIN";
+  const canManageData = (await authorize({
+    userId: user["id"],
+    orgId,
+    permission: "settings.edit",
+  }))["allowed"];
   const t = await getTranslations("settings");
 
   let counts: Record<string, number>;
@@ -154,6 +159,20 @@ export default async function SettingsPage({ params }: { params: { locale: strin
         <CardContent>
           <Button asChild variant="outline" size="sm">
             <Link href="/dashboard/settings/catalog">Manage catalog</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Roles &amp; Permissions</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Manage system roles and custom roles for your organisation.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/settings/roles">Manage roles</Link>
           </Button>
         </CardContent>
       </Card>

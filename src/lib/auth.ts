@@ -220,11 +220,29 @@ export const authOptions: NextAuthOptions = {
           // `undefined` (when the row is missing) and the SQL NULL into a
           // single observable shape so call sites do not have to defend
           // against both.
-          organizationId = dbUser?.["organizationId"] ?? null;
-          role = dbUser?.["role"] ?? "OWNER";
-          userLocale = dbUser?.["locale"] ?? null;
-          emailVerified = dbUser?.["emailVerified"] ?? null;
-        } catch (err) {
+        organizationId = dbUser?.["organizationId"] ?? null;
+        role = dbUser?.["role"] ?? "OWNER";
+        userLocale = dbUser?.["locale"] ?? null;
+        emailVerified = dbUser?.["emailVerified"] ?? null;
+
+        // Best-effort membership backfill: if the user has a legacy `role`
+        // column but no OrganizationMembership row, create one so the RBAC
+        // tables become the source of truth. Fire-and-forget — never blocks
+        // the session response. Uses a dynamic import to avoid a circular
+        // dependency: auth.ts → memberships.ts → org.ts → auth.ts.
+        if (organizationId && dbUser?.["role"]) {
+          const orgId = organizationId;
+          void import("@/lib/actions/memberships").then(async (mod) => {
+            try {
+              await mod.syncMembershipFromLegacyRole(user["id"], orgId);
+            } catch (err: any) {
+              if (!(err?.["message"]?.includes("does not exist") || err?.["name"] === "ActionError")) {
+                logServerError("auth session callback (membership sync)", err);
+              }
+            }
+          });
+        }
+      } catch (err) {
           if (isMissingColumnError(err)) {
             try {
               const dbUser = await db["user"]["findUnique"]({
