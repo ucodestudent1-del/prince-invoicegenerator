@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { BarChart3, Users, FileText, Download, Calendar } from "lucide-react";
+import { BarChart3, Users, FileText, Download, Calendar, Clock, Wallet, AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -24,6 +24,9 @@ export function ReportsView() {
   const [outstandingData, setOutstandingData] = React["useState"]<any>(null);
   const [taxesData, setTaxesData] = React["useState"]<any>(null);
   const [customersData, setCustomersData] = React["useState"]<any>(null);
+  const [agingData, setAgingData] = React["useState"]<any>(null);
+  const [projectsData, setProjectsData] = React["useState"]<any>(null);
+  const [cashFlowData, setCashFlowData] = React["useState"]<any>(null);
   const [loading, setLoading] = React["useState"](false);
 
   const [error, setError] = React["useState"]<string | null>(null);
@@ -47,11 +50,26 @@ export function ReportsView() {
         if (res["ok"]) setTaxesData(await res["json"]());
         else setError(t("failedTaxes"));
       }
-      if (activeTab === "customers" && !customersData) {
-        const res = await fetch("/api/reports/customers");
-        if (res["ok"]) setCustomersData(await res["json"]());
-        else setError(t("failedCustomers"));
-      }
+       if (activeTab === "customers" && !customersData) {
+         const res = await fetch("/api/reports/customers");
+         if (res["ok"]) setCustomersData(await res["json"]());
+         else setError(t("failedCustomers"));
+       }
+       if (activeTab === "aging" && !agingData) {
+         const res = await fetch("/api/reports/aging");
+         if (res["ok"]) setAgingData(await res["json"]());
+         else setError(t("failedAging"));
+       }
+       if (activeTab === "projects" && !projectsData) {
+         const res = await fetch("/api/reports/project-financials");
+         if (res["ok"]) setProjectsData(await res["json"]());
+         else setError(t("failedProjects"));
+       }
+       if (activeTab === "cashFlow" && !cashFlowData) {
+         const res = await fetch(`/api/reports/cash-flow?months=3`);
+         if (res["ok"]) setCashFlowData(await res["json"]());
+         else setError(t("failedCashFlow"));
+       }
     } catch (err) {
       setError(t("failedGeneric"));
       console["error"]("Failed to load report data", err);
@@ -72,6 +90,9 @@ export function ReportsView() {
   const tabs = [
     { id: "revenue", label: t("revenue"), icon: BarChart3 },
     { id: "outstanding", label: t("outstanding"), icon: FileText },
+    { id: "aging", label: t("aging"), icon: Clock },
+    { id: "projects", label: t("projectFinancials"), icon: Wallet },
+    { id: "cashFlow", label: t("cashFlow"), icon: BarChart3 },
     { id: "taxes", label: t("taxesCollected"), icon: Calendar },
     { id: "customers", label: t("customerAnalytics"), icon: Users },
   ];
@@ -361,6 +382,284 @@ export function ReportsView() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+
+      {activeTab === "aging" && (
+        <>
+          {loading && <p className="text-sm text-muted-foreground">{t("loading")}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {!loading && !error && !agingData && (
+            <p className="text-sm text-muted-foreground">{t("noAgingData")}</p>
+          )}
+          {agingData && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalOutstanding")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">
+                    {formatCurrency(agingData["totalOutstanding"], agingData["currency"])}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalOverdue")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold text-red-600">
+                    {formatCurrency(agingData["totalOverdue"], agingData["currency"])}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("overdueInvoices")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">
+                    {agingData["buckets"]?.["reduce"]?.((s: any, b: any) => s + b["count"], 0) ?? 0}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("unpaidInvoices")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">
+                    {agingData["buckets"]?.["find"]?.((b: any) => b["label"] === "Not yet due")?.["count"] ?? 0}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t("agingBuckets")}</CardTitle>
+                  <CardDescription>{t("agingDescription")}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {agingData["buckets"]?.["map"]?.((bucket: any) => (
+                      <div key={bucket["label"]} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">{bucket["label"]}</span>
+                          {bucket["invoices"]?.["length"] > 0 && (
+                            <Badge variant={bucket["label"].includes("90+") ? "destructive" : bucket["label"].includes("61") || bucket["label"].includes("31") ? "default" : "secondary"}>
+                              {bucket["count"]} invoices
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold">{formatCurrency(bucket["total"], agingData["currency"])}</span>
+                        </div>
+                        {bucket["invoices"]?.["length"] > 0 && bucket["invoices"]?.["length"] <= 5 && (
+                          <div className="mt-2 space-y-1">
+                            {bucket["invoices"].map((inv: any) => (
+                              <div key={inv["id"]} className="flex items-center justify-between text-sm">
+                                <Link
+                                  href={`/dashboard/invoices/${inv["id"]}`}
+                                  className="font-medium text-primary hover:underline"
+                                >
+                                  {inv["number"]}
+                                </Link>
+                                <span className="text-muted-foreground">
+                                  {formatCurrency(inv["balance"], inv["currency"])} · {inv["daysOverdue"]} days overdue
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )) ?? []}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+
+      {activeTab === "projects" && (
+        <>
+          {loading && <p className="text-sm text-muted-foreground">{t("loading")}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {!loading && !error && !projectsData && (
+            <p className="text-sm text-muted-foreground">{t("noProjectData")}</p>
+          )}
+          {projectsData && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalContractValue")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">
+                    {formatCurrency(projectsData["totals"]["totalContractValue"], projectsData["currency"])}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalInvoicedHeader")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">
+                    {formatCurrency(projectsData["totals"]["totalInvoiced"], projectsData["currency"])}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalCollected")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">
+                    {formatCurrency(projectsData["totals"]["totalCollected"], projectsData["currency"])}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalCosts")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold text-red-600">
+                    {formatCurrency(projectsData["totals"]["totalCosts"], projectsData["currency"])}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t("projectProfitability")}</CardTitle>
+                  <CardDescription>
+                    {t("grossMargin", { margin: projectsData["totals"]["grossMargin"]?.toFixed?.(1) ?? "0" })}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-muted-foreground">
+                          <th className="py-2">{t("project")}</th>
+                          <th className="py-2 text-right">{t("contractValue")}</th>
+                          <th className="py-2 text-right">{t("totalInvoicedHeader")}</th>
+                          <th className="py-2 text-right">{t("totalCollected")}</th>
+                          <th className="py-2 text-right">{t("totalCosts")}</th>
+                          <th className="py-2 text-right">{t("profit")}</th>
+                          <th className="py-2 text-right">{t("status")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {projectsData["projects"]?.map?.((proj: any) => (
+                          <tr key={proj["id"]} className="border-b">
+                            <td className="py-2">
+                              <Link
+                                href={`/dashboard/projects/${proj["id"]}`}
+                                className="font-medium text-primary hover:underline"
+                              >
+                                {proj["name"]}
+                              </Link>
+                            </td>
+                            <td className="py-2 text-right">{formatCurrency(proj["contractValue"], proj["currency"])}</td>
+                            <td className="py-2 text-right">{formatCurrency(proj["totalInvoiced"], proj["currency"])}</td>
+                            <td className="py-2 text-right">{formatCurrency(proj["amountPaid"], proj["currency"])}</td>
+                            <td className="py-2 text-right">{formatCurrency(proj["totalExpenses"] + proj["totalTimeBillable"], proj["currency"])}</td>
+                            <td className="py-2 text-right font-medium">
+                              {formatCurrency(proj["amountPaid"] - proj["totalExpenses"] - proj["totalTimeBillable"], proj["currency"])}
+                            </td>
+                            <td className="py-2 text-right">
+                              <Badge variant="outline">{proj["status"]}</Badge>
+                            </td>
+                          </tr>
+                        )) ?? []}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+
+      {activeTab === "cashFlow" && (
+        <>
+          {loading && <p className="text-sm text-muted-foreground">{t("loading")}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {!loading && !error && !cashFlowData && (
+            <p className="text-sm text-muted-foreground">{t("noCashFlowData")}</p>
+          )}
+          {cashFlowData && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("expectedInflows")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold text-green-600">
+                    {formatCurrency(cashFlowData["totalExpectedInflows"], cashFlowData["currency"])}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("expectedOutflows")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold text-red-600">
+                    {formatCurrency(cashFlowData["totalExpectedOutflows"], cashFlowData["currency"])}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{t("netCashFlow")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">
+                    {formatCurrency(cashFlowData["netCashFlow"], cashFlowData["currency"])}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t("cashFlowForecast")}</CardTitle>
+                  <CardDescription>{t("cashFlowDescription", { months: 3 })}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {cashFlowData["periods"]?.map?.((period: any) => (
+                      <div key={period["period"]} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">{period["period"]}</span>
+                          <Badge variant={period["netCashFlow"] >= 0 ? "default" : "destructive"}>
+                            {period["netCashFlow"] >= 0 ? "+" : ""}{formatCurrency(period["netCashFlow"], cashFlowData["currency"])}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Inflows:</span> {formatCurrency(period["expectedInflows"], cashFlowData["currency"])}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Outflows:</span> {formatCurrency(period["expectedOutflows"], cashFlowData["currency"])}
+                          </div>
+                          <div className="text-right">
+                            <span className="text-muted-foreground">Cumulative:</span> {formatCurrency(period["cumulative"], cashFlowData["currency"])}
+                          </div>
+                        </div>
+                        {period["invoices"]?.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {period["invoices"].map((inv: any) => (
+                              <div key={inv["number"]} className="flex items-center justify-between text-xs text-muted-foreground">
+                                <Link
+                                  href={`/dashboard/invoices/${inv["id"] ?? ""}`}
+                                  className="text-primary hover:underline"
+                                >
+                                  {inv["number"]}
+                                </Link>
+                                <span>
+                                  {formatCurrency(inv["amount"], cashFlowData["currency"])} · Due {formatDate(inv["dueDate"])}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )) ?? []}
                   </div>
                 </CardContent>
               </Card>

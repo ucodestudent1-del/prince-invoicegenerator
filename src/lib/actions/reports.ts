@@ -518,3 +518,487 @@ export async function exportInvoices(format: "csv" | "xlsx") {
     return { content: base64, filename: `invoices-${formatDateFn(new Date(), "yyyy-MM-dd")}.xlsx` };
   });
 }
+
+export interface AgingBucket {
+  label: string;
+  minDays: number;
+  maxDays: number | null;
+  count: number;
+  total: number;
+  invoices: Array<{
+    id: string;
+    number: string;
+    customerName: string;
+    dueDate: Date | null;
+    balance: number;
+    daysOverdue: number;
+    status: string;
+    currency: string;
+  }>;
+}
+
+export interface AgingReport {
+  buckets: AgingBucket[];
+  totalOutstanding: number;
+  totalOverdue: number;
+  currency: string;
+  generatedAt: Date;
+}
+
+const AGING_BUCKETS = [
+  { label: "1-30 days", minDays: 1, maxDays: 30 },
+  { label: "31-60 days", minDays: 31, maxDays: 60 },
+  { label: "61-90 days", minDays: 61, maxDays: 90 },
+  { label: "90+ days", minDays: 91, maxDays: null },
+];
+
+export async function getAgingReport() {
+  return withActionError("getAgingReport", async () => {
+    const user = await requireUser();
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
+
+    let invoices;
+    try {
+      invoices = await db["invoice"]["findMany"]({
+        where: {
+          orgId,
+          status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE", "PARTIALLY_PAID"] },
+          dueDate: { lte: new Date() },
+        },
+        include: { customer: { select: { name: true, email: true } } },
+        orderBy: { dueDate: "asc" },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        invoices = await db["invoice"]["findMany"]({
+          where: {
+            orgId,
+            status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"] },
+            dueDate: { lte: new Date() },
+          },
+          select: {
+            id: true,
+            number: true,
+            customerId: true,
+            dueDate: true,
+            total: true,
+            amountPaid: true,
+            status: true,
+            currency: true,
+            customer: { select: { name: true, email: true } },
+          },
+          orderBy: { dueDate: "asc" },
+        });
+      } else if (isInvalidEnumValueError(err)) {
+        invoices = await db["invoice"]["findMany"]({
+          where: {
+            orgId,
+            status: { in: ["SENT", "VIEWED", "OVERDUE"] },
+            dueDate: { lte: new Date() },
+          },
+          select: {
+            id: true,
+            number: true,
+            customerId: true,
+            dueDate: true,
+            total: true,
+            amountPaid: true,
+            status: true,
+            currency: true,
+            customer: { select: { name: true, email: true } },
+          },
+          orderBy: { dueDate: "asc" },
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    const now = new Date();
+    const buckets: AgingBucket[] = AGING_BUCKETS["map"](b => ({
+      label: b["label"],
+      minDays: b["minDays"],
+      maxDays: b["maxDays"],
+      count: 0,
+      total: 0,
+      invoices: [],
+    }));
+
+    const notDueBucket: AgingBucket = {
+      label: "Not yet due",
+      minDays: 0,
+      maxDays: 0,
+      count: 0,
+      total: 0,
+      invoices: [],
+    };
+
+    let totalOutstanding = 0;
+    let totalOverdue = 0;
+    const currency = invoices["length"] > 0 ? (invoices[0]["currency"] ?? "USD") : "USD";
+
+    for (const inv of invoices) {
+      const balance = inv["total"] - inv["amountPaid"];
+      if (balance <= 0) continue;
+
+      totalOutstanding += balance;
+
+      let daysOverdue = 0;
+      if (inv["dueDate"]) {
+        daysOverdue = Math["max"](0, Math["floor"](
+          (now["getTime"]() - new Date(inv["dueDate"])["getTime"]()) / (1000 * 60 * 60 * 24)
+        ));
+      }
+
+      const invoiceEntry = {
+        id: inv["id"],
+        number: inv["number"],
+        customerName: inv["customer"]?.["name"] ?? "Unknown",
+        dueDate: inv["dueDate"],
+        balance,
+        daysOverdue,
+        status: inv["status"],
+        currency: inv["currency"],
+      };
+
+      if (daysOverdue === 0) {
+        notDueBucket["count"] += 1;
+        notDueBucket["total"] += balance;
+        notDueBucket["invoices"]["push"](invoiceEntry);
+      } else {
+        totalOverdue += balance;
+        for (const bucket of buckets) {
+          if (daysOverdue >= bucket["minDays"] && (bucket["maxDays"] === null || daysOverdue <= bucket["maxDays"])) {
+            bucket["count"] += 1;
+            bucket["total"] += balance;
+            bucket["invoices"]["push"](invoiceEntry);
+            break;
+          }
+        }
+      }
+    }
+
+    return {
+      buckets: [notDueBucket, ...buckets],
+      totalOutstanding,
+      totalOverdue,
+      currency,
+      generatedAt: now,
+    };
+  });
+}
+
+export interface ProjectFinancialSummary {
+  id: string;
+  name: string;
+  number?: string | null;
+  status: string;
+  contractValue: number;
+  totalInvoiced: number;
+  amountPaid: number;
+  estimatedCost: number;
+  totalExpenses: number;
+  totalTimeBillable: number;
+  changeOrdersTotal: number;
+  retainageHeld: number;
+  balance: number;
+  currency: string;
+}
+
+export interface ProjectProfitabilityReport {
+  projects: ProjectFinancialSummary[];
+  totals: {
+    totalContractValue: number;
+    totalInvoiced: number;
+    totalCollected: number;
+    totalCosts: number;
+    totalProfit: number;
+    grossMargin: number;
+  };
+  currency: string;
+  generatedAt: Date;
+}
+
+export async function getProjectFinancialReport() {
+  return withActionError("getProjectFinancialReport", async () => {
+    const user = await requireUser();
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
+
+    const now = new Date();
+    let projects;
+    try {
+      projects = await db["project"]["findMany"]({
+        where: { orgId },
+        select: {
+          id: true,
+          name: true,
+          number: true,
+          status: true,
+          contractValue: true,
+          estimatedCost: true,
+          retainageRate: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+      projects = await db["project"]["findMany"]({
+        where: { orgId },
+        select: {
+          id: true,
+          name: true,
+          number: true,
+          contractValue: true,
+          estimatedCost: true,
+          status: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      } else {
+        throw err;
+      }
+    }
+
+    const currency = "USD";
+
+    const summaries: ProjectFinancialSummary[] = await Promise["all"](
+      projects["map"](async (proj: any) => {
+        let invoices: any[] = [];
+        let changeOrders: any[] = [];
+        let expenses: any[] = [];
+        let timeEntries: any[] = [];
+        let milestones: any[] = [];
+
+        try {
+          [invoices, changeOrders, expenses, timeEntries, milestones] = await Promise["all"]([
+            db["invoice"]["findMany"]({
+              where: { orgId, projectId: proj["id"] },
+              select: { total: true, amountPaid: true, retainageAmount: true },
+            }),
+            db["changeOrder"]["findMany"]({
+              where: { orgId, projectId: proj["id"], status: "APPROVED" },
+              select: { changeAmount: true },
+            }),
+            db["expense"]["findMany"]({
+              where: { orgId, projectId: proj["id"] },
+              select: { amount: true },
+            }),
+            db["timeEntry"]["findMany"]({
+              where: { orgId, projectId: proj["id"], billable: true },
+              select: { amount: true },
+            }),
+            db["projectMilestone"]["findMany"]({
+              where: { orgId, projectId: proj["id"], status: "COMPLETED" },
+              select: { amount: true },
+            }),
+          ]);
+        } catch (err) {
+          if (isMissingColumnError(err)) {
+            try {
+              [invoices, changeOrders, expenses] = await Promise["all"]([
+                db["invoice"]["findMany"]({
+                  where: { orgId, projectId: proj["id"] },
+                  select: { total: true, amountPaid: true },
+                }),
+                db["changeOrder"]["findMany"]({
+                  where: { orgId, projectId: proj["id"], status: "APPROVED" },
+                  select: { changeAmount: true },
+                }),
+                db["expense"]["findMany"]({
+                  where: { orgId, projectId: proj["id"] },
+                  select: { amount: true },
+                }),
+              ]);
+            } catch {
+              invoices = [];
+              changeOrders = [];
+              expenses = [];
+              timeEntries = [];
+              milestones = [];
+            }
+          } else {
+            throw err;
+          }
+        }
+
+        const totalInvoiced = invoices["reduce"]((s, inv) => s + (inv["total"] ?? 0), 0);
+        const amountPaid = invoices["reduce"]((s, inv) => s + (inv["amountPaid"] ?? 0), 0);
+        const totalExpenses = expenses["reduce"]((s, e) => s + (e["amount"] ?? 0), 0);
+        const totalTimeBillable = (timeEntries ?? [])["reduce"]((s, t) => s + (t["amount"] ?? 0), 0);
+        const changeOrdersTotal = changeOrders["reduce"]((s, co) => s + (co["changeAmount"] ?? 0), 0);
+        const retainageHeld = invoices["reduce"]((s, inv) => s + (inv["retainageAmount"] ?? 0), 0);
+        const balance = totalInvoiced - amountPaid;
+
+        return {
+          id: proj["id"],
+          name: proj["name"],
+          number: proj["number"] ?? null,
+          status: proj["status"] ?? "ACTIVE",
+          contractValue: Number(proj["contractValue"] ?? 0),
+          totalInvoiced,
+          amountPaid,
+          estimatedCost: Number(proj["estimatedCost"] ?? 0),
+          totalExpenses,
+          totalTimeBillable,
+          changeOrdersTotal,
+          retainageHeld,
+          balance,
+          currency,
+        };
+      })
+    );
+
+    const totalContractValue = summaries["reduce"]((s, p) => s + p["contractValue"], 0);
+    const totalInvoiced = summaries["reduce"]((s, p) => s + p["totalInvoiced"], 0);
+    const totalCollected = summaries["reduce"]((s, p) => s + p["amountPaid"], 0);
+    const totalCosts = summaries["reduce"]((s, p) => s + p["totalExpenses"] + p["totalTimeBillable"], 0);
+    const totalProfit = totalCollected - totalCosts;
+    const grossMargin = totalCollected > 0 ? (totalProfit / totalCollected) * 100 : 0;
+
+    return {
+      projects: summaries,
+      totals: {
+        totalContractValue,
+        totalInvoiced,
+        totalCollected,
+        totalCosts,
+        totalProfit,
+        grossMargin,
+      },
+      currency,
+      generatedAt: now,
+    };
+  });
+}
+
+export interface CashFlowForecast {
+  period: string;
+  expectedInflows: number;
+  expectedOutflows: number;
+  netCashFlow: number;
+  cumulative: number;
+  invoices: Array<{ number: string; customerName: string; amount: number; dueDate: Date }>;
+}
+
+export interface CashFlowForecastReport {
+  periods: CashFlowForecast[];
+  totalExpectedInflows: number;
+  totalExpectedOutflows: number;
+  netCashFlow: number;
+  currency: string;
+  generatedAt: Date;
+}
+
+export async function getCashFlowForecast(monthsAhead = 3) {
+  return withActionError("getCashFlowForecast", async () => {
+    const user = await requireUser();
+    if (!user["organizationId"]) actionError("No organization");
+    const orgId = user["organizationId"];
+
+    const now = new Date();
+    const endDate = new Date(now);
+    endDate["setMonth"](endDate["getMonth"]() + monthsAhead);
+
+    let invoices: any[] = [];
+    let expenses: any[] = [];
+
+    try {
+      [invoices, expenses] = await Promise["all"]([
+        db["invoice"]["findMany"]({
+          where: {
+            orgId,
+            status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE", "PARTIALLY_PAID"] },
+            dueDate: { gte: now, lte: endDate },
+          },
+          include: { customer: { select: { name: true } } },
+        }),
+        db["expense"]["findMany"]({
+          where: { orgId, date: { gte: now, lte: endDate } },
+        }),
+      ]);
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        invoices = await db["invoice"]["findMany"]({
+          where: {
+            orgId,
+            status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"] },
+            dueDate: { gte: now, lte: endDate },
+          },
+          select: {
+            number: true,
+            total: true,
+            amountPaid: true,
+            dueDate: true,
+            currency: true,
+            customer: { select: { name: true } },
+          },
+        });
+        expenses = [];
+      } else {
+        throw err;
+      }
+    }
+
+    const currency = invoices["length"] > 0 ? (invoices[0]["currency"] ?? "USD") : "USD";
+
+    const periods: CashFlowForecast[] = [];
+    let cumulative = summaries_cumulative(invoices, expenses);
+
+    for (let m = 0; m < monthsAhead; m++) {
+      const periodStart = new Date(now);
+      periodStart["setMonth"](periodStart["getMonth"]() + m);
+      const periodEnd = new Date(periodStart);
+      periodEnd["setMonth"](periodEnd["getMonth"]() + 1);
+      periodEnd["setDate"](periodEnd["getDate"]() - 1);
+
+      const periodInvoices = invoices["filter"]((inv: any) => {
+        const due = new Date(inv["dueDate"]);
+        return due >= periodStart && due <= periodEnd;
+      });
+
+      const periodExpenses = expenses["filter"]((exp: any) => {
+        const date = new Date(exp["date"]);
+        return date >= periodStart && date <= periodEnd;
+      });
+
+      const expectedInflows = periodInvoices["reduce"]((s: number, inv: any) => s + (inv["total"] - inv["amountPaid"]), 0);
+      const expectedOutflows = periodExpenses["reduce"]((s: number, exp: any) => s + (exp["amount"] ?? 0), 0);
+
+      cumulative += expectedInflows - expectedOutflows;
+
+      periods["push"]({
+        period: formatDateFn(periodStart, "MMM yyyy"),
+        expectedInflows,
+        expectedOutflows,
+        netCashFlow: expectedInflows - expectedOutflows,
+        cumulative,
+        invoices: periodInvoices["map"]((inv: any) => ({
+          number: inv["number"],
+          customerName: inv["customer"]?.["name"] ?? "Unknown",
+          amount: inv["total"] - inv["amountPaid"],
+          dueDate: inv["dueDate"],
+        })),
+      });
+    }
+
+    const totalExpectedInflows = periods["reduce"]((s, p) => s + p["expectedInflows"], 0);
+    const totalExpectedOutflows = periods["reduce"]((s, p) => s + p["expectedOutflows"], 0);
+
+    return {
+      periods,
+      totalExpectedInflows,
+      totalExpectedOutflows,
+      netCashFlow: totalExpectedInflows - totalExpectedOutflows,
+      currency,
+      generatedAt: now,
+    };
+  });
+}
+
+function summaries_cumulative(invoices: any[], expenses: any[]): number {
+  const invTotal = invoices["reduce"]((s, inv) => s + (inv["total"] - inv["amountPaid"]), 0);
+  const expTotal = expenses["reduce"]((s, exp) => s + (exp["amount"] ?? 0), 0);
+  return invTotal - expTotal;
+}
