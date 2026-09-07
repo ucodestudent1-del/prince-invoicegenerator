@@ -215,11 +215,12 @@ model User {
    organization   Organization? @relation(fields: [organizationId], references: [id])
    role           OrgRole       @default(OWNER)
 
-   accounts        Account[]
-   sessions        Session[]
-   timeEntries     TimeEntry[]
-   onboardingState OnboardingState?
-   memberships     OrganizationMembership[]
+    accounts        Account[]
+    sessions        Session[]
+    timeEntries     TimeEntry[]
+    onboardingState OnboardingState?
+    memberships     OrganizationMembership[]
+    invoiceTemplates InvoiceTemplate[]
 }
 
 model Account {
@@ -351,11 +352,12 @@ model Organization {
   reminders            Reminder[]
   reminderSuppressions InvoiceReminderSuppression[]
   lateFeeConfig        LateFeeConfig?
-   settings             OrganizationSettings?
-   paymentInfo          PaymentInfo?
-   roles                OrganizationRole[]
-   milestones           ProjectMilestone[]
-   PhotoAttachment      PhotoAttachment[]
+    settings             OrganizationSettings?
+    paymentInfo          PaymentInfo?
+    roles                OrganizationRole[]
+    milestones           ProjectMilestone[]
+    invoiceTemplates     InvoiceTemplate[]
+    PhotoAttachment      PhotoAttachment[]
 }
 
 // ---------------------------------------------------------------------------
@@ -949,6 +951,9 @@ model Invoice {
   estimate     Estimate?     @relation("EstimateToInvoice", fields: [estimateId], references: [id], onDelete: SetNull)
   changeOrders ChangeOrder[] // change orders referenced by this invoice
 
+  templateId String?          // reference to the InvoiceTemplate used to render this invoice
+  template   InvoiceTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
   createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -993,6 +998,32 @@ model InvoiceItem {
 
   @@index([invoiceId])
   @@index([sourceType, sourceId])
+}
+
+// ---------------------------------------------------------------------------
+// Invoice Templates (Universal Invoice Customizer)
+// ---------------------------------------------------------------------------
+
+model InvoiceTemplate {
+  id            String    @id @default(cuid())
+  orgId         String?   // null for system/default templates
+  org           Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId        String?   // owner of the template (user who created it)
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name          String    // e.g. "Residential Invoice", "Commercial Progress Billing"
+  invoiceType   InvoiceType @default(STANDARD)
+  configuration Json      // full template config: sections, fields, rules, styling
+  isDefault     Boolean   @default(false)
+  isSystem      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  invoices      Invoice[]
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([orgId, isDefault])
+  @@unique([orgId, name])
 }
 
 // ---------------------------------------------------------------------------
