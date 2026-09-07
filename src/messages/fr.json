@@ -344,7 +344,6 @@
     "amount": "Montant",
     "subtotal": "Sous-total",
     "tax": "Taxe",
-    "retainage": "Retenue",
     "paid": "Payée",
     "balanceDue": "Solde dû",
     "cancel": "Annuler",
@@ -369,7 +368,7 @@
       "subtotal": "Sous-total",
       "tax": "Taxe",
       "discount": "Remise",
-     "amount": "Montant",
+      "amount": "Montant",
       "retainage": "Retenue",
       "total": "Total",
       "notes": "Notes",
@@ -377,7 +376,6 @@
       "due": "Échéance le {date}",
       "qty": "Qté",
       "unitPrice": "Prix unitaire",
-      "amount": "Montant",
       "description": "Description",
       "standard": "Standard",
       "fixedPrice": "Prix fixe",
@@ -386,7 +384,6 @@
       "milestone": "Jalons",
       "changeOrder": "Ordre de changement",
       "deposit": "Acompte",
-      "retainage": "Retenue",
       "final": "Final",
       "recurring": "Récurrent",
       "expense": "Dépense",
@@ -403,7 +400,7 @@
     }
   },
   "estimates": {
-    "title": "Devis",
+    "title": "Titre",
     "newEstimate": "Nouveau devis",
     "noEstimates": "Aucun devis pour le moment.",
     "number": "Numéro",
@@ -432,7 +429,6 @@
     "tax": "Taxe",
     "discount": "Remise",
     "projectInformation": "Informations du projet",
-    "title": "Titre",
     "titlePlaceholder": "Saisir le titre du devis (facultatif)",
     "selectProject": "Sélectionner un projet…",
     "none": "Aucun",
@@ -586,8 +582,8 @@
     "save": "Enregistrer le client",
     "saving": "Enregistrement…",
     "failed": "Échec de l'enregistrement.",
-     "failedToSave": "Échec de l'enregistrement.",
-     "back": "Retour"
+    "failedToSave": "Échec de l'enregistrement.",
+    "back": "Retour"
   },
   "subcontractors": {
     "title": "Sous-traitants",
@@ -715,9 +711,9 @@
     "teamMembers": "Membres de l'équipe",
     "deleteOrganization": "Supprimer l'organisation",
     "ownerRequired": "Accès propriétaire ou administrateur requis.",
-     "deleteWarning": "Seuls les propriétaires et administrateurs peuvent supprimer l'organisation.",
-     "confirm": "Confirmer",
-     "remove": "Supprimer"
+    "deleteWarning": "Seuls les propriétaires et administrateurs peuvent supprimer l'organisation.",
+    "confirm": "Confirmer",
+    "remove": "Supprimer"
   },
   "reminders": {
     "title": "Rappels automatisés",
@@ -937,7 +933,40 @@
     "complianceLocalization": "Conformité et localisation",
     "alreadyCompleteTitle": "Configuration terminée",
     "alreadyCompleteDescription": "Votre profil d'entreprise est déjà configuré."
+  },
+  "invoiceTemplates": {
+    "title": "Modèles de Facture",
+    "subtitle": "Personnalisez vos mises en page de facture pour chaque type",
+    "sectionLibrary": "Bibliothèque de Sections",
+    "properties": "Propriétés",
+    "preview": "Aperçu",
+    "sections": "Sections",
+    "sectionsTotal": "sections",
+    "sectionsVisible": "visibles",
+    "addSection": "Ajouter une Section",
+    "noMoreSections": "Toutes les sections sont ajoutées",
+    "selectSection": "Sélectionnez une section pour modifier ses propriétés",
+    "renderedPreview": "Aperçu Rendu",
+    "noVisibleSections": "Aucune section visible",
+    "addFromLibrary": "Ajoutez des sections depuis la bibliothèque",
+    "sectionLabel": "Étiquette de Section",
+    "sectionDescription": "Description",
+    "sectionVisible": "Visible",
+    "sectionPosition": "Position",
+    "conditionalLogic": "Logique Conditionnelle",
+    "conditionalField": "ID du Champ",
+    "conditionalOperator": "Opérateur",
+    "conditionalValue": "Valeur",
+    "removeConditional": "Supprimer la Condition",
+    "conditionalFieldHelp": "Champ à évaluer pour cette condition",
+    "styling": "Style",
+    "collapsible": "Repliable",
+    "collapsed": "Réduit (par défaut)",
+    "fullWidth": "Pleine Largeur",
+    "fullWidthOn": "Pleine Largeur : Activé",
+    "fullWidthOff": "Pleine Largeur : Désactivé",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "locale": "fr"
   }
 }
-
-

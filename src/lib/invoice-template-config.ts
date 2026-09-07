@@ -393,17 +393,67 @@ export function buildDefaultTemplate(invoiceType: InvoiceType): Omit<InvoiceTemp
 }
 
 export function getDefaultTemplate(invoiceType: InvoiceType): InvoiceTemplateConfig {
+  const built = buildDefaultTemplate(invoiceType);
   return {
     id: `default_${invoiceType.toLowerCase()}`,
-    name: BUILT_IN_TEMPLATES[invoiceType.toLowerCase() as keyof typeof BUILT_IN_TEMPLATES]?.name ?? "Custom Invoice",
-    description: BUILT_IN_TEMPLATES[invoiceType.toLowerCase() as keyof typeof BUILT_IN_TEMPLATES]?.description ?? "",
+    name: built.name,
+    description: built.description,
     invoiceType,
-    sections: buildDefaultTemplate(invoiceType).sections,
-    fields: buildDefaultTemplate(invoiceType).fields,
-    styling: { ...DEFAULT_TEMPLATE_STYLING },
-    rules: getDefaultRules(invoiceType),
+    sections: built.sections,
+    fields: built.fields,
+    styling: built.styling,
+    rules: built.rules,
   };
 }
+
+export function convertToLegacyTemplate(config: InvoiceTemplateConfig) {
+  const sectionTypes = config.sections.map((s) => s.type);
+  const sectionMap = {
+    details: sectionTypes.includes("invoice_details"),
+    billTo: sectionTypes.includes("customer_info"),
+    shipTo: sectionTypes.includes("customer_info"),
+    lineItems: sectionTypes.includes("line_items"),
+    tax: sectionTypes.includes("taxes"),
+    discount: sectionTypes.includes("discounts"),
+    retainage: sectionTypes.includes("retainage"),
+    notes: sectionTypes.includes("notes"),
+    milestones: sectionTypes.includes("milestone_info"),
+    changeOrders: sectionTypes.includes("change_orders"),
+    progressSummary: sectionTypes.includes("schedule_of_values"),
+  };
+
+  const features = {
+    requiresProject: config.invoiceType === "PROGRESS" || config.invoiceType === "MILESTONE" || config.invoiceType === "FIXED_PRICE" || config.invoiceType === "TIME_AND_MATERIALS" || config.invoiceType === "CHANGE_ORDER" || config.invoiceType === "DEPOSIT" || config.invoiceType === "RETAINAGE" || config.invoiceType === "FINAL",
+    supportsRetainage: config.invoiceType === "FIXED_PRICE" || config.invoiceType === "PROGRESS" || config.invoiceType === "MILESTONE" || config.invoiceType === "CHANGE_ORDER" || config.invoiceType === "RETAINAGE" || config.invoiceType === "FINAL" || config.invoiceType === "CUSTOM",
+    supportsMilestones: config.invoiceType === "PROGRESS" || config.invoiceType === "MILESTONE" || config.invoiceType === "RETAINAGE" || config.invoiceType === "CUSTOM",
+    supportsChangeOrders: config.invoiceType === "FIXED_PRICE" || config.invoiceType === "PROGRESS" || config.invoiceType === "CHANGE_ORDER" || config.invoiceType === "FINAL" || config.invoiceType === "CUSTOM",
+    supportsTimeTracking: config.invoiceType === "STANDARD" || config.invoiceType === "PROGRESS" || config.invoiceType === "MILESTONE" || config.invoiceType === "RECURRING" || config.invoiceType === "TIME_AND_MATERIALS" || config.invoiceType === "CUSTOM",
+    supportsCatalog: true,
+  };
+
+  const defaults = {
+    taxRate: 0,
+    discount: 0,
+    retainageRate: config.invoiceType === "FIXED_PRICE" ? 5 : config.invoiceType === "PROGRESS" ? 10 : 0,
+    billingIntent: config.invoiceType === "DEPOSIT" ? "DEPOSIT" as const : config.invoiceType === "FINAL" ? "FINAL" as const : config.invoiceType === "FIXED_PRICE" ? "PROGRESS" as const : config.invoiceType === "CHANGE_ORDER" ? "CUSTOM" as const : null,
+  };
+
+  return {
+    id: config.invoiceType,
+    label: config.name,
+    description: config.description,
+    sections: sectionMap,
+    defaults,
+    features,
+    suggestions: {
+      depositPercent: config.invoiceType === "DEPOSIT" ? 10 : undefined,
+      fillRemaining: config.invoiceType === "FINAL",
+      suggestTimeEntries: features.supportsTimeTracking,
+      retainageRate: defaults.retainageRate,
+    },
+  };
+}
+
 
 function getSectionLabel(type: SectionType | string): string {
   const labels: Record<string, string> = {
