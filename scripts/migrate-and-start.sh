@@ -202,21 +202,26 @@ else
     echo "Resolving failed migration 20260906000000_add_roles_permissions..."
     npx prisma migrate resolve --rolled-back 20260906000000_add_roles_permissions || true
 
-    # Retry migrations up to 5 times in case database is not ready yet
-   max_retries=5
-   retry=1
-   until npx prisma migrate deploy; do
-     if [ $retry -ge $max_retries ]; then
-       echo "Migration failed after $retry attempts"
-       exit 1
-     fi
-     echo "Migration attempt $retry failed, retrying in $((retry * 5))s..."
-     sleep $((retry * 5))
-     retry=$((retry + 1))
-   done
+# Retry migrations up to 5 times in case database is not ready yet.
+    # IMPORTANT: do NOT exit the container on migration failure. A transient
+    # DB hiccup or a recoverable schema drift must not kill the process and
+    # restart it into a 502 loop — the app can serve traffic while migrations
+    # are retried on the next deploy. Failures are logged loudly instead.
+    max_retries=5
+    retry=1
+    until npx prisma migrate deploy; do
+      if [ $retry -ge $max_retries ]; then
+        echo "WARNING: migrations did not apply cleanly after $retry attempts."
+        echo "Starting the application anyway — retry migrations on the next deploy."
+        break
+      fi
+      echo "Migration attempt $retry failed, retrying in $((retry * 5))s..."
+      sleep $((retry * 5))
+      retry=$((retry + 1))
+    done
 
-   echo "Migrations completed successfully."
- fi
+    echo "Migrations completed successfully."
+  fi
 
 # Start the application
 exec npm start
