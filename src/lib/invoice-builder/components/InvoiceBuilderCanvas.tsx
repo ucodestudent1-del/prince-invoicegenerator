@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from "react";
 import { useEditor, useDocument, useSelectedComponent, useChildren } from "../editor-context";
 import { componentRegistry } from "../component-registry";
 import { BaseComponent, AllComponentType } from "../document-model";
+import { ensureLayoutStructure, getEffectiveParent, insertAtRoot } from "../document-operations";
 import { Button } from "@/components/ui/button";
 import {
   Trash2,
@@ -23,7 +24,7 @@ interface ComponentRendererProps {
 }
 
 export function InvoiceBuilderCanvas() {
-  const { state, selectComponent, deleteComponent, duplicateComponent } = useEditor();
+  const { state, selectComponent, deleteComponent, duplicateComponent, setDocument, insertComponent, moveComponent } = useEditor();
   const document = useDocument();
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -36,21 +37,37 @@ export function InvoiceBuilderCanvas() {
     const data = e.dataTransfer.getData("application/json");
     if (!data) return;
 
+    let item: { type?: string; componentType?: string; componentId?: string; sourceId?: string | null } = {};
     try {
-      const item = JSON.parse(data);
-      if (item.type === "palette" && item.componentType) {
-        if (rootComponents.length > 0) {
-          const firstRoot = rootComponents[0];
-          if (firstRoot) {
-            const firstColumn = findFirstColumn(document, firstRoot.id);
-            if (firstColumn) {
-              // This would be handled by the editor context
-            }
-          }
+      item = JSON.parse(data);
+    } catch {
+      return;
+    }
+
+    // Palette drag → create a new component inside the first available column.
+    if (item.type === "palette" && item.componentType) {
+      const { document: withLayout, firstColumnId } = ensureLayoutStructure(state.document);
+      if (firstColumnId) {
+        setDocument(withLayout);
+        insertComponent(
+          item.componentType as AllComponentType,
+          firstColumnId,
+          (withLayout.components.get(firstColumnId)?.children || []).length
+        );
+      }
+      return;
+    }
+
+    // Canvas drag → move an existing component to the root level (rare path;
+    // per-component drops are handled by ComponentRenderer below).
+    if (item.type === "canvas" && item.componentId) {
+      const targetId = rootComponents[0]?.id;
+      if (targetId) {
+        const parent = getEffectiveParent(state.document, targetId, "before");
+        if (parent && parent.parentId) {
+          moveComponent(item.componentId, parent.parentId, parent.index);
         }
       }
-    } catch {
-      // Ignore parse errors
     }
   };
 
@@ -100,7 +117,13 @@ export function InvoiceBuilderCanvas() {
 }
 
 function EmptyCanvasState() {
-  const { insertComponent } = useEditor();
+  const { newDocument } = useEditor();
+
+  const handleAddSection = () => {
+    // newDocument dispatches SET_DOCUMENT with a fresh section→row→column
+    // skeleton, so the canvas immediately has a valid drop target.
+    newDocument("Untitled", "STANDARD");
+  };
 
   return (
     <div className="h-[200mm] flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-300 rounded-lg p-12">
@@ -111,33 +134,12 @@ function EmptyCanvasState() {
       <p className="text-gray-500 mb-6 max-w-md text-center">
         Drag components from the palette to start building your invoice, or click below to add a section.
       </p>
-      <Button
-        onClick={() => {
-          // Add a default section with row and column
-        }}
-        className="gap-2"
-      >
+      <Button onClick={handleAddSection} className="gap-2">
         <Plus className="w-4 h-4" />
         Add Section
       </Button>
     </div>
   );
-}
-
-function findFirstColumn(document: ReturnType<typeof useDocument>, sectionId: string): string | null {
-  const section = document.components.get(sectionId);
-  if (!section?.children) return null;
-
-  for (const rowId of section.children) {
-    const row = document.components.get(rowId);
-    if (row?.children) {
-      for (const colId of row.children) {
-        const col = document.components.get(colId);
-        if (col?.type === "column") return colId;
-      }
-    }
-  }
-  return null;
 }
 
 export function ComponentRenderer({
@@ -147,7 +149,7 @@ export function ComponentRenderer({
   isDropTarget = false,
   dropPosition,
 }: ComponentRendererProps) {
-  const { selectComponent, deleteComponent, duplicateComponent, updateComponentProps, updateComponentStyle } = useEditor();
+  const { state, selectComponent, deleteComponent, duplicateComponent, updateComponentProps, updateComponentStyle, insertComponent, moveComponent, reorderComponent } = useEditor();
   const document = useDocument();
   const children = useChildren(component.id);
   const schema = componentRegistry[component.type as AllComponentType];
@@ -186,11 +188,37 @@ export function ComponentRenderer({
     const data = e.dataTransfer.getData("application/json");
     if (!data) return;
 
+    let item: { type?: string; componentType?: string; componentId?: string; sourceId?: string | null } = {};
     try {
-      const item = JSON.parse(data);
-      // Drop handling would be done via editor context
+      item = JSON.parse(data);
     } catch {
-      // Ignore
+      return;
+    }
+
+    if (item.type === "palette" && item.componentType) {
+      // Insert the new component relative to this target component.
+      const parent = getEffectiveParent(document, component.id, position);
+      if (parent) {
+        if (parent.parentId) {
+          insertComponent(item.componentType as AllComponentType, parent.parentId, parent.index);
+        } else {
+          // Root-level insert (before/after a root component).
+          insertAtRoot(state.document, item.componentType as AllComponentType, parent.index);
+        }
+      }
+      return;
+    }
+
+    if (item.type === "canvas" && item.componentId && item.componentId !== component.id) {
+      // Reorder/move an existing component relative to this target.
+      const parent = getEffectiveParent(document, component.id, position);
+      if (parent) {
+        if (parent.parentId) {
+          moveComponent(item.componentId, parent.parentId, parent.index);
+        } else {
+          reorderComponent(item.componentId, parent.index);
+        }
+      }
     }
   };
 

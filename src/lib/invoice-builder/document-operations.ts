@@ -344,6 +344,132 @@ export function createDefaultInvoiceDocument(invoiceType: string): DocumentModel
   };
 }
 
+/**
+ * Ensure a document has at least one section → row → column layout so that
+ * dropped content components always have a valid parent. Returns the same
+ * document (possibly mutated in place) and the id of the first column, or
+ * null when the document is empty.
+ */
+export function ensureLayoutStructure(document: DocumentModel): {
+  document: DocumentModel;
+  firstColumnId: string | null;
+} {
+  const firstRoot = document.rootIds
+    .map((id) => document.components.get(id))
+    .find((c) => c?.type === "section");
+
+  if (!firstRoot) {
+    const section = createSectionComponent(generateId("sec"), undefined);
+    const row = createRowComponent(generateId("row"), section.id);
+    const column = createColumnComponent(generateId("col"), row.id);
+    const components = new Map(document.components);
+    components.set(section.id, { ...section, children: [row.id] });
+    components.set(row.id, { ...row, children: [column.id], parentId: section.id });
+    components.set(column.id, { ...column, parentId: row.id });
+    return {
+      document: { ...document, components, rootIds: [...document.rootIds, section.id] },
+      firstColumnId: column.id,
+    };
+  }
+
+  // Walk section → first row → first column.
+  for (const rowId of firstRoot.children || []) {
+    const row = document.components.get(rowId);
+    if (row?.type === "row") {
+      for (const colId of row.children || []) {
+        const col = document.components.get(colId);
+        if (col?.type === "column") {
+          return { document, firstColumnId: colId };
+        }
+      }
+    }
+  }
+
+  // Section exists but has no row/column — complete the chain.
+  const row = createRowComponent(generateId("row"), firstRoot.id);
+  const column = createColumnComponent(generateId("col"), row.id);
+  const components = new Map(document.components);
+  components.set(row.id, { ...row, children: [column.id] });
+  components.set(column.id, { ...column, parentId: row.id });
+  const updatedSection = { ...firstRoot, children: [...(firstRoot.children || []), row.id] };
+  components.set(firstRoot.id, updatedSection);
+  return { document: { ...document, components }, firstColumnId: column.id };
+}
+
+/**
+ * Resolve the effective parent for a drop at a given position.
+ *
+ * - "inside" → the target component itself (if it accepts children) or its
+ *   first descendant that does.
+ * - "before"/"after" → the target's parent, with the insertion index derived
+ *   from the target's position within that parent.
+ *
+ * Returns `parentId: ""` for root-level inserts; callers must handle that
+ * case with `insertAtRoot`.
+ */
+export function getEffectiveParent(
+  document: DocumentModel,
+  targetId: string,
+  position: "before" | "after" | "inside"
+): { parentId: string; index: number } | null {
+  const target = document.components.get(targetId);
+  if (!target) return null;
+
+  if (position === "inside") {
+    const schema = componentRegistry[target.type];
+    if (schema?.allowedChildren && schema.allowedChildren.length > 0) {
+      return { parentId: targetId, index: (target.children || []).length };
+    }
+    // Fall through to before/after behaviour when the target cannot hold children.
+  }
+
+  const parentId = target.parentId;
+  if (!parentId) {
+    // Dropping before/after a root component: insert at root level.
+    const rootIndex = document.rootIds.indexOf(targetId);
+    return {
+      parentId: "",
+      index: position === "before" ? rootIndex : rootIndex + 1,
+    };
+  }
+
+  const parent = document.components.get(parentId);
+  if (!parent?.children) return null;
+  const siblingIndex = parent.children.indexOf(targetId);
+  return {
+    parentId,
+    index: position === "before" ? siblingIndex : siblingIndex + 1,
+  };
+}
+
+/**
+ * Insert a component at the root level (before/after an existing root
+ * component, or append). This is the complement to `insertComponent`, which
+ * requires a parent id.
+ */
+export function insertAtRoot(
+  document: DocumentModel,
+  componentType: AllComponentType,
+  index: number,
+  overrides?: Partial<BaseComponent>
+): DocumentModel {
+  const newComponent = createComponent(componentType, undefined, overrides);
+  const newComponents = new Map(document.components);
+  newComponents.set(newComponent.id, newComponent);
+
+  const newRootIds = [...document.rootIds];
+  const clampedIndex = Math.max(0, Math.min(index, newRootIds.length));
+  newRootIds.splice(clampedIndex, 0, newComponent.id);
+
+  return {
+    ...document,
+    components: newComponents,
+    rootIds: newRootIds,
+    version: document.version + 1,
+    updatedAt: new Date(),
+  };
+}
+
 export function serializeDocument(document: DocumentModel): string {
   const serializable = {
     ...document,

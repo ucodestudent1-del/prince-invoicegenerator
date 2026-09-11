@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Undo, Redo, Download, Eye, Code, RotateCcw, Upload } from "lucide-react";
 
 export function InvoiceBuilderToolbar() {
-  const { state, undo, redo, canUndo, canRedo, exportDocument, newDocument } = useEditor();
+  const { state, undo, redo, canUndo, canRedo, exportDocument, newDocument, importDocument } = useEditor();
   const [showPreview, setShowPreview] = React.useState(false);
   const [showCode, setShowCode] = React.useState(false);
 
@@ -27,7 +27,9 @@ export function InvoiceBuilderToolbar() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = event.target?.result as string;
-        // Import would be handled by the editor context
+        if (content) {
+          importDocument(content);
+        }
       };
       reader.readAsText(file);
     }
